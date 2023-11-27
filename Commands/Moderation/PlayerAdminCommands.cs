@@ -12,11 +12,11 @@ internal static class PlayerAdminCommands
 	public static void RenamePlayer (Player sender, Player _foundPlayer = null, string newName = "")
 	{
 		if (_foundPlayer == null)
-			sender.ReceiveMessage("Player not found!".Error());
+			sender.ReceiveMessage("Player not found.".Error());
 		else if (newName == "")
-			sender.ReceiveMessage("New Name is empty!".Error());
+			sender.ReceiveMessage("New Name is empty.".Error());
 		else if (PlayerService.TryGetPlayerFromString(newName, out Player otherPlayer))
-			sender.ReceiveMessage("Name already taken!".Error());
+			sender.ReceiveMessage("Name already taken.".Error());
 		else
 		{
 			Helper.RenamePlayer(new FromCharacter
@@ -24,7 +24,7 @@ internal static class PlayerAdminCommands
 				Character = _foundPlayer.Character,
 				User = _foundPlayer.User,
 			}, newName);
-			sender.ReceiveMessage("Renaming done!".Success());
+			sender.ReceiveMessage("Renaming done.".Success());
 		}
 	}
 
@@ -39,7 +39,7 @@ internal static class PlayerAdminCommands
 				Plugin.PluginLog.LogInfo($"{Player.Name} {Player.SteamID}");
 			}
 		}
-		sender.ReceiveMessage("Logged Steam IDs to Console !".Success());
+		sender.ReceiveMessage("Logged Steam IDs to Console.".Success());
 	}
 
 	[Command("down", adminOnly: true)]

@@ -15,7 +15,7 @@ public static class KitCommands
 		sender.ReceiveMessage("Gave:".Success()+" Legendaries / Armor / Necks".White());
 	}
 	
-	[Command("kit legendary", description: "Gives default legendaries", usage: ".kit legendary", aliases: new string[] { "kit legendaries" }, adminOnly: false, includeInHelp:true, category:"Kits")]
+	[Command("kit legendary", description: "Gives default legendaries", usage: ".kit legendary", aliases: new string[] { "kit legendaries" }, adminOnly: false, includeInHelp:false, category:"Kits")]
 	public static void LegendaryKitCommand (Player sender)
 	{
 		Helper.GiveDefaultLegendaries(sender);
@@ -30,11 +30,11 @@ public static class KitCommands
 		sender.ReceiveMessage("Gave:".Success()+" Armor / Necks".White());
 	}
 	
-	[Command("kit bags", description: "Gives a kit of bags", usage:".kit gear", adminOnly: false, includeInHelp:true, category:"Kits")]
+	[Command("kit bags", description: "Gives a kit of bags", usage:".kit bags", adminOnly: false, includeInHelp:true, category:"Kits")]
 	public static void GearKitBagCommand (Player sender)
 	{
 		Helper.GiveBags(sender);	
-		sender.ReceiveMessage("Gave:".Success()+" Bags".White());
+		sender.ReceiveMessage("Gave and equiped:".Success()+" Bags".White());
 	}
 	
 
