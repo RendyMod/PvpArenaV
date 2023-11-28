@@ -27,6 +27,7 @@ using Unity.Transforms;
 using ProjectM.Gameplay.Scripting;
 using AsmResolver.PE.Exceptions;
 using Epic.OnlineServices.Stats;
+using static ProjectM.SpawnBuffsAuthoring.SpawnBuffElement_Editor;
 
 namespace PvpArena.GameModes.CaptureThePancake;
 
@@ -85,6 +86,19 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		{ Prefabs.TM_Castle_Wall_Tier01_Wood, true },
 		{ Prefabs.TM_Castle_Wall_Door_Palisade_Tier01, true}
 	};
+
+	private static Dictionary<PrefabGUID, Action<Player, Entity>> _buffHandlers = new Dictionary<PrefabGUID, Action<Player, Entity>>
+	{
+		{ Prefabs.AB_Subdue_Channeling_Target_Debuff, HandleSubdueChannelingTargetDebuff },
+		{ Prefabs.AB_Subdue_Channeling, HandleSubdueChannelingBuff },
+		{ Prefabs.AB_Subdue_Active_Capture_Buff, HandleSubdueActiveBuff },
+		{ Prefabs.AB_Feed_02_Bite_Abort_Trigger, HandleBiteAbortBuff },
+		{ Prefabs.AB_Interact_Mount_Owner_Buff_Horse, HandleMountBuff },
+		{ Prefabs.AB_Interact_HealingOrb_Buff, HandleHealingOrbBuff },
+		{ Prefabs.Buff_General_RelicCarryDebuff, HandleRelicDebuff },
+		{ Prefabs.Buff_InCombat, HandleInCombatBuff },
+		{ Prefabs.AB_Shapeshift_BloodMend_Buff, HandleBloodMendBuff }
+    };
 
 	public static Dictionary<string, bool> AllowedCommands = new Dictionary<string, bool>
 	{
@@ -229,6 +243,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		WingedHorrorGate = Entity.Null;
 		MonsterGate = Entity.Null;
 	}
+
 	public override void HandleOnPlayerDowned(Player player, Entity killer)
 	{
 		if (!player.IsInCaptureThePancake()) return;
@@ -469,6 +484,149 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		//BuffClanMembersOnConsume(player, item);
 	}
 
+	public static void HandleSubdueChannelingTargetDebuff(Player player, Entity buffEntity)
+	{
+
+		if (player.Character.Index > 0 && Team.IsAllies(player.Character.Read<Team>(), player.Character.Read<Team>()))
+		{
+			player.Interrupt();
+			player.ReceiveMessage("That's the wrong pancake!".Error());
+		}
+		else if (player.Character.Index > 0)
+		{
+			var lifetime = buffEntity.Read<LifeTime>();
+			lifetime.Duration += 5;
+			buffEntity.Write(lifetime);
+			var buffer = buffEntity.ReadBuffer<CreateGameplayEventsOnTimePassed>();
+
+			for (var i = 0; i < buffer.Length; i++)
+			{
+				var gameplayEvent = buffer[i];
+				//gameplayEvent.Target = GameplayEventTarget.None;
+				gameplayEvent.Duration += 5;
+				buffer[i] = gameplayEvent;
+			}
+			foreach (var team in Teams.Values)
+			{
+				foreach (var teamPlayer in team)
+				{
+					bool isAllied = teamPlayer.MatchmakingTeam == player.MatchmakingTeam;
+					string message;
+					if (isAllied)
+					{
+						message = $"{player.Name.FriendlyTeam()} is returning your {"pancake".Emphasize()}! Help them!".White();
+					}
+					else
+					{
+						message = $"{player.Name.EnemyTeam()} is returning the enemy's {"pancake".Emphasize()}! Stop them!".White();
+					}
+					teamPlayer.ReceiveMessage(message);
+				}
+			}
+		}
+	}
+
+	public static void HandleSubdueChannelingBuff(Player player, Entity buffEntity)
+	{
+		var lifetime = buffEntity.Read<LifeTime>();
+		lifetime.Duration += 5;
+		buffEntity.Write(lifetime);
+		buffEntity.Add<DestroyBuffOnDamageTaken>();
+	}
+	public static void HandleSubdueActiveBuff(Player player, Entity buffEntity)
+	{
+		foreach (var unitSpawn in CaptureThePancakeConfig.Config.UnitSpawns)
+		{
+			if (unitSpawn.Type.ToLower() == "horse")
+			{
+				if (unitSpawn.Team != player.MatchmakingTeam)
+				{
+					var unit = new ObjectiveHorse(unitSpawn.Team);
+					unit.MaxHealth = unitSpawn.Health;
+					unit.Category = "pancake";
+					UnitFactory.SpawnUnit(unit, unitSpawn.Location.ToFloat3(), Teams[unitSpawn.Team][0]);
+					break;
+				}
+			}
+		}
+	}
+
+	public static void HandleBiteAbortBuff(Player player, Entity buffEntity)
+	{
+		Helper.RemoveBuff(player.Character, Prefabs.AB_FeedEnemyVampire_01_Initiate_DashChannel);
+	}
+
+	public static void HandleMountBuff(Player player, Entity buffEntity)
+	{
+		Helper.BuffPlayer(player, Prefabs.AB_Gallop_Buff, out var buffEntity2, Helper.NO_DURATION); //I don't know how to make horses go below 6 speed without gallop buff
+	}
+
+	public static void HandleHealingOrbBuff(Player player, Entity buffEntity)
+	{
+		var buffer = buffEntity.ReadBuffer<HealOnGameplayEvent>();
+		for (var i = 0; i < buffer.Length; i++)
+		{
+			var heal = buffer[i];
+			heal.HealthPercent = 0.2f;
+			buffer[i] = heal;
+		}
+	}
+
+	public static void HandleRelicDebuff(Player player, Entity buffEntity)
+	{
+		buffEntity.Remove<ShapeshiftImpairBuff>();
+		var buffer = buffEntity.ReadBuffer<GameplayEventListeners>();
+		buffer.Clear();
+
+		Helper.ApplyStatModifier(buffEntity, BuffModifiers.PancakeSlowRelicSpeed);
+		Helper.BuffPlayer(player, Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Buff, out var grandmaBuffEntity, Helper.NO_DURATION);
+
+		grandmaBuffEntity.Add<DestroyOnAbilityCast>();
+		var scriptBuffShapeshiftDataShared = grandmaBuffEntity.Read<Script_Buff_Shapeshift_DataShared>();
+		scriptBuffShapeshiftDataShared.RemoveOnDamageTaken = false;
+		grandmaBuffEntity.Write(scriptBuffShapeshiftDataShared);
+		grandmaBuffEntity.Remove<ModifyMovementSpeedBuff>();
+		Helper.FixIconForShapeshiftBuff(player, grandmaBuffEntity, Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Group);
+
+		Helper.RemoveNewAbilitiesFromBuff(grandmaBuffEntity);
+
+		foreach (var team in Teams.Values)
+		{
+			foreach (var teamPlayer in team)
+			{
+				var isTeammate = player.MatchmakingTeam == teamPlayer.MatchmakingTeam;
+				var colorizedName = isTeammate ? player.Name.FriendlyTeam() : player.Name.EnemyTeam();
+				var message = $"{colorizedName} is moving a shard!".White();
+				teamPlayer.ReceiveMessage(message);
+			}
+		}
+	}
+
+	public static void HandleShapeshiftBuff(Player player, Entity buffEntity)
+	{
+		buffEntity.Add<DestroyBuffOnDamageTaken>();
+		buffEntity.Add<DestroyOnAbilityCast>();
+		var buffer = buffEntity.ReadBuffer<ReplaceAbilityOnSlotBuff>();
+		buffer.Clear();
+		Helper.ApplyStatModifier(buffEntity, BuffModifiers.PancakeShapeshiftSpeed);
+	}
+
+	public static void HandleInCombatBuff(Player player, Entity buffEntity)
+	{
+		Helper.DestroyBuff(buffEntity);
+	}
+
+	public  static void HandleBloodMendBuff(Player player, Entity buffEntity)
+	{
+		var buffer = buffEntity.ReadBuffer<ChangeBloodOnGameplayEvent>();
+		for (var i = 0; i < buffer.Length; i++)
+		{
+			var changeBloodOnGameplayEvent = buffer[i];
+			changeBloodOnGameplayEvent.BloodValue = 10;
+			buffer[i] = changeBloodOnGameplayEvent;
+		}
+	}
+
 	public override void HandleOnPlayerBuffed(Player player, Entity buffEntity)
 	{
 		if (!player.IsInCaptureThePancake()) return;
@@ -485,134 +643,13 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		{
 			targetPlayer = player;
 		}
-		if (prefabGuid == Prefabs.AB_Subdue_Channeling_Target_Debuff)
+		if (_buffHandlers.TryGetValue(prefabGuid, out var handler))
 		{
-			
-			if (target.Index > 0 && Team.IsAllies(player.Character.Read<Team>(), target.Read<Team>()) )
-			{
-				player.Interrupt();
-				player.ReceiveMessage("That's the wrong pancake!".Error());
-			}
-			else if (target.Index > 0)
-			{
-				var lifetime = buffEntity.Read<LifeTime>();
-				lifetime.Duration += 5;
-				buffEntity.Write(lifetime);
-				var buffer = buffEntity.ReadBuffer<CreateGameplayEventsOnTimePassed>();
-				
-				for (var i = 0; i < buffer.Length; i++)
-				{
-					var gameplayEvent = buffer[i];
-					//gameplayEvent.Target = GameplayEventTarget.None;
-					gameplayEvent.Duration += 5;
-					buffer[i] = gameplayEvent;
-				}
-				foreach (var team in Teams.Values)
-				{
-					foreach (var teamPlayer in team)
-					{
-						bool isAllied = teamPlayer.MatchmakingTeam == player.MatchmakingTeam;
-						string message;
-						if (isAllied)
-						{
-							message = $"{player.Name.FriendlyTeam()} is returning your {"pancake".Emphasize()}! Help them!".White();
-						}
-						else
-						{
-							message = $"{player.Name.EnemyTeam()} is returning the enemy's {"pancake".Emphasize()}! Stop them!".White();
-						}
-						teamPlayer.ReceiveMessage(message);
-					}
-				}
-			}
-		}
-		else if (prefabGuid == Prefabs.AB_Subdue_Channeling)
-		{
-			var lifetime = buffEntity.Read<LifeTime>();
-			lifetime.Duration += 5;
-			buffEntity.Write(lifetime);
-			buffEntity.Add<DestroyBuffOnDamageTaken>();
-		}
-		else if (prefabGuid == Prefabs.AB_Subdue_Active_Capture_Buff)
-		{
-			foreach (var unitSpawn in CaptureThePancakeConfig.Config.UnitSpawns)
-			{
-				if (unitSpawn.Type.ToLower() == "horse")
-				{
-					if (unitSpawn.Team != player.MatchmakingTeam)
-					{
-						var unit = new ObjectiveHorse(unitSpawn.Team);
-						unit.MaxHealth = unitSpawn.Health;
-						unit.Category = "pancake";
-						UnitFactory.SpawnUnit(unit, unitSpawn.Location.ToFloat3(), Teams[unitSpawn.Team][0]);
-						break;
-					}
-				}
-			}
-		}
-		else if (prefabGuid == Prefabs.AB_Feed_02_Bite_Abort_Trigger)
-		{
-			Helper.RemoveBuff(player.Character, Prefabs.AB_FeedEnemyVampire_01_Initiate_DashChannel);
-		}
-		else if (prefabGuid == Prefabs.AB_Interact_Mount_Owner_Buff_Horse)
-		{
-			Helper.BuffPlayer(player, Prefabs.AB_Gallop_Buff, out var buffEntity2, Helper.NO_DURATION); //I don't know how to make horses go below 6 speed without gallop buff																				//an option for sudden death -- mounting gives you a shield;
-			/*BuffHelper.BuffPlayer(player, Prefabs.AB_Illusion_PhantomAegis_Buff, out var aegisBuffEntity, BuffHelper.NO_DURATION);
-			aegisBuffEntity.Add<AbsorbBuff>();
-			aegisBuffEntity.Write(new AbsorbBuff
-			{
-				AbsorbCap = 100,
-				AbsorbValue = 100,
-				AbsorbModifier = 1
-			});
-			aegisBuffEntity.Remove<MultiplyAbsorbCapBySpellPower>();*/
-		}
-		else if (prefabGuid == Prefabs.AB_Interact_HealingOrb_Buff)
-		{
-			var buffer = buffEntity.ReadBuffer<HealOnGameplayEvent>();
-			for (var i = 0; i < buffer.Length; i++)
-			{
-				var heal = buffer[i];
-				heal.HealthPercent = 0.2f;
-				buffer[i] = heal;
-			}
-		}
-		else if (prefabGuid == Prefabs.Buff_General_RelicCarryDebuff)
-		{
-            buffEntity.Remove<ShapeshiftImpairBuff>();
-            var buffer = buffEntity.ReadBuffer<GameplayEventListeners>();
-            buffer.Clear();
-            
-			Helper.ApplyStatModifier(buffEntity, BuffModifiers.PancakeSlowRelicSpeed);
-            Helper.BuffPlayer(player, Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Buff, out var grandmaBuffEntity, Helper.NO_DURATION);
-
-            grandmaBuffEntity.Add<DestroyOnAbilityCast>();            
-            var scriptBuffShapeshiftDataShared = grandmaBuffEntity.Read<Script_Buff_Shapeshift_DataShared>();
-            scriptBuffShapeshiftDataShared.RemoveOnDamageTaken = false;
-            grandmaBuffEntity.Write(scriptBuffShapeshiftDataShared);
-            grandmaBuffEntity.Remove<ModifyMovementSpeedBuff>();
-            Helper.FixIconForShapeshiftBuff(player, grandmaBuffEntity, Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Group);
-
-            Helper.RemoveNewAbilitiesFromBuff(grandmaBuffEntity);
-           
-            foreach (var team in Teams.Values)
-			{
-				foreach (var teamPlayer in team)
-				{
-					var isTeammate = player.MatchmakingTeam == teamPlayer.MatchmakingTeam;
-					var colorizedName = isTeammate ? player.Name.FriendlyTeam() : player.Name.EnemyTeam();
-					var message = $"{colorizedName} is moving a shard!".White();
-					teamPlayer.ReceiveMessage(message);
-				}
-			}
+			handler(targetPlayer, buffEntity);
 		}
 		else if (shapeshiftGroupToBuff.ContainsValue(prefabGuid))
 		{
-			buffEntity.Add<DestroyBuffOnDamageTaken>();
-			buffEntity.Add<DestroyOnAbilityCast>();
-			var buffer = buffEntity.ReadBuffer<ReplaceAbilityOnSlotBuff>();
-			buffer.Clear();
-			Helper.ApplyStatModifier(buffEntity, BuffModifiers.PancakeShapeshiftSpeed);
+			HandleShapeshiftBuff(targetPlayer, buffEntity);
 		}
 		else if (buffEntity.Has<AbsorbBuff>())/* && BuffHelper.HasBuff(player, Prefabs.AB_Interact_Mount_Owner_Buff_Horse))*/
 		{
@@ -620,23 +657,6 @@ public class CaptureThePancakeGameMode : BaseGameMode
 			{
 				Helper.DestroyBuff(buffEntity);
 			}
-		}
-        else if (buffEntity.Read<PrefabGUID>() == Prefabs.AB_Shapeshift_BloodMend_Buff)
-        {
-            var buffer = buffEntity.ReadBuffer<ChangeBloodOnGameplayEvent>();
-            for (var i = 0; i < buffer.Length; i++)
-            {
-                var changeBloodOnGameplayEvent = buffer[i];
-                changeBloodOnGameplayEvent.BloodValue = 10;
-                buffer[i] = changeBloodOnGameplayEvent;
-            }
-        }
-		else if (buffEntity.Read<PrefabGUID>() == Prefabs.Buff_InCombat)
-		{
-			var creator = buffEntity.Read<EntityCreator>().Creator._Entity;
-			var owner = buffEntity.Read<EntityOwner>().Owner;
-			creator.LogPrefabName();
-			owner.LogPrefabName();
 		}
 	}
 
