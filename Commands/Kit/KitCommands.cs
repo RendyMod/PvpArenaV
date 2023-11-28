@@ -34,7 +34,7 @@ public static class KitCommands
 	public static void GearKitBagCommand (Player sender)
 	{
 		Helper.GiveBags(sender);	
-		sender.ReceiveMessage("Gave and equiped:".Success()+" Bags".White());
+		sender.ReceiveMessage("Gave and equipped:".Success()+" Bags".White());
 	}
 	
 

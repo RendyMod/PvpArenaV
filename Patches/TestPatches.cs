@@ -28,6 +28,7 @@ using PvpArena.GameModes;
 using ProjectM.Scripting;
 using ProjectM.Shared.Systems;
 using static ProjectM.SpawnRegionSpawnSystem;
+using Unity.Physics.Authoring;
 
 namespace PvpArena.Patches;
 
@@ -188,21 +189,15 @@ public static class CollisionDetectionSystemPatch
 		var entities = __instance.__OnUpdate_LambdaJob0_entityQuery.ToEntityArray(Allocator.Temp);
 		foreach (var entity in entities)
 		{
-			var createGameplayEventsOnHit = entity.ReadBuffer<CreateGameplayEventsOnHit>();
-			foreach (var createGameplayEventOnHit in createGameplayEventsOnHit)
+			if (__instance._NewHitTriggersCached.Length > 0)
 			{
-				createGameplayEventOnHit.
+				Unity.Debug.Log("hi");
+			}
+			else
+			{
+				entity.LogComponentTypes();
 			}
 		}
 	}
-}*/
-
-[HarmonyPatch(typeof(PavementBonusSystem), nameof(PavementBonusSystem.OnUpdate))]
-public static class PavementBonusSystemPatch
-{
-
-	public static void Prefix(PavementBonusSystem __instance)
-	{
-
-	}
 }
+*/

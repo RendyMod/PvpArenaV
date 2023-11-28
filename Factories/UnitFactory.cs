@@ -120,10 +120,10 @@ public static class UnitFactory
 						});
 					}
 					
-					if (unit.AggroRadius != -1)
+					/*if (unit.AggroRadius != -1)
 					{
 						ModifyAggroRadius(unit, buffEntity); //this increases the boss range, but keeps players in combat :(
-					}
+					}*/
 					AddBuffModifications(unit, buffEntity);
 					if (unit.KnockbackResistance)
 					{

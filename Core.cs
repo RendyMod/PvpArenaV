@@ -14,6 +14,7 @@ using PvpArena.GameModes.CaptureThePancake;
 using PvpArena.GameModes.Domination;
 using PvpArena.Listeners;
 using PvpArena.Models;
+using PvpArena.Patches;
 using PvpArena.Persistence.Json;
 using PvpArena.Persistence.MySql;
 using PvpArena.Services;
@@ -87,9 +88,22 @@ public static class Core
 		var query = VWorld.Server.EntityManager.CreateEntityQuery(queryDesc);
 		Listener.AddListener(query, new ManuallySpawnedStructureListener());
 
+		queryDesc = new EntityQueryDesc
+		{
+			All = new ComponentType[]
+			{
+				new ComponentType(Il2CppType.Of<ScrollingCombatTextMessage>(), ComponentType.AccessMode.ReadWrite)
+			},
+			Options = options
+		};
+		query = VWorld.Server.EntityManager.CreateEntityQuery(queryDesc);
+		Listener.AddListener(query, new ScrollingCombatTextListener());
+
+		//ScrollingCombatTextMessage
+
 		/*discordBot = new DiscordBot();
 		discordBot.InitializeAsync();*/
-		
+
 		/*sqlHandler = new SQLHandler();
 		sqlHandler.InitializeAsync();*/
 
@@ -130,6 +144,7 @@ public static class Core
         }
         spectatingGameMode.Dispose();
 		PersistPlayerSubData();
+		Listener.Dispose();
 	}
 
 	public static void PersistPlayerSubData()

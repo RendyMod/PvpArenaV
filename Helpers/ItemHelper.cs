@@ -170,7 +170,11 @@ public static partial class Helper
 				Amount = invBuffer.Amount,
 				Position = player.Position
 			});
-			Helper.ClearInventorySlot(player, slot);
+			var action = () =>
+			{
+				Helper.ClearInventorySlot(player, slot); //delay this slightly so that the event has time to process
+			};
+			ActionScheduler.RunActionOnceAfterDelay(action, .1);	
 		}
 	}
 

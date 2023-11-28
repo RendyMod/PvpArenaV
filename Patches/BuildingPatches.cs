@@ -21,21 +21,67 @@ using Unity.Physics;
 using ProjectM.Tiles;
 using UnityEngine.Jobs;
 using ProjectM.Shared;
+using PvpArena.Models;
+using static ProjectM.Terrain.MapMaker.MapMakerDefinition;
 
 namespace PvpArena.Patches;
-/*
-[HarmonyPatch(typeof(PlaceTileModelSystem), nameof(PlaceTileModelSystem.HandleBuildTileModelEvents))]
-public static class PlaceTileModelSystemPatch
+
+[HarmonyPatch(typeof(PlaceTileModelSystem), nameof(PlaceTileModelSystem.OnUpdate))]
+public static class BuildingPermissions
 {
-	public static void Prefix(PlaceTileModelSystem __instance, CollisionWorld collisionWorld, NativeHashMap<NetworkId, Entity> networkIdToEntityMap, GetPlacementResult.SystemData.PrepareJobData prepareJobData)
+	public static void Prefix(PlaceTileModelSystem __instance)
 	{
-		var entities = __instance._BuildTileQuery.ToEntityArray(Allocator.Temp);
+		var entities = __instance._DismantleTileQuery.ToEntityArray(Allocator.Temp);
+			
 		foreach (var entity in entities)
 		{
-			var buildTileModelEvent = entity.Read<BuildTileModelEvent>();
-			//entity.LogComponentTypes();
-			//buildTileModelEvent.PrefabGuid.LogPrefabName();
+			var fromCharacter = entity.Read<FromCharacter>();
+			Player player = PlayerService.GetPlayerFromUser(fromCharacter.User);
+			if (!player.IsAdmin)
+			{
+				player.ReceiveMessage($"You do not have building permissions".Error());
+				VWorld.Server.EntityManager.DestroyEntity(entity);
+			}
+		}
+
+
+		entities = __instance._BuildTileQuery.ToEntityArray(Allocator.Temp);
+
+		foreach (var entity in entities)
+		{
+			var fromCharacter = entity.Read<FromCharacter>();
+			Player player = PlayerService.GetPlayerFromUser(fromCharacter.User);
+			if (!player.IsAdmin)
+			{
+				player.ReceiveMessage($"You do not have building permissions".Error());
+				VWorld.Server.EntityManager.DestroyEntity(entity);
+			}
+		}
+
+		entities = __instance._MoveTileQuery.ToEntityArray(Allocator.Temp);
+
+		foreach (var entity in entities)
+		{
+			var fromCharacter = entity.Read<FromCharacter>();
+			Player player = PlayerService.GetPlayerFromUser(fromCharacter.User);
+			if (!player.IsAdmin)
+			{
+				player.ReceiveMessage($"You do not have building permissions".Error());
+				VWorld.Server.EntityManager.DestroyEntity(entity);
+			}
+		}
+
+		entities = __instance._BuildWallpaperQuery.ToEntityArray(Allocator.Temp);
+
+		foreach (var entity in entities)
+		{
+			var fromCharacter = entity.Read<FromCharacter>();
+			Player player = PlayerService.GetPlayerFromUser(fromCharacter.User);
+			if (!player.IsAdmin)
+			{
+				player.ReceiveMessage($"You do not have building permissions".Error());
+				VWorld.Server.EntityManager.DestroyEntity(entity);
+			}
 		}
 	}
 }
-*/

@@ -26,6 +26,7 @@ using Unity.Collections;
 using Unity.Transforms;
 using ProjectM.Gameplay.Scripting;
 using AsmResolver.PE.Exceptions;
+using Epic.OnlineServices.Stats;
 
 namespace PvpArena.GameModes.CaptureThePancake;
 
@@ -99,6 +100,8 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 	public static List<Timer> Timers = new List<Timer>();
     public static Dictionary<Player, List<Timer>> PlayerRespawnTimers = new Dictionary<Player, List<Timer>>();
+	public static Dictionary<Player, float> PlayerDamageDealt = new Dictionary<Player, float>();
+	public static Dictionary<Player, float> PlayerDamageReceived = new Dictionary<Player, float>();
 
 	public static Entity WingedHorrorGate;
 	public static Entity MonsterGate;
@@ -140,8 +143,9 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		GameEvents.OnPlayerDamageReceived += HandleOnPlayerDamageReceived;
         GameEvents.OnDelayedSpawn += HandleOnDelayedSpawnEvent;
         GameEvents.OnPlayerStartedCasting += HandleOnPlayerStartedCasting;
+		GameEvents.OnPlayerDamageReported += HandleOnPlayerDamageReported;
 
-        stopwatch.Start();
+		stopwatch.Start();
 	}
 
 	public void Initialize(List<Player> team1Players, List<Player> team2Players)
@@ -159,6 +163,8 @@ public class CaptureThePancakeGameMode : BaseGameMode
 				playerKills[player] = 0;
 				playerDeaths[player] = 0;
                 PlayerRespawnTimers[player] = new List<Timer>();
+				PlayerDamageDealt[player] = 0;
+				PlayerDamageReceived[player] = 0;
 			}
 		}
 	}
@@ -188,8 +194,9 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		GameEvents.OnPlayerDamageReceived -= HandleOnPlayerDamageReceived;
         GameEvents.OnDelayedSpawn -= HandleOnDelayedSpawnEvent;
         GameEvents.OnPlayerStartedCasting -= HandleOnPlayerStartedCasting;
+		GameEvents.OnPlayerDamageReported -= HandleOnPlayerDamageReported;
 
-        Teams.Clear();
+		Teams.Clear();
 		foreach (var shardBuffs in TeamToShardBuffsMap.Values)
 		{
 			shardBuffs.Clear();
@@ -216,6 +223,8 @@ public class CaptureThePancakeGameMode : BaseGameMode
         shouldRemoveGallopBuff.Clear();
 		playerKills.Clear();
 		playerDeaths.Clear();
+		PlayerDamageDealt.Clear();
+		PlayerDamageReceived.Clear();
 		stopwatch.Reset();
 		WingedHorrorGate = Entity.Null;
 		MonsterGate = Entity.Null;
@@ -299,6 +308,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 	{
 		if (!player.IsInCaptureThePancake()) return;
 
+		//clear out any queued up respawn actions since we will recreate them now that the player has died (in case they killed themselves twice in a row before the initial respawn actions finished)
         foreach (var respawnAction in PlayerRespawnTimers[player])
         {
             if (respawnAction != null)
@@ -389,17 +399,17 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
         Action makeSpectatorAction = () =>
 		{
+			var respawnDelay = CalculateRespawnDelay();
             ResetPlayer(player);
-            Helper.BuffPlayer(player, Prefabs.AB_Shapeshift_Mist_Buff, out var buffEntity, CalculateRespawnDelay());
+            Helper.BuffPlayer(player, Prefabs.AB_Shapeshift_Mist_Buff, out var buffEntity, respawnDelay);
             Helper.CompletelyRemoveAbilityBarFromBuff(buffEntity);
             Helper.FixIconForShapeshiftBuff(player, buffEntity, Prefabs.AB_Shapeshift_Mist_Group);
-
-
             Helper.ModifyBuff(buffEntity, BuffModificationTypes.Invulnerable | BuffModificationTypes.Immaterial | BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.AbilityCastImpair | BuffModificationTypes.PickupItemImpaired | BuffModificationTypes.TargetSpellImpaired, true);
-            Helper.BuffPlayer(player, Prefabs.Admin_Observe_Invisible_Buff, out var invisibleBuff, CalculateRespawnDelay());
+
+            Helper.BuffPlayer(player, Prefabs.Admin_Observe_Invisible_Buff, out var invisibleBuff, respawnDelay);
             Helper.ModifyBuff(invisibleBuff, BuffModificationTypes.None, true);
 			Helper.RespawnPlayer(player, player.Position);
-            var timer = ActionScheduler.RunActionOnceAfterDelay(respawnPlayerActionPart1, CalculateRespawnDelay()-3);
+            var timer = ActionScheduler.RunActionOnceAfterDelay(respawnPlayerActionPart1, respawnDelay - 3);
             PlayerRespawnTimers[player].Add(timer);
         };
 
@@ -621,6 +631,13 @@ public class CaptureThePancakeGameMode : BaseGameMode
                 buffer[i] = changeBloodOnGameplayEvent;
             }
         }
+		else if (buffEntity.Read<PrefabGUID>() == Prefabs.Buff_InCombat)
+		{
+			var creator = buffEntity.Read<EntityCreator>().Creator._Entity;
+			var owner = buffEntity.Read<EntityOwner>().Owner;
+			creator.LogPrefabName();
+			owner.LogPrefabName();
+		}
 	}
 
     public static void HandleOnPlayerBuffRemoved(Player player, Entity buffEntity)
@@ -998,6 +1015,17 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		
 	}
 
+	public void HandleOnPlayerDamageReported(Player source, Player target, PrefabGUID type, float damage)
+	{
+		if (!source.IsInCaptureThePancake()) return;
+
+		if (type == Prefabs.SCT_Type_DamageDone || type == Prefabs.SCT_Type_CritDamage || type == Prefabs.SCT_Type_Absorb || type == Prefabs.SCT_Type_DamageDoneWeak || type == Prefabs.SCT_Type_Damage)
+		{
+			PlayerDamageDealt[source] += damage;
+			PlayerDamageReceived[target] += damage;
+		}
+	}
+
 
 	public void HandleOnGameFrameUpdate()
 	{
@@ -1155,6 +1183,8 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		.OrderByDescending(player => player.Kills)
 		.ToList();
 
+		var damageSorted = PlayerDamageDealt.OrderByDescending(kvp => kvp.Value);
+
 		// Send individual and team stats to each player
 		foreach (var receiver in playerKills.Keys)
 		{
@@ -1169,6 +1199,14 @@ public class CaptureThePancakeGameMode : BaseGameMode
 				string colorizedKills = isStatPlayerAlly ? stat.Kills.ToString().FriendlyTeam() : stat.Kills.ToString().EnemyTeam();
 				string colorizedDeaths = isStatPlayerAlly ? stat.Deaths.ToString().EnemyTeam() : stat.Deaths.ToString().FriendlyTeam();
 				receiver.ReceiveMessage($"{colorizedPlayerName} - Kills: {colorizedKills}, Deaths: {colorizedDeaths}".White());
+			}
+
+			receiver.ReceiveMessage("Total PvP Damage Dealt / Taken".White());
+			foreach (var kvp in damageSorted)
+			{
+				bool isStatPlayerAlly = receiver.MatchmakingTeam == kvp.Key.MatchmakingTeam;
+				string colorizedPlayerName = isStatPlayerAlly ? kvp.Key.Name.FriendlyTeam() : kvp.Key.Name.EnemyTeam();
+				receiver.ReceiveMessage($"{colorizedPlayerName} - {Math.Round(kvp.Value)} / {Math.Round(PlayerDamageReceived[kvp.Key])}".White());
 			}
 		}
 	}

@@ -303,7 +303,7 @@ public static class CaptureThePancakeHelper
 		var team2Players = team2LeaderPlayer.GetClanMembers();
 		Core.captureThePancakeGameMode.Initialize(team1Players, team2Players);
 		SpawnStructures(team1LeaderPlayer, team2LeaderPlayer);
-
+		
 		foreach (var team1Player in team1Players)
 		{
 			team1Player.CurrentState = Player.PlayerState.CaptureThePancake;
@@ -313,6 +313,15 @@ public static class CaptureThePancakeHelper
 			GiveVerminSalvesIfNotPresent(team1Player);
 			team1Player.Teleport(CaptureThePancakeConfig.Config.Team1PlayerRespawn.ToFloat3());
 			team1Player.ReceiveMessage($"The match will start in {"10".Emphasize()} seconds. {"Get ready!".Emphasize()}".White());
+			try
+			{
+				Helper.RemoveItemFromInventory(team1Player, Prefabs.Item_Building_Relic_Monster);
+				Helper.RemoveItemFromInventory(team1Player, Prefabs.Item_Building_Relic_Manticore);
+			}
+			catch
+			{
+
+			}
 		}
 
 		foreach (var team2Player in team2Players)
@@ -324,6 +333,15 @@ public static class CaptureThePancakeHelper
 			GiveVerminSalvesIfNotPresent(team2Player);
 			team2Player.Teleport(CaptureThePancakeConfig.Config.Team2PlayerRespawn.ToFloat3());
 			team2Player.ReceiveMessage($"The match will start in {"10".Emphasize()} seconds. {"Get ready!".Emphasize()}".White());
+			try
+			{
+				Helper.RemoveItemFromInventory(team2Player, Prefabs.Item_Building_Relic_Monster);
+				Helper.RemoveItemFromInventory(team2Player, Prefabs.Item_Building_Relic_Manticore);
+			}
+			catch
+			{
+
+			}
 		}
 
 		Action action = () => { StartMatchCountdown(); };
@@ -508,18 +526,6 @@ public static class CaptureThePancakeHelper
 		foreach (var loser in losers)
 		{
 			Helper.ApplyLoserMatchEndBuff(loser);
-		}
-	}
-
-
-	public static void MessageEveryone(Dictionary<int, List<Player>> teams, string message)
-	{
-		foreach (var team in teams.Values)
-		{
-			foreach (var player in team)
-			{
-				player.ReceiveMessage(message);
-			}
 		}
 	}
 }

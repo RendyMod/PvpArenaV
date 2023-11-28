@@ -77,6 +77,9 @@ using static PlayerJewels;
 using Stunlock.Fmod;
 using FMOD;
 using PvpArena.GameModes.BulletHell;
+using ProjectM.Debugging;
+using Il2CppSystem.Xml.Schema;
+using UnityEngine.Rendering;
 
 namespace PvpArena.Commands.Debug;
 internal class TestCommands
@@ -85,53 +88,19 @@ internal class TestCommands
 	[Command("test", description: "Used for debugging", adminOnly: true)]
 	public void TestCommand(Player sender, int rotationMode = 0)
 	{
-		var entities = Helper.GetEntitiesByComponentTypes<CastleHeartConnection>();
-		foreach (var entity in entities)
-		{
-			if (entity.Read<PrefabGUID>() == Prefabs.TM_Castle_Fence_Iron02)
-			{
-				var position = entity.Read<LocalToWorld>().Position;
-				string logMessage = $"\"X\": {position.x},\n\"Y\": {position.y},\n\"Z\": {position.z}";
-				Plugin.PluginLog.LogInfo(logMessage);
-				
-			}
-		}
-		//Helper.TeleportUnit(entity, sender.Position);
-
-/*		var eventEntity = Helper.CreateEntityWithComponents<FromCharacter, BuildTileModelEvent, NetworkEventType, ReceiveNetworkEventTag>();
-
-		eventEntity.Write(sender.ToFromCharacter());
-		
-		eventEntity.Write(new BuildTileModelEvent
-		{
-			PrefabGuid = Prefabs.BP_Castle_Wall_Tier02_Stone_Plain,
-			SpawnTranslation = mousePositionTranslation,
-			SpawnTileRotation = (TileRotation)rotationMode,
-		});*/
-
-		
-		sender.ReceiveMessage("hello");
+		var prefab = Helper.GetPrefabEntityByPrefabGUID(Prefabs.ScrollingCombatTextMessage);
+		var commandBuffer = Core.entityCommandBufferSystem.CreateCommandBuffer();
+		var entity = ScrollingCombatTextMessage.Create(VWorld.Server.EntityManager, commandBuffer, prefab, 99999, Prefabs.SCT_Type_InfoMessage, sender.Position, sender.Character, sender.Character);
+		/*var sct = entity.Read<ScrollingCombatTextMessage>();
+		sct.OverrideText = "HELLO THERE";
+		entity.Write(sct);*/
+		//ScrollingCombatTextMessage.CreateLocal(VWorld.Server.EntityManager, prefab, new FixedString512("testinggg"), sender.Position, sender.Position, sender.Character);
 	}
 
 	[Command("test2", description: "Used for debugging", adminOnly: true)]
 	public void Test2Command(Player sender)
 	{
-		var stairs = Helper.GetEntitiesByComponentTypes<CastleStairs>();
-		foreach (var stair in stairs)
-		{
-			if (stair.Index > 0)
-			{
-				PrefabSpawnerService.SpawnWithCallback(Prefabs.TM_Castle_Fence_IronGate02, sender.Position, (e) => {
-					/*e.Remove<PhysicsCollider>();
-					e.Remove<CollisionRadius>();*/
-					e.Remove<EntityCategory>();
-					e.Add<TileCollisionTag>();
-					e.LogComponentTypes();
-				}, 0);
-				break;
-			}
-		}
-		
+		DamageRecorderService.ReportDamageResults(sender);
 		sender.ReceiveMessage("done");
 	}
 
@@ -172,9 +141,10 @@ internal class TestCommands
 	}
 
 	[Command("test4", description: "Used for debugging", adminOnly: true)]
-	public void Test4Command(Player sender, bool order = true)
+	public void Test4Command(Player sender, Player player)
 	{
-		Helper.AddItemToInventory(sender.Character, Prefabs.Item_Bag_Grand_Coins, 1, out Entity itemEntity);
+		Helper.BuffPlayer(player, Prefabs.Buff_Gloomrot_SentryOfficer_TurretCooldown, out var buffEntity, Helper.NO_DURATION, true);
+		Helper.ModifyBuff(buffEntity, BuffModificationTypes.BuildMenuImpair);
 	}
 
 
@@ -379,7 +349,6 @@ internal class TestCommands
 			System.Action action = () =>
 			{
 				CaptureThePancakeHelper.StartMatch(team1Leader, team2Leader);
-				sender.ReceiveMessage("Match started".Success());
 			};
 			ActionScheduler.RunActionOnceAfterDelay(action, 1);
 			

@@ -5,6 +5,7 @@ using PvpArena;
 using PvpArena.Data;
 using PvpArena.Helpers;
 using PvpArena.Models;
+using PvpArena.Services;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics;
@@ -75,5 +76,20 @@ public class LogCommands
 		{
 			sender.ReceiveMessage("Invalid entity");
 		}
+	}
+
+
+	[Command("find-builders", description: "Finds people who shouldn't be able to build", adminOnly: true)]
+	public void FindBuildersCommand(Player sender)
+	{
+		var players = PlayerService.UserCache.Values;
+		foreach (var player in players)
+		{
+			if (!player.IsAdmin && !Helper.HasBuff(player, Prefabs.Buff_Gloomrot_SentryOfficer_TurretCooldown))
+			{
+				sender.ReceiveMessage(player.Name);
+			}
+		}
+		sender.ReceiveMessage("Done!");
 	}
 }

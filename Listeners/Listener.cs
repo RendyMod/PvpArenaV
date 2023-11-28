@@ -17,6 +17,15 @@ public static class Listener
 		_listeners[query] = listener;
 	}
 
+	public static void Dispose()
+	{
+		foreach (var listener in _listeners)
+		{
+			listener.Key.Dispose();
+		}
+		_listeners.Clear();
+	}
+
 	public static void Prefix()
 	{
 		foreach (var kvp in _listeners)

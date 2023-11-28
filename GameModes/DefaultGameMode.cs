@@ -89,6 +89,7 @@ public class DefaultGameMode : BaseGameMode
 		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
 		GameEvents.OnItemWasThrown += HandleOnItemWasThrown;
 		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
+		GameEvents.OnPlayerDamageReported += HandleOnPlayerDamageReported;
 	}
 	public override void Dispose()
 	{
@@ -103,6 +104,7 @@ public class DefaultGameMode : BaseGameMode
 		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
 		GameEvents.OnItemWasThrown -= HandleOnItemWasThrown;
 		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
+		GameEvents.OnPlayerDamageReported -= HandleOnPlayerDamageReported;
 	}
 
 	private static Dictionary<string, bool> AllowedCommands = new Dictionary<string, bool>
@@ -308,11 +310,21 @@ public class DefaultGameMode : BaseGameMode
 		if (!player.IsInDefaultMode()) return;
 
 		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
+		if (damageDealtEvent.Target.Has<PlayerCharacter>())
+		{
+			DamageRecorderService.RecordDamageDealtInitial(player, damageDealtEvent);
+		}
+		
 		var isStructure = (damageDealtEvent.Target.Has<CastleHeartConnection>());
 		if (isStructure)
 		{
 			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 		}
+	}
+
+	public void HandleOnPlayerDamageReported(Player source, Player target, PrefabGUID type, float damageDealt)
+	{
+		DamageRecorderService.RecordDamageDoneFinal(source, damageDealt, type);
 	}
 
 	public override void ResetPlayer(Player player)

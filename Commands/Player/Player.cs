@@ -135,7 +135,6 @@ public class Player
 
 	private bool GetIsAdmin()
 	{
-		
 		return User.Read<User>().IsAdmin || Core.adminAuthSystem._LocalAdminList.Contains(SteamID);
 	}
 

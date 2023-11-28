@@ -80,6 +80,9 @@ public static class GameEvents
 	public delegate void PlayerDamageDealtHandler(Player player, Entity eventEntity);
 	public static event PlayerDamageDealtHandler OnPlayerDamageDealt;
 
+	public delegate void PlayerDamageReported(Player source, Player target, PrefabGUID type, float damageDealt);
+	public static event PlayerDamageReported OnPlayerDamageReported;
+
 	public delegate void PlayerDamageReceivedHandler(Player player, Entity eventEntity);
 	public static event PlayerDamageReceivedHandler OnPlayerDamageReceived;
 
@@ -210,6 +213,11 @@ public static class GameEvents
 	public static void RaiseDelayedSpawnEvent(Unit unit, int timeUntilSpawn)
 	{
 		OnDelayedSpawn?.Invoke(unit, timeUntilSpawn);
+	}
+
+	public static void RaisePlayerDamageReported(Player source, Player target, PrefabGUID type, float damage)
+	{
+		OnPlayerDamageReported?.Invoke(source, target, type, damage);
 	}
 
 	public static void RaiseGameFrameUpdate()

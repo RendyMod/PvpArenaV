@@ -25,6 +25,7 @@ using System.Runtime.InteropServices;
 using ProjectM.CastleBuilding;
 using ProjectM.Presentation;
 using PvpArena.GameModes;
+using PvpArena.Listeners;
 
 namespace PvpArena.Patches;
 
@@ -57,5 +58,28 @@ public static class DealDamageSystemPatch
 				}
 			}
 		}
+	}
+}
+
+public class ScrollingCombatTextListener : EntityQueryListener
+{
+	public void OnNewMatchFound(Entity entity)
+	{
+		var sct = entity.Read<ScrollingCombatTextMessage>();
+		if (sct.Value == 0) { return; }
+		if (sct.Source._Entity.Has<PlayerCharacter>() && sct.Source._Entity.Has<PlayerCharacter>()) 
+		{
+			var sourceEntity = sct.Source._Entity;
+			var sourcePlayer = PlayerService.GetPlayerFromCharacter(sourceEntity);
+			var targetEntity = sct.Target._Entity;
+			var targetPlayer = PlayerService.GetPlayerFromCharacter(targetEntity);
+			
+			GameEvents.RaisePlayerDamageReported(sourcePlayer, targetPlayer, sct.Type, sct.Value);
+		}
+	}
+
+	public void OnNewMatchRemoved(Entity entity)
+	{
+
 	}
 }
