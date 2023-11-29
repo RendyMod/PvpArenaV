@@ -8,7 +8,6 @@ using PvpArena.Models;
 using PvpArena.Helpers;
 using PvpArena.Services.Moderation;
 
-namespace PvpArena.Commands;
 internal class BanCommands
 {
 	public static int FOREVER = -1;

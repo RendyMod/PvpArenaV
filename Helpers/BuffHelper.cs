@@ -24,8 +24,9 @@ public static partial class Helper
 	public const int DEFAULT_DURATION = -1;
 
 	private static PrefabGUID AbilityImpairBuff = Prefabs.Gloomrot_Voltage_VBlood_Emote_OnAggro_Buff;
-	public static PrefabGUID CustomBuff = Prefabs.Buff_InCombat_Manticore; //good blank slate for adding modifiers, but doesn't persist through death
+	public static PrefabGUID CustomBuff = Prefabs.Buff_InCombat_Manticore; //good blank slate for adding modifiers, but doesn't persist through death. May show mob in combat
 	public static PrefabGUID CustomBuff2 = Prefabs.Buff_Manticore_ImmaterialHomePos; //good blank slate for adding modifiers, but doesn't persist through death
+	public static PrefabGUID CustomBuff3 = Prefabs.Buff_BloodQuality_T01_OLD; //experimental blank slate
 	public static void ApplyMatchInitializationBuff(Player player)
 	{
 		Helper.BuffPlayer(player, Prefabs.Buff_General_Gloomrot_LightningStun, out var buffEntity, 5);

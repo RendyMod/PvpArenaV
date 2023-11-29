@@ -15,6 +15,8 @@ using Stunlock.Network;
 using PvpArena.Matchmaking;
 using PvpArena.Services;
 using UnityEngine;
+using PvpArena.Factories;
+using System.Linq;
 
 namespace PvpArena.Patches;
 
@@ -38,12 +40,43 @@ public static class TraderPurchaseSystemPatch
 			if (Player.PlayerPointsData.TotalPoints >= cost)
 			{
 				Player.PlayerPointsData.TotalPoints -= cost;
-				Player.ReceiveMessage($"Purchased for {cost} VPoints. New total points: {Player.PlayerPointsData.TotalPoints}");
+				Player.ReceiveMessage($"Purchased for {cost} VPoints. New total points: {Player.PlayerPointsData.TotalPoints}".Success());
+
+				RefillStock(purchaseEvent, trader);
 			}
 			else
 			{
 				VWorld.Server.EntityManager.DestroyEntity(entity);
-				Player.ReceiveMessage($"Not enough VPoints to purchase! {Player.PlayerPointsData.TotalPoints} / {cost}");
+				Player.ReceiveMessage($"Not enough VPoints to purchase! {Player.PlayerPointsData.TotalPoints} / {cost}".Error());
+			}
+		}
+	}
+
+	private static void RefillStock(TraderPurchaseEvent purchaseEvent, Entity trader)
+	{
+		var _entryBuffer = trader.ReadBuffer<TraderEntry>();
+		var _inputBuffer = trader.ReadBuffer<TradeCost>();
+		var _outputBuffer = trader.ReadBuffer<TradeOutput>();
+
+		for (int i = 0; i < _entryBuffer.Length; i++)
+		{
+
+			TraderEntry _newEntry = _entryBuffer[i];
+			if (purchaseEvent.ItemIndex == _newEntry.OutputStartIndex)
+			{
+				PrefabGUID _outputItem = _outputBuffer[i].Item;
+				PrefabGUID _inputItem = _inputBuffer[i].Item;
+
+
+				foreach (var traderConfig in TradersConfig.Config.Traders)
+				{
+					var item = traderConfig.TraderItems.Where(x => x.InputItem == _inputItem && x.OutputItem == _outputItem).FirstOrDefault();
+					if (item != null && item.AutoRefill)
+					{
+						_newEntry.StockAmount = item.StockAmount + 1;
+						_entryBuffer[i] = _newEntry;
+					}
+				}
 			}
 		}
 	}

@@ -95,6 +95,7 @@ internal class TestCommands
 		string myCustomText = "Your custom message here";
 		var bytes = Encoding.UTF8.GetBytes(myCustomText);
 		var assetGuid = AssetGuid.FromBytes(bytes);
+		
 		var entity = ScrollingCombatTextMessage.Create(VWorld.Server.EntityManager, commandBuffer, prefab, assetGuid, sender.Position, sender.Position, sender.Character, 0f, Prefabs.SCT_Type_InfoMessage, sender.User);
 		
 		/*var sct = entity.Read<ScrollingCombatTextMessage>();
@@ -114,12 +115,7 @@ internal class TestCommands
 		sender.ReceiveMessage(sender.PlayerBulletHellData.BestTime);
 	}
 
-	[Command("recount", description: "Used for debugging", adminOnly: false)]
-	public void RecountCommand(Player sender)
-	{
-		DamageRecorderService.ReportDamageResults(sender);
-		sender.ReceiveMessage("done");
-	}
+
 
 	[Command("test3", description: "Used for debugging", adminOnly: true)]
 	public void Test3Command(Player sender, bool friendly = true)
@@ -162,20 +158,6 @@ internal class TestCommands
 	{
 		Helper.BuffPlayer(player, Prefabs.Buff_Gloomrot_SentryOfficer_TurretCooldown, out var buffEntity, Helper.NO_DURATION, true);
 		Helper.ModifyBuff(buffEntity, BuffModificationTypes.BuildMenuImpair);
-	}
-
-
-	[Command("fix-regen", description: "Used for debugging", adminOnly: true)]
-	public void FixRegenCommand(Player sender, bool order = true)
-	{
-		foreach (var player in PlayerService.UserCache.Values)
-		{
-			if (!Helper.HasBuff(player, Prefabs.Buff_OutOfCombat))
-			{
-				Helper.BuffPlayer(player, Prefabs.Buff_OutOfCombat, out var buffEntity);
-			}
-		}
-		sender.ReceiveMessage("Done!");
 	}
 
 	[Command("move-structures", description: "Used for debugging", adminOnly: true)]
@@ -333,178 +315,8 @@ internal class TestCommands
 		Plugin.PluginLog.LogInfo(logMessage);
 	}
 
-	[Command("start-domination", description: "Starts a match of domination", usage: ".start-domination Ash", adminOnly: true)]
-	public void StartDominationCommand(Player sender, Player team2Leader, Player team1Leader = null)
-	{
-		if (team1Leader == null)
-		{
-			team1Leader = sender;
-		}
-		if (!Team.IsAllies(team1Leader.Character.Read<Team>(), team2Leader.Character.Read<Team>()))
-		{
-			DominationHelper.EndMatch();
-			DominationHelper.StartMatch(team1Leader, team2Leader);
-			sender.ReceiveMessage("Match started".Success());
-		}
-		else
-		{
-			sender.ReceiveMessage("Cannot start a match against someone in your clan!".Error());
-		}
-	}
 
 
-	[Command("start-pancake", description: "Starts capture the pancake", usage:".start-pancake Ash Rendy", adminOnly: true)]
-	public void StartPancakeCommand(Player sender, Player team2Leader, Player team1Leader = null)
-	{
-		if (team1Leader == null)
-		{
-			team1Leader = sender;
-		}
-		if (!Team.IsAllies(team1Leader.Character.Read<Team>(), team2Leader.Character.Read<Team>()))
-		{
-			CaptureThePancakeHelper.EndMatch();
-			System.Action action = () =>
-			{
-				CaptureThePancakeHelper.StartMatch(team1Leader, team2Leader);
-			};
-			ActionScheduler.RunActionOnceAfterDelay(action, 1);
-			
-		}
-		else
-		{
-			sender.ReceiveMessage("Cannot start a match against someone in your clan!".Error());
-		}
-	}
-
-	[Command("end-pancake", description: "Ends capture the pancake", adminOnly: true)]
-	public void EndPancakeCommand(Player sender)
-	{
-		CaptureThePancakeHelper.EndMatch(1);
-		sender.ReceiveMessage("Match ended".Success());
-	}
-
-	[Command("end-domination", description: "Ends capture the pancake", adminOnly: true)]
-	public void EndDominationCommand(Player sender)
-	{
-		DominationHelper.EndMatch();
-		sender.ReceiveMessage("Match ended".Success());
-	}
-
-	[Command("start-bullet", description: "Starts capture the pancake", usage: ".start-pancake Ash Rendy", adminOnly: false)]
-	public void StartBulletHellCommand(Player sender, Player receiver = null)
-	{
-		Player player = sender;
-		if (receiver != null)
-		{
-			player = receiver;
-		}
-		BulletHellManager.QueueForMatch(player);
-	}
-
-
-	[Command("imprison", description: "Imprisons a player for a set duration", usage: ".imprison Ash", adminOnly: true)]
-	public void ImprisonCommand(Player sender, Player imprisonedPlayer, int numberOfDays = -1, string reason = "No reason given")
-	{
-		ImprisonService.ImprisonPlayer(imprisonedPlayer.SteamID, numberOfDays);
-		string durationMessage;
-		if (numberOfDays == -1)
-		{
-			durationMessage = "indefinitely";
-		}
-		else
-		{
-			durationMessage = $"for {numberOfDays.ToString()} days";
-		}
-		imprisonedPlayer.ReceiveMessage($"You have been {"imprisoned".Emphasize()} {durationMessage}.".White());
-		sender.ReceiveMessage($"{imprisonedPlayer.Name} has been imprisoned {durationMessage}.");
-	}
-
-	[Command("unimprison", description: "Unimprisons a player for a set duration", usage: ".unimprison Ash", adminOnly: true)]
-	public void ImprisonCommand(Player sender, Player imprisonedPlayer)
-	{
-		ImprisonService.UnimprisonPlayer(imprisonedPlayer.SteamID);
-		imprisonedPlayer.ReceiveMessage($"You have been set free!".White());
-		sender.ReceiveMessage($"{imprisonedPlayer.Name} has been unimprisoned.");
-	}
-
-	[Command("spawn-turret", description: "Spawns a turret at your location", adminOnly: true)]
-	public static void SpawnTurretCommand(Player sender, PrefabGUID _prefab, int team = 10, int level = 80)
-	{
-		var turret = new Turret(_prefab, team, level);
-		UnitFactory.SpawnUnit(turret, sender.Position);
-		sender.ReceiveMessage($"Spawned turret!".Success());
-	}
-
-	[Command("spawn-dummy", description: "Spawns a turret at your location", adminOnly: true)]
-	public static void SpawnDummyCommand(Player sender)
-	{
-		var turret = new Dummy();
-		UnitFactory.SpawnUnit(turret, sender.Position);
-		sender.ReceiveMessage($"Spawned turret!".Success());
-	}
-
-	[Command("spawn-boss", description: "Spawns a boss at your location", adminOnly: true)]
-	public static void SpawnBossCommand(Player sender, PrefabGUID _prefab, int team = 10, int level = 84)
-	{
-		var turret = new Boss(_prefab, team, level);
-		turret.MaxHealth = 3000;
-		UnitFactory.SpawnUnit(turret, sender.Position);
-		sender.ReceiveMessage($"Spawned boss!".Success());
-	}
-
-	[Command("spawn-vampire", description: "Spawns a boss at your location", adminOnly: true)]
-	public static void SpawnVampireCommand(Player sender, int team = 10, int level = 84)
-	{
-		PrefabSpawnerService.SpawnWithCallback(Prefabs.CHAR_VampireMale, sender.Position, (System.Action<Entity>)((e) => {
-			e.Remove<PlayerCharacter>();
-			e.Remove<RespawnCharacter>();
-			e.Remove<PlayerMapIcon>();
-			e.Remove<Immortal>();
-			e.Add<BuffResistances>();
-			e.Write(new BuffResistances
-			{
-				SettingsEntity = ModifiableEntity.CreateFixed(Helper.GetPrefabEntityByPrefabGUID(Prefabs.BuffResistance_Golem)),
-				InitialSettingGuid = Prefabs.BuffResistance_Golem
-			});
-			Helper.BuffEntity(e, Helper.CustomBuff, out var buffEntity, (float)Helper.NO_DURATION, false, true);
-			Helper.ModifyBuff(buffEntity, BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.DisableMapCollision);
-		}), 0, -1);
-		sender.ReceiveMessage($"Spawned vampire!".Success());
-	}
-
-	[Command("spawn-prefab", description: "Used for debugging", adminOnly: true)]
-	public static void SpawnPrefabCommand(Player sender, PrefabGUID _prefab, int rotationMode = 1)
-	{
-		PrefabSpawnerService.SpawnWithCallback(_prefab, sender.Position, (System.Action<Entity>)((Entity e) =>
-		{
-			e.LogComponentTypes();
-			Helper.BuffEntity(e, Prefabs.Buff_Voltage_Stage2, out var buffEntity, (float)Helper.NO_DURATION);
-			sender.ReceiveMessage("Spawned prefab!".Success());
-		}), rotationMode);
-	}
-	
-	[Command("destroy-prefab", description: "Used for debugging", adminOnly: true)]
-	public static void DestroyPrefabCommand(Player sender, PrefabGUID prefab = default)
-	{
-		if (prefab != default)
-		{
-			var entities = Helper.GetEntitiesNearPosition(sender, 100);
-			foreach (var entity in entities)
-			{
-				if (entity.Read<PrefabGUID>() == prefab)
-				{
-					Helper.DestroyEntity(entity);
-					sender.ReceiveMessage($"Killed entity: {entity.Read<PrefabGUID>().LookupName()}".Success());
-				}
-			}
-		}
-		else
-		{
-			Entity entity = Helper.GetHoveredEntity(sender.Character);
-			Helper.DestroyEntity(entity);
-			sender.ReceiveMessage($"Killed entity: {entity.Read<PrefabGUID>().LookupName()}".Success());
-		}
-	}
 
 	[Command("get-nearby-structures", description: "Used for debugging", adminOnly: true)]
 	public static void GetNearbyCommand(Player sender, int range = 10)
@@ -598,14 +410,6 @@ internal class TestCommands
 	}
 
 
-	[Command("create-clan", description: "Used for debugging", adminOnly: true)]
-	public static void CreateClanCommand(Player sender, string name = "")
-	{
-		Helper.CreateClanForPlayer(sender.User);
-		sender.ReceiveMessage("Clan created.");
-	}
-
-
 	[Command("claim-target", description: "Used for debugging", adminOnly: true)]
 	public static void ClaimTargetCommand(Player sender)
 	{
@@ -613,26 +417,5 @@ internal class TestCommands
 
 		entity.Write(sender.Character.Read<Team>());
 		entity.Write(sender.Character.Read<TeamReference>());
-	}
-
-	[Command("spawn-chest", usage:".spawn-chest rage", adminOnly: true)]
-	public static void SpawnChestCommand(Player sender, string potion, int rotationMode = 1, int quantity = 1)
-	{
-		var entity = Helper.GetHoveredEntity(sender.Character);
-
-		PrefabSpawnerService.SpawnWithCallback(Prefabs.TM_WorldChest_Epic_01_Full, sender.Position, (Entity e) =>
-		{
-			e.Remove<DestroyAfterTimeOnInventoryChange>();
-			e.Remove<DropInInventoryOnSpawn>();
-			if (potion == "rage")
-			{
-				Helper.AddItemToInventory(e, Prefabs.Item_Consumable_GlassBottle_PhysicalBrew_T02, quantity, out Entity itemEntity);
-			}
-			else
-			{
-				Helper.AddItemToInventory(e, Prefabs.Item_Consumable_GlassBottle_SpellBrew_T02, quantity, out Entity itemEntity);
-			}
-			sender.ReceiveMessage("Spawned chest!".Success());
-		}, rotationMode);
 	}
 }

@@ -6,8 +6,8 @@ using PvpArena.Models;
 using static PvpArena.Frameworks.CommandFramework.CommandFramework;
 using PvpArena.Helpers;
 using PvpArena.Services.Moderation;
+using PvpArena;
 
-namespace PvpArena.Commands;
 internal class MuteCommands
 {
 	public static int FOREVER = -1;

@@ -184,4 +184,20 @@ public class ConfigDtos
 		public string UserId { get; set; } = "";
 		public string Password { get; set; } = "";
 	}
+
+	public class TraderDto
+	{
+		public UnitSpawn UnitSpawn { get; set; }
+		public List<TraderItemDto> TraderItems {get;set;}
+	}
+
+	public class TraderItemDto
+	{
+		public PrefabGUID OutputItem { get; set; }
+		public int OutputAmount { get; set; }
+		public PrefabGUID InputItem { get; set; }
+		public int InputAmount { get; set; }
+		public int StockAmount { get; set; }
+		public bool AutoRefill { get; set; } = true;
+	}
 }

@@ -165,4 +165,11 @@ internal class ClanCommands
 
 		}
 	}
+
+	[Command("create-clan", description: "Used for debugging", adminOnly: true)]
+	public static void CreateClanCommand(Player sender, string name = "")
+	{
+		Helper.CreateClanForPlayer(sender.User);
+		sender.ReceiveMessage("Clan created.");
+	}
 }

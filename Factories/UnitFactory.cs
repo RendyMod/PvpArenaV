@@ -11,6 +11,7 @@ using ProjectM.CastleBuilding;
 using ProjectM.ContentTesting;
 using ProjectM.Debugging;
 using ProjectM.Hybrid;
+using ProjectM.Network;
 using ProjectM.Pathfinding;
 using ProjectM.Sequencer;
 using PvpArena.Configs;
@@ -27,6 +28,7 @@ using Unity.Properties.Generated;
 using Unity.Transforms;
 using static ProjectM.DeathEventListenerSystem;
 using static ProjectM.SpawnBuffsAuthoring.SpawnBuffElement_Editor;
+using static PvpArena.Configs.ConfigDtos;
 using static PvpArena.Factories.UnitFactory;
 
 namespace PvpArena.Factories;
@@ -110,7 +112,7 @@ public static class UnitFactory
 			{
 				StoreMetaDataOnUnit(unit, e, position, player);
 				SetHealth(unit, e);
-				if (Helper.BuffEntity(e, Prefabs.Buff_InCombat_Manticore, out Entity buffEntity, (float)Helper.NO_DURATION, true))
+				if (Helper.BuffEntity(e, Helper.CustomBuff3, out Entity buffEntity, (float)Helper.NO_DURATION, true))
 				{
 					if (unit.Level != -1 && e.Has<UnitLevel>())
 					{
@@ -369,7 +371,7 @@ public class Unit
 
 	public virtual void Modify(Entity e, Entity buffEntity)
 	{
-
+		Modify(e);
 	}
 
 	public virtual void Modify(Entity e)
@@ -525,6 +527,57 @@ public class HealingOrb : Unit
 		lifetime.Duration = -1;
 		var buffer = e.ReadBuffer<CreateGameplayEventsOnTimePassed>();
 		buffer.Clear();
+	}
+}
+
+public class Trader : Unit
+{
+	List<TraderItemDto> TraderItemDtos;
+	public Trader(PrefabGUID prefabGuid, List<TraderItemDto> traderItemDtos) : base(prefabGuid)
+	{
+		TraderItemDtos = traderItemDtos;
+	}
+
+	public override void Modify(Entity e)
+	{
+		e.Remove<AggroConsumer>();
+		var _tradeOutputBuffer = e.ReadBuffer<TradeOutput>();
+		var _traderEntryBuffer = e.ReadBuffer<TraderEntry>();
+		var _tradeCostBuffer = e.ReadBuffer<TradeCost>();
+		_tradeOutputBuffer.Clear();
+		_traderEntryBuffer.Clear();
+		_tradeCostBuffer.Clear();
+		var i = 0;
+		foreach (var item in TraderItemDtos)
+		{
+			if (i > 25)
+			{
+				break;
+			}
+			_tradeOutputBuffer.Add(new TradeOutput
+			{
+				Amount = item.OutputAmount,
+				Item = item.OutputItem,
+			});
+
+			_tradeCostBuffer.Add(new TradeCost
+			{
+				Amount = item.InputAmount,
+				Item = item.InputItem,
+			});
+
+			_traderEntryBuffer.Add(new TraderEntry
+			{
+				RechargeInterval = -1,
+				CostCount = 1,
+				CostStartIndex = i,
+				FullRechargeTime = -1,
+				OutputCount = 1,
+				OutputStartIndex = i,
+				StockAmount = item.StockAmount,
+			});
+			i++;
+		}
 	}
 }
 

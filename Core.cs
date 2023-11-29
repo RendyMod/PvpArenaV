@@ -66,8 +66,9 @@ public static class Core
 		CaptureThePancakeConfig.Load();
 		DominationConfig.Load();
 		PrisonConfig.Load();
-		
-		if (PvpArenaConfig.Config.Database.UseDatabaseStorage)
+        TradersConfig.Load();
+
+        if (PvpArenaConfig.Config.Database.UseDatabaseStorage)
 		{
 			matchmaking1V1DataRepository = new PlayerMatchmaking1v1DataStorage();
 			pointsDataRepository = new PlayerPointsStorage();

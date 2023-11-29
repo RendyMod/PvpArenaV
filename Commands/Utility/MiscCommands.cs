@@ -71,4 +71,10 @@ internal static class MiscellaneousCommands
 		des.ControlUnit(sender.ToFromCharacter(), controlDebugEvent);
 		sender.ReceiveMessage("Controlling self");
 	}
+
+	[Command("recount", description: "Used for debugging", adminOnly: false)]
+	public static void RecountCommand(Player sender)
+	{
+		DamageRecorderService.ReportDamageResults(sender);
+	}
 }
