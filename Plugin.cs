@@ -57,7 +57,6 @@ public class Plugin : BasePlugin, IRunOnInitialized
 
 	public void OnGameInitialized()
 	{
-		Unity.Debug.Log("test");
 		Initialize();
 	}
 

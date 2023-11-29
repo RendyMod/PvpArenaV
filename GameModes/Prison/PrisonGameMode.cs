@@ -33,6 +33,7 @@ public class PrisonGameMode : BaseGameMode
 		{ "ranked lb", true },
 		{ "bp", true },
 		{ "r", true },
+		{ "recount", true }
 	};
 	public PrisonGameMode()
 	{
@@ -188,6 +189,8 @@ public class PrisonGameMode : BaseGameMode
 
 	public static void HandleOnPlayerChatMessage(Player player, Entity eventEntity)
 	{
+		if (!player.IsImprisoned()) return;
+
 		var chatEvent = eventEntity.Read<ChatMessageEvent>();
 		if (chatEvent.MessageType == ChatMessageType.Global)
 		{

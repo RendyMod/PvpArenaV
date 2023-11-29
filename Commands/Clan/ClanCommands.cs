@@ -12,7 +12,7 @@ namespace PvpArena.Commands;
 
 internal class ClanCommands
 {
-	[Command("clan invite", description: "Invite a player to your clan, regardless of either person's clan state", usage: ".inv Ash", aliases: new string[] { "inv", "ci", "invite" }, adminOnly: false, category:"Clan", includeInHelp: true)]
+	[Command("clan invite", description: "Invite a player to your clan, regardless of either person's clan state", usage: ".inv Ash", aliases: new string[] { "inv", "ci", "invite", "clan-invite" }, adminOnly: false, category:"Clan", includeInHelp: true)]
 	public void ClanInviteCommand (Player sender, Player player)
 	{
 		if (sender.User.Read<Team>().Equals(player.User.Read<Team>()))
@@ -107,11 +107,11 @@ internal class ClanCommands
 				var clanEntity = RecipientPlayer.User.Read<User>().ClanEntity._Entity;
 				if (clanEntity.Index == 0)
 				{
-					action = new ScheduledAction(Helper.CreateClanForPlayer, new object[] { RecipientPlayer });
+					action = new ScheduledAction(Helper.CreateClanForPlayer, new object[] { RecipientPlayer.User });
 					ActionScheduler.ScheduleAction(action, 2);
 				}
 
-				action = new ScheduledAction(Helper.AddPlayerToPlayerClan, new object[] { RequesterPlayer, RecipientPlayer });
+				action = new ScheduledAction(Helper.AddPlayerToPlayerClan, new object[] { RequesterPlayer.User, RecipientPlayer.User });
 				ActionScheduler.ScheduleAction(action, 3);
 			}
 			else if (request.Type == Request.RequestType.ClanInviteRequest)
@@ -122,11 +122,11 @@ internal class ClanCommands
 				var clanEntity = RequesterPlayer.User.Read<User>().ClanEntity._Entity;
 				if (clanEntity.Index == 0)
 				{
-					action = new ScheduledAction(Helper.CreateClanForPlayer, new object[] { RequesterPlayer });
+					action = new ScheduledAction(Helper.CreateClanForPlayer, new object[] { RequesterPlayer.User });
 					ActionScheduler.ScheduleAction(action, 2);
 				}
 				
-				action = new ScheduledAction(Helper.AddPlayerToPlayerClan, new object[] { RecipientPlayer, RequesterPlayer });
+				action = new ScheduledAction(Helper.AddPlayerToPlayerClan, new object[] { RecipientPlayer.User, RequesterPlayer.User });
 				ActionScheduler.ScheduleAction(action, 3);
 			}
 		}
@@ -141,5 +141,28 @@ internal class ClanCommands
 	{
 		sender.RemoveFromClan();
 		sender.ReceiveMessage("You have left your clan.".White());
+	}
+
+	[Command("rename clan", description: "Leave your clan", usage: ".rnc", adminOnly: false, aliases: new string[] { "rnc", "renameclan", "rename-clan" }, category: "Clan", includeInHelp: true)]
+	public void RenameClanCommand(Player sender, string name)
+	{
+		var clanEntity = sender.User.Read<User>().ClanEntity._Entity;
+		if (clanEntity.Exists())
+		{
+			var clanTeam = clanEntity.Read<ClanTeam>();
+			clanTeam.Name = new FixedString64(name);
+			clanEntity.Write(clanTeam);
+			var clanMembers = sender.GetClanMembers();
+			foreach (var clanMember in clanMembers)
+			{
+				ClanUtility.SetCharacterClanName(VWorld.Server.EntityManager, sender.User, clanTeam.Name);
+			}
+			sender.ReceiveMessage("You have renamed your clan.".White());
+		}
+		else
+		{
+			sender.ReceiveMessage("You aren't in a clan.".Error());
+
+		}
 	}
 }

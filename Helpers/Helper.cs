@@ -350,4 +350,9 @@ public static partial class Helper
 			}
 		}
 	}
+
+	public static void AnnounceSiegeWeapon()
+	{
+		CreateEntityWithComponents<AnnounceSiegeWeapon, SpawnTag, DestroyOnSpawn, PrefabGUID>();
+	}
 }

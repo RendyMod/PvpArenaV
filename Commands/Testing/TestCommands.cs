@@ -81,6 +81,7 @@ using ProjectM.Debugging;
 using Il2CppSystem.Xml.Schema;
 using UnityEngine.Rendering;
 using PvpArena.Services.Moderation;
+using Unity.Core;
 
 namespace PvpArena.Commands.Debug;
 internal class TestCommands
@@ -91,8 +92,11 @@ internal class TestCommands
 	{
 		var prefab = Helper.GetPrefabEntityByPrefabGUID(Prefabs.ScrollingCombatTextMessage);
 		var commandBuffer = Core.entityCommandBufferSystem.CreateCommandBuffer();
-		var entity = ScrollingCombatTextMessage.Create(VWorld.Server.EntityManager, commandBuffer, prefab, 69, Prefabs.SCT_Type_InfoMessage, sender.Position, sender.Character, sender.Character);
-
+		string myCustomText = "Your custom message here";
+		var bytes = Encoding.UTF8.GetBytes(myCustomText);
+		var assetGuid = AssetGuid.FromBytes(bytes);
+		var entity = ScrollingCombatTextMessage.Create(VWorld.Server.EntityManager, commandBuffer, prefab, assetGuid, sender.Position, sender.Position, sender.Character, 0f, Prefabs.SCT_Type_InfoMessage, sender.User);
+		
 		/*var sct = entity.Read<ScrollingCombatTextMessage>();
 		sct.OverrideText = "HELLO THERE";
 		entity.Write(sct);*/

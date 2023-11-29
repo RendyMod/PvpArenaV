@@ -148,5 +148,10 @@ public static class ECSExtensions
 	{
 		VWorld.Server.EntityManager.DestroyEntity(entity);
 	}
+
+	public static bool Exists(this Entity entity)
+	{
+		return VWorld.Server.EntityManager.Exists(entity);
+	}
 }
 #pragma warning restore CS8500

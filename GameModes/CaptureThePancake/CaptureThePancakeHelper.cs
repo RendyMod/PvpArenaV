@@ -443,6 +443,7 @@ public static class CaptureThePancakeHelper
 					Helper.RespawnPlayer(player, player.Position);
 				}
 			}
+			KillPreviousEntities();
 			if (winner > 0)
 			{
 				var action = () => {
@@ -450,7 +451,6 @@ public static class CaptureThePancakeHelper
 					Core.captureThePancakeGameMode.Dispose();
 					UnitFactory.DisposeTimers("pancake");
 					DisposeTimers();
-					KillPreviousEntities();
 				};
 				ActionScheduler.RunActionOnceAfterDelay(action, .1);
 			}
