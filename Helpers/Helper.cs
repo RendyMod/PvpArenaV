@@ -19,6 +19,8 @@ using Il2CppSystem;
 using Unity.Physics;
 using Unity.Jobs;
 using UnityEngine.Jobs;
+using PvpArena.Factories;
+using static PvpArena.Factories.UnitFactory;
 
 namespace PvpArena.Helpers;
 
@@ -322,5 +324,30 @@ public static partial class Helper
 	public static double GetServerTime()
 	{
 		return Core.traderSyncSystem._ServerTime.GetSingleton().TimeOnServer;
+	}
+
+	public static void KillPreviousEntities(string category)
+	{
+		var entities = Helper.GetEntitiesByComponentTypes<CanFly>(true);
+		foreach (var entity in entities)
+		{
+			if (!entity.Has<PlayerCharacter>())
+			{
+				if (UnitFactory.TryGetSpawnedUnitFromEntity(entity, out SpawnedUnit spawnedUnit))
+				{
+					if (spawnedUnit.Unit.Category == category)
+					{
+						Helper.DestroyEntity(entity);
+					}
+				}
+				else
+				{
+					if (entity.Has<ResistanceData>() && entity.Read<ResistanceData>().GarlicResistance_IncreasedExposureFactorPerRating == StringToFloatHash(category))
+					{
+						Helper.DestroyEntity(entity);
+					}
+				}
+			}
+		}
 	}
 }

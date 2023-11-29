@@ -14,6 +14,17 @@ using PvpArena.Services.Moderation;
 
 namespace PvpArena.Models;
 
+public class PlayerBulletHellData : PlayerData
+{
+	public override ulong SteamID { get; set; }
+	public string BestTime { get; set; } = "0";
+
+	public PlayerBulletHellData()
+	{
+
+	}
+}
+
 public class PlayerMatchmaking1v1Data : PlayerData
 {	
 	public override ulong SteamID { get; set; }	

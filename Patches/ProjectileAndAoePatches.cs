@@ -38,7 +38,8 @@ public static class ProjectileSystem_Spawn_ServerPatch
 		var entities = __instance.__OnUpdate_LambdaJob0_entityQuery.ToEntityArray(Allocator.Temp);
 		foreach (var entity in entities)
 		{
-			if (entity.Read<PrefabGUID>() == Prefabs.AB_Subdue_Projectile)
+			var prefabGuid = entity.Read<PrefabGUID>();
+			if (prefabGuid == Prefabs.AB_Subdue_Projectile || prefabGuid == Prefabs.AB_Sorceress_Projectile)
 			{
 				var buffer = entity.ReadBuffer<HitColliderCast>();
 				for (var i = 0; i < buffer.Length; i++)
@@ -48,21 +49,30 @@ public static class ProjectileSystem_Spawn_ServerPatch
 					buffer[i] = hitCollider;
 				}
 			}
-/*			else
+		}
+	}
+}
+
+[HarmonyPatch(typeof(HitCastColliderSystem_OnDestroy), nameof(HitCastColliderSystem_OnDestroy.OnUpdate))]
+public static class HitCastColliderSystem_OnDestroyPatch
+{
+	public static void Prefix(HitCastColliderSystem_OnDestroy __instance)
+	{
+		var entities = __instance.__OnUpdate_LambdaJob0_entityQuery.ToEntityArray(Allocator.Temp);
+		foreach (var entity in entities)
+		{
+			var prefabGuid = entity.Read<PrefabGUID>();
+			if (prefabGuid == Prefabs.AB_Sorceress_AoE_Throw)
 			{
-				entity.LogComponentTypes();
 				var buffer = entity.ReadBuffer<HitColliderCast>();
-				var buffer2 = entity.ReadBuffer<TriggerHitConsume>();
 				for (var i = 0; i < buffer.Length; i++)
 				{
-					
-					var hitCollider = buffer[i];
-					hitCollider.PrimaryFilterFlags = ProjectM.Physics.CollisionFilterFlags.Player;
-					Unity.Debug.Log($"{hitCollider.ContiniousCollision} {hitCollider.CollisionCheckType} {hitCollider.IncludeTerrain} {hitCollider.Handled} {hitCollider.PrimaryFilterFlags} {hitCollider.TerrainColliderModifier}");
-					buffer[i] = hitCollider;
-					
+					var hitColliderCast = buffer[i];
+					hitColliderCast.IgnoreImmaterial = true;
+					buffer[i] = hitColliderCast;
 				}
-			}*/
+			}
 		}
+		entities.Dispose();
 	}
 }

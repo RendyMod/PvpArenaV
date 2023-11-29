@@ -16,7 +16,6 @@ public static class DamageRecorderService
 		{
 			_playerDamageEventQueues[player] = new Queue<DamageEvent>();
 		}
-		Unity.Debug.Log($"initial: {dealDamageEvent.SpellSource.Read<PrefabGUID>()}");
 		_playerDamageEventQueues[player].Enqueue(new DamageEvent { Ability = dealDamageEvent.SpellSource.Read<PrefabGUID>() });
 	}
 
@@ -24,7 +23,6 @@ public static class DamageRecorderService
 	{
 		if (_playerDamageEventQueues.TryGetValue(player, out var queue) && queue.Count > 0)
 		{
-			Unity.Debug.Log($"final: {damageAmount}");
 			var damageEvent = queue.Dequeue();
 			damageEvent.DamageAmount = damageAmount;
 			damageEvent.DamageType = damageType;
@@ -64,7 +62,6 @@ public static class DamageRecorderService
 
 				if (roundedGroupTotalDamage > 0)
 				{
-					Plugin.PluginLog.LogInfo($"{groupName.Colorify(ExtendedColor.ServerColor)} - {roundedGroupTotalDamage} ({percentage:F2}%)");
 					player.ReceiveMessage($"{groupName.Colorify(ExtendedColor.ServerColor)} - {roundedGroupTotalDamage} ({percentage:F2}%)".White());
 				}
 			}

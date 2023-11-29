@@ -70,11 +70,7 @@ public static class BulletHellConfig
 
 public class BulletHellConfigData
 {
-	public string DefaultBlood { get; set; } = "Warrior"; // Default value
+	public string DefaultBlood { get; set; } = "Creature"; // Default value
 	public CoordinateDto RespawnPoint { get; set; } = new CoordinateDto();
-	public CoordinateDto StartPosition { get; set; } = new CoordinateDto();
-	public List<UnitSpawn> UnitSpawns { get; set; } = new List<UnitSpawn>();
-	public CircleZoneDto FightZone { get; set; } = new CircleZoneDto();
-
-	// Additional properties...
+	public List<BulletHellArenaDto> BulletHellArenas { get; set; } = new List<BulletHellArenaDto>();
 }

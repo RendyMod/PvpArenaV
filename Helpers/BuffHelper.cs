@@ -170,7 +170,7 @@ public static partial class Helper
 
 	public static void CompletelyRemoveAbilityBarFromBuff(Entity buffEntity)
 	{
-		var buffer = buffEntity.ReadBuffer<ReplaceAbilityOnSlotBuff>();
+		var buffer = VWorld.Server.EntityManager.AddBuffer<ReplaceAbilityOnSlotBuff>(buffEntity);
 		for (var i = 0; i < 8; i++)
 		{
 			buffer.Add(new ReplaceAbilityOnSlotBuff
@@ -179,10 +179,11 @@ public static partial class Helper
 				CastBlockType = GroupSlotModificationCastBlockType.WholeCast,
 				NewGroupId = PrefabGUID.Empty,
 				ReplaceGroupId = PrefabGUID.Empty,
-				Priority = 99,
+				Priority = 100,
 				Target = ReplaceAbilityTarget.BuffOwner
 			});
 		}
+		buffEntity.Add<ReplaceAbilityOnSlotData>();
 	}
 
 	public static void RemoveNewAbilitiesFromBuff(Entity buffEntity)
@@ -412,5 +413,15 @@ public static partial class Helper
 				DestroyUtility.Destroy(VWorld.Server.EntityManager, buff.Entity, DestroyDebugReason.TryRemoveBuff);
 			}
 		}
+	}
+
+	public static void MakeBuffCcImmune(Entity e)
+	{
+		e.Add<BuffResistances>();
+		e.Write(new BuffResistances
+		{
+			SettingsEntity = ModifiableEntity.CreateFixed(Helper.GetPrefabEntityByPrefabGUID(Prefabs.BuffResistance_Golem)),
+			InitialSettingGuid = Prefabs.BuffResistance_Golem
+		});
 	}
 }

@@ -14,16 +14,28 @@ using ProjectM.CastleBuilding;
 using PvpArena.Services;
 using System.Threading;
 using System.Diagnostics;
+using static PvpArena.Configs.ConfigDtos;
+using PvpArena.Factories;
 
 namespace PvpArena.GameModes.BulletHell;
 
 public class BulletHellGameMode : BaseGameMode
 {
 	public Player player = null;
-	private CircleZone fightZone = BulletHellConfig.Config.FightZone.ToCircleZone();
 	public bool HasStarted = false;
 	public List<Timer> Timers = new List<Timer>();
 	public Stopwatch stopwatch = new Stopwatch();
+	public int ArenaNumber = 0;
+	public CircleZone FightZone;
+	public TemplateUnitSpawn UnitSpawns = new TemplateUnitSpawn();
+
+	public BulletHellGameMode(CircleZone fightZone, TemplateUnitSpawn unitSpawns, int arenaNumber)
+	{
+		FightZone = fightZone;
+		UnitSpawns = unitSpawns;
+		ArenaNumber = arenaNumber;
+	}
+
 	public override void Initialize()
 	{
 		/*GameEvents.OnPlayerRespawn += HandleOnPlayerRespawn;*/
@@ -73,7 +85,7 @@ public class BulletHellGameMode : BaseGameMode
 
 	public override void HandleOnPlayerDowned(Player player, Entity killer)
 	{
-		if (!player.IsInBulletHell()) return;
+		if (!player.IsInBulletHell() || player != this.player) return;
 
 		ResetPlayer(player);
 		if (Helper.BuffPlayer(player, Prefabs.Witch_PigTransformation_Buff, out var buffEntity, 3))
@@ -81,19 +93,19 @@ public class BulletHellGameMode : BaseGameMode
 			buffEntity.Add<BuffModificationFlagData>();
 			buffEntity.Write(BuffModifiers.PigModifications);
 		}
-		BulletHellHelper.EndMatch();
+		BulletHellManager.EndMatch(this);
 		//end match and tp to training + report time and record score
 	}
 	public override void HandleOnPlayerDeath(Player player, OnKillCallResult killCallResult)
 	{
-		if (!player.IsInBulletHell()) return;
+		if (!player.IsInBulletHell() || player != this.player) return;
 
 		var pos = player.Position;
 		Helper.RespawnPlayer(player, pos);
 		player.Reset();
 		var blood = player.Character.Read<Blood>();
 		Helper.SetPlayerBlood(player, blood.BloodType, blood.Quality);
-		BulletHellHelper.EndMatch();
+		BulletHellManager.EndMatch(this);
 		//end match and tp to training + report time and record score
 	}
 	/*public override void HandleOnPlayerRespawn(Player player)
@@ -103,35 +115,35 @@ public class BulletHellGameMode : BaseGameMode
 	}*/
 	public override void HandleOnPlayerChatCommand(Player player, CommandAttribute command)
 	{
-		if (!player.IsInBulletHell()) return;
+		if (!player.IsInBulletHell() || player != this.player) return;
 
 	}
 	public override void HandleOnShapeshift(Player player, Entity eventEntity)
 	{
-		if (!player.IsInBulletHell()) return;
+		if (!player.IsInBulletHell() || player != this.player) return;
 
 	}
 	public override void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
 	{
-		if (!player.IsInBulletHell()) return;
+		if (!player.IsInBulletHell() || player != this.player) return;
 
 	}
 
 	public void HandleOnPlayerStartedCasting(Player player, Entity eventEntity)
 	{
-		if (!player.IsInBulletHell()) return;
+		if (!player.IsInBulletHell() || player != this.player) return;
 
 	}
 
 	public override void HandleOnPlayerBuffed(Player player, Entity buffEntity)
 	{
-		if (!player.IsInBulletHell()) return;
+		if (!player.IsInBulletHell() || player != this.player) return;
 
 	}
 
 	public override void HandleOnPlayerConnected(Player player)
 	{
-		if (!player.IsInBulletHell()) return;
+		if (!player.IsInBulletHell() || player != this.player) return;
 
 		if (PvpArenaConfig.Config.UseCustomSpawnLocation)
 		{
@@ -141,7 +153,7 @@ public class BulletHellGameMode : BaseGameMode
 
 	public override void HandleOnPlayerDisconnected(Player player)
 	{
-		if (!player.IsInBulletHell()) return;
+		if (!player.IsInBulletHell() || player != this.player) return;
 
 		player.CurrentState = Player.PlayerState.Normal;
 		//end the match
@@ -149,14 +161,14 @@ public class BulletHellGameMode : BaseGameMode
 
 	public override void HandleOnItemWasThrown(Player player, Entity eventEntity)
 	{
-		if (!player.IsInBulletHell()) return;
+		if (!player.IsInBulletHell() || player != this.player) return;
 
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 	}
 
 	public override void HandleOnPlayerDamageDealt(Player player, Entity eventEntity)
 	{
-		if (!player.IsInBulletHell()) return;
+		if (!player.IsInBulletHell() || player != this.player) return;
 
 		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
 		var isStructure = damageDealtEvent.Target.Has<CastleHeartConnection>();
@@ -168,7 +180,7 @@ public class BulletHellGameMode : BaseGameMode
 
 	private bool IsOutOfBounds()
 	{
-		return !fightZone.Contains(player);
+		return !FightZone.Contains(player);
 	}
 
 	public void HandleOnGameFrameUpdate()
@@ -176,7 +188,7 @@ public class BulletHellGameMode : BaseGameMode
 		if (HasStarted && IsOutOfBounds())
 		{
 			player.ReceiveMessage("You have gone out of bounds!".Error());
-			BulletHellHelper.EndMatch();
+			BulletHellManager.EndMatch(this);
 		}
 	}
 

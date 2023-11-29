@@ -41,7 +41,7 @@ public class LogCommands
 	[Command("log-components", description: "Logs components of hovered entity", adminOnly: true)]
 	public void LogComponentsCommand(Player sender)
 	{
-		var entity = Helper.GetHoveredEntity<CastleHeartConnection>(sender.Character);
+		var entity = Helper.GetHoveredEntity<HitColliderCast>(sender.Character);
 		if (entity != Entity.Null)
 		{
 			entity.LogComponentTypes();

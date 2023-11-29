@@ -29,6 +29,7 @@ using ProjectM.Scripting;
 using ProjectM.Shared.Systems;
 using static ProjectM.SpawnRegionSpawnSystem;
 using Unity.Physics.Authoring;
+using static ProjectM.HitColliderCast;
 
 namespace PvpArena.Patches;
 
@@ -201,3 +202,19 @@ public static class CollisionDetectionSystemPatch
 	}
 }
 */
+
+[HarmonyPatch(typeof(AnnounceSiegeWeaponSystem), nameof(AnnounceSiegeWeaponSystem.OnUpdate))]
+public static class AnnounceSiegeWeaponSystemPatch
+{
+
+	public static void Prefix(AnnounceSiegeWeaponSystem __instance)
+	{
+		__instance._AnnounceSiegeWeaponQuery.LogComponentTypes();
+		var entities = __instance._AnnounceSiegeWeaponQuery.ToEntityArray(Allocator.Temp);
+		foreach (var entity in entities)
+		{
+			Unity.Debug.Log("hi");
+		}
+	}
+}
+

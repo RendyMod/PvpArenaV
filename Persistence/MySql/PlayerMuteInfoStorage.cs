@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using MySqlConnector;
 using PvpArena.Models;
+using PvpArena.Services;
 
 namespace PvpArena.Persistence.MySql;
 public class PlayerMuteInfoStorage : MySqlDataStorage<PlayerMuteInfo>
@@ -84,6 +85,12 @@ public class PlayerMuteInfoStorage : MySqlDataStorage<PlayerMuteInfo>
 							MuteDurationDays = reader.GetInt32("MuteDurationDays")
 						};
 						dataList.Add(data);
+						var action = () =>
+						{
+							var player = PlayerService.GetPlayerFromSteamId(data.SteamID);
+							player.MuteInfo = data;
+						};
+						ActionScheduler.RunActionOnMainThread(action);
 					}
 				}
 			}

@@ -85,7 +85,7 @@ public static partial class Helper
 		}
 		else
 		{
-			var entities = GetEntitiesByComponentTypes<PrefabGUID, PhysicsCollider>();
+			var entities = GetEntitiesByComponentTypes<PrefabGUID>();
 			if (entities.Length > 0)
 			{
 				SortEntitiesByDistance(entities, position);
@@ -105,7 +105,7 @@ public static partial class Helper
 		}
 		else
 		{
-			var entities = GetEntitiesByComponentTypes<PrefabGUID, PhysicsCollider, T>();
+			var entities = GetEntitiesByComponentTypes<PrefabGUID, T>();
 			if (entities.Length > 0)
 			{
 				SortEntitiesByDistance(entities, position);
@@ -125,7 +125,7 @@ public static partial class Helper
 		}
 		else
 		{
-			var entities = GetEntitiesByComponentTypes<PrefabGUID, PhysicsCollider, T, T2>();
+			var entities = GetEntitiesByComponentTypes<PrefabGUID, T, T2>();
 			if (entities.Length > 0)
 			{
 				SortEntitiesByDistance(entities, position);

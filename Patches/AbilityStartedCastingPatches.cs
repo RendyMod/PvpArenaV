@@ -13,6 +13,9 @@ using UnityEngine.TextCore;
 using PvpArena.Helpers;
 using PvpArena.Models;
 using ProjectM.UI;
+using ProjectM.Gameplay.Scripting;
+using ProjectM.Audio;
+using ProjectM.Debugging;
 
 namespace PvpArena.Patches;
 
@@ -23,6 +26,7 @@ public static class AbilityCastStarted_SpawnPrefabSystem_ServerPatch
 	public static void Prefix(AbilityCastStarted_SpawnPrefabSystem_Server __instance)
 	{
 		//__instance.__OnUpdate_LambdaJob0_entityQuery.LogComponentTypes();
+		
 		var entities = __instance.__OnUpdate_LambdaJob0_entityQuery.ToEntityArray(Allocator.Temp);
 		foreach (var entity in entities)
 		{

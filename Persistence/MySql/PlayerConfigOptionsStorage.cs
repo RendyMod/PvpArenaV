@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Il2CppSystem.Xml;
 using MySqlConnector;
 using PvpArena.Models;
+using PvpArena.Services;
 
 namespace PvpArena.Persistence.MySql;
 public class PlayerConfigOptionsStorage : MySqlDataStorage<PlayerConfigOptions>
@@ -58,6 +59,12 @@ public class PlayerConfigOptionsStorage : MySqlDataStorage<PlayerConfigOptions>
 							SubscribeToKillFeed = reader.GetBoolean("SubscribeToKillFeed")
 						};
 						dataList.Add(data);
+						var action = () =>
+						{
+							var player = PlayerService.GetPlayerFromSteamId(data.SteamID);
+							player.ConfigOptions = data;
+						};
+						ActionScheduler.RunActionOnMainThread(action);
 					}
 				}
 			}

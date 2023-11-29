@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using MySqlConnector;
 using PvpArena.Models;
+using PvpArena.Services;
 
 namespace PvpArena.Persistence.MySql;
 public class PlayerMatchmaking1v1DataStorage : MySqlDataStorage<PlayerMatchmaking1v1Data>
@@ -61,6 +62,12 @@ public class PlayerMatchmaking1v1DataStorage : MySqlDataStorage<PlayerMatchmakin
 							MMR = reader.GetInt32("MMR")
 						};
 						dataList.Add(data);
+						var action = () =>
+						{
+							var player = PlayerService.GetPlayerFromSteamId(data.SteamID);
+							player.MatchmakingData1v1 = data;
+						};
+						ActionScheduler.RunActionOnMainThread(action);
 					}
 				}
 			}

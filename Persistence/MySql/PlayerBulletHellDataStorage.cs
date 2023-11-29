@@ -9,11 +9,11 @@ using PvpArena.Models;
 using PvpArena.Services;
 
 namespace PvpArena.Persistence.MySql;
-public class PlayerPointsStorage : MySqlDataStorage<PlayerPoints>
+public class PlayerBulletHellDataStorage : MySqlDataStorage<PlayerBulletHellData>
 {
-	public PlayerPointsStorage() : base() { }
+	public PlayerBulletHellDataStorage() : base() { }
 
-	protected async override Task SaveItemAsync(PlayerPoints data)
+	protected async override Task SaveItemAsync(PlayerBulletHellData data)
 	{
 		try
 		{
@@ -21,12 +21,12 @@ public class PlayerPointsStorage : MySqlDataStorage<PlayerPoints>
 			{
 				await _connection.OpenAsync();
 				var command = new MySqlCommand(@"
-            INSERT INTO PlayerPoints (SteamID, TotalPoints) 
-            VALUES (@SteamID, @TotalPoints) 
+            INSERT INTO PlayerBulletHellData (SteamID, BestTime) 
+            VALUES (@SteamID, @BestTime) 
             ON DUPLICATE KEY UPDATE 
-            TotalPoints = @TotalPoints;", _connection);
+            BestTime = @BestTime;", _connection);
 				command.Parameters.AddWithValue("@SteamID", data.SteamID);
-				command.Parameters.AddWithValue("@TotalPoints", data.TotalPoints);
+				command.Parameters.AddWithValue("@BestTime", data.BestTime);
 				await command.ExecuteNonQueryAsync();
 			}
 		}
@@ -36,30 +36,30 @@ public class PlayerPointsStorage : MySqlDataStorage<PlayerPoints>
 		}
 	}
 
-	public async override Task<List<PlayerPoints>> LoadDataAsync()
+	public async override Task<List<PlayerBulletHellData>> LoadDataAsync()
 	{
-		var dataList = new List<PlayerPoints>();
+		var dataList = new List<PlayerBulletHellData>();
 
 		try
 		{
 			using (var _connection = new MySqlConnection(connectionString))
 			{
 				await _connection.OpenAsync();
-				var command = new MySqlCommand("SELECT SteamID, TotalPoints FROM PlayerPoints;", _connection);
+				var command = new MySqlCommand("SELECT SteamID, BestTime FROM PlayerBulletHellData;", _connection);
 				using (var reader = await command.ExecuteReaderAsync())
 				{
 					while (await reader.ReadAsync())
 					{
-						var data = new PlayerPoints
+						var data = new PlayerBulletHellData
 						{
 							SteamID = reader.GetUInt64("SteamID"),
-							TotalPoints = reader.GetInt32("TotalPoints")
+							BestTime = reader.GetString("BestTime")
 						};
 						dataList.Add(data);
 						var action = () =>
 						{
 							var player = PlayerService.GetPlayerFromSteamId(data.SteamID);
-							player.PlayerPointsData = data;
+							player.PlayerBulletHellData = data;
 						};
 						ActionScheduler.RunActionOnMainThread(action);
 					}

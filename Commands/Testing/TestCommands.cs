@@ -90,7 +90,8 @@ internal class TestCommands
 	{
 		var prefab = Helper.GetPrefabEntityByPrefabGUID(Prefabs.ScrollingCombatTextMessage);
 		var commandBuffer = Core.entityCommandBufferSystem.CreateCommandBuffer();
-		var entity = ScrollingCombatTextMessage.Create(VWorld.Server.EntityManager, commandBuffer, prefab, 99999, Prefabs.SCT_Type_InfoMessage, sender.Position, sender.Character, sender.Character);
+		var entity = ScrollingCombatTextMessage.Create(VWorld.Server.EntityManager, commandBuffer, prefab, 69, Prefabs.SCT_Type_InfoMessage, sender.Position, sender.Character, sender.Character);
+
 		/*var sct = entity.Read<ScrollingCombatTextMessage>();
 		sct.OverrideText = "HELLO THERE";
 		entity.Write(sct);*/
@@ -99,6 +100,17 @@ internal class TestCommands
 
 	[Command("test2", description: "Used for debugging", adminOnly: true)]
 	public void Test2Command(Player sender)
+	{
+		var sortedPlayers = PlayerService.UserCache.Values.OrderByDescending(p =>
+		{
+			float.TryParse(p.PlayerBulletHellData.BestTime, out float longestTime);
+			return longestTime;
+		}).ToList();
+		sender.ReceiveMessage(sender.PlayerBulletHellData.BestTime);
+	}
+
+	[Command("recount", description: "Used for debugging", adminOnly: false)]
+	public void RecountCommand(Player sender)
 	{
 		DamageRecorderService.ReportDamageResults(sender);
 		sender.ReceiveMessage("done");
@@ -362,7 +374,7 @@ internal class TestCommands
 	[Command("end-pancake", description: "Ends capture the pancake", adminOnly: true)]
 	public void EndPancakeCommand(Player sender)
 	{
-		CaptureThePancakeHelper.EndMatch();
+		CaptureThePancakeHelper.EndMatch(1);
 		sender.ReceiveMessage("Match ended".Success());
 	}
 
@@ -373,23 +385,15 @@ internal class TestCommands
 		sender.ReceiveMessage("Match ended".Success());
 	}
 
-	[Command("start-bullet", description: "Starts capture the pancake", usage: ".start-pancake Ash Rendy", adminOnly: true)]
-	public void StartBulletHellCommand(Player sender)
+	[Command("start-bullet", description: "Starts capture the pancake", usage: ".start-pancake Ash Rendy", adminOnly: false)]
+	public void StartBulletHellCommand(Player sender, Player receiver = null)
 	{
-		BulletHellHelper.EndMatch();
-		System.Action action = () =>
+		Player player = sender;
+		if (receiver != null)
 		{
-			BulletHellHelper.StartMatch(sender);
-			sender.ReceiveMessage("Match started".Success());
-		};
-		ActionScheduler.RunActionOnceAfterDelay(action, 1);
-	}
-
-	[Command("end-bullet", description: "Ends capture the pancake", adminOnly: true)]
-	public void EndBulletHellCommand(Player sender)
-	{
-		BulletHellHelper.EndMatch();
-		sender.ReceiveMessage("Match ended".Success());
+			player = receiver;
+		}
+		BulletHellManager.QueueForMatch(player);
 	}
 
 	[Command("spawn-turret", description: "Spawns a turret at your location", adminOnly: true)]

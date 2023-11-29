@@ -303,6 +303,7 @@ public static class CaptureThePancakeHelper
 		var team2Players = team2LeaderPlayer.GetClanMembers();
 		Core.captureThePancakeGameMode.Initialize(team1Players, team2Players);
 		SpawnStructures(team1LeaderPlayer, team2LeaderPlayer);
+		Action action;
 		
 		foreach (var team1Player in team1Players)
 		{
@@ -311,7 +312,8 @@ public static class CaptureThePancakeHelper
 			team1Player.Reset(true, true);
 			Helper.SetDefaultBlood(team1Player, CaptureThePancakeConfig.Config.DefaultBlood.ToLower());
 			GiveVerminSalvesIfNotPresent(team1Player);
-			team1Player.Teleport(CaptureThePancakeConfig.Config.Team1PlayerRespawn.ToFloat3());
+			action = () => team1Player.Teleport(CaptureThePancakeConfig.Config.Team1PlayerRespawn.ToFloat3());
+			ActionScheduler.RunActionOnceAfterDelay(action, .1);
 			team1Player.ReceiveMessage($"The match will start in {"10".Emphasize()} seconds. {"Get ready!".Emphasize()}".White());
 			try
 			{
@@ -331,7 +333,8 @@ public static class CaptureThePancakeHelper
 			team2Player.Reset(true, true);
 			Helper.SetDefaultBlood(team2Player, CaptureThePancakeConfig.Config.DefaultBlood.ToLower());
 			GiveVerminSalvesIfNotPresent(team2Player);
-			team2Player.Teleport(CaptureThePancakeConfig.Config.Team2PlayerRespawn.ToFloat3());
+			action = () => team2Player.Teleport(CaptureThePancakeConfig.Config.Team2PlayerRespawn.ToFloat3());
+			ActionScheduler.RunActionOnceAfterDelay(action, .1);
 			team2Player.ReceiveMessage($"The match will start in {"10".Emphasize()} seconds. {"Get ready!".Emphasize()}".White());
 			try
 			{
@@ -344,7 +347,7 @@ public static class CaptureThePancakeHelper
 			}
 		}
 
-		Action action = () => { StartMatchCountdown(); };
+		action = () => { StartMatchCountdown(); };
 
 		Timer timer = ActionScheduler.RunActionOnceAfterDelay(action, 5);
 		CaptureThePancakeGameMode.Timers.Add(timer);
@@ -442,13 +445,15 @@ public static class CaptureThePancakeHelper
 			}
 			if (winner > 0)
 			{
-				TeleportTeamsToCenter(CaptureThePancakeGameMode.Teams, winner, TeamSide.East);
+				var action = () => {
+					TeleportTeamsToCenter(CaptureThePancakeGameMode.Teams, winner, TeamSide.East);
+					Core.captureThePancakeGameMode.Dispose();
+					UnitFactory.DisposeTimers("pancake");
+					DisposeTimers();
+					KillPreviousEntities();
+				};
+				ActionScheduler.RunActionOnceAfterDelay(action, .1);
 			}
-
-			Core.captureThePancakeGameMode.Dispose();
-			UnitFactory.DisposeTimers("pancake");
-			DisposeTimers();
-			KillPreviousEntities();
 		}
 		catch (Exception e)
 		{

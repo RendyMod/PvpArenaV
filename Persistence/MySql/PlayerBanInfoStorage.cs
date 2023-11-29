@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using MySqlConnector;
 using ProjectM.Scripting;
 using PvpArena.Models;
+using PvpArena.Services;
 
 namespace PvpArena.Persistence.MySql;
 public class PlayerBanInfoStorage : MySqlDataStorage<PlayerBanInfo>
@@ -83,7 +84,13 @@ public class PlayerBanInfoStorage : MySqlDataStorage<PlayerBanInfo>
 							BanDurationDays = reader.GetInt32("BanDurationDays"),
 							Reason = reader.IsDBNull(reader.GetOrdinal("Reason")) ? null : reader.GetString("Reason")
 						};
-						dataList.Add(data);
+						var action = () =>
+						{
+							var player = PlayerService.GetPlayerFromSteamId(data.SteamID);
+							player.BanInfo = data;
+							dataList.Add(data);
+						};
+						ActionScheduler.RunActionOnMainThread(action);
 					}
 				}
 			}

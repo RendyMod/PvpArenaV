@@ -72,6 +72,15 @@ public static class ActionScheduler
 		return timer;
 	}
 
+	public static void RunActionOnMainThread(Action action)
+	{
+		// Enqueue the action to be executed on the main thread
+		actionsToExecuteOnMainThread.Enqueue(() =>
+		{
+			action.Invoke();  // Execute the action
+		});
+	}
+
 	public static List<ScheduledAction> GetScheduledActions()
 	{
 		return scheduledActions;

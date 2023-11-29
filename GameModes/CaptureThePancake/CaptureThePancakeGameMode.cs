@@ -28,6 +28,7 @@ using ProjectM.Gameplay.Scripting;
 using AsmResolver.PE.Exceptions;
 using Epic.OnlineServices.Stats;
 using static ProjectM.SpawnBuffsAuthoring.SpawnBuffElement_Editor;
+using ProjectM.Shared.Systems;
 
 namespace PvpArena.GameModes.CaptureThePancake;
 
@@ -403,11 +404,6 @@ public class CaptureThePancakeGameMode : BaseGameMode
             Helper.ModifyBuff(buffEntity, BuffModificationTypes.MovementImpair | BuffModificationTypes.Immaterial);
             var timer = ActionScheduler.RunActionOnceAfterDelay(respawnPlayerActionPart2, 3);
             PlayerRespawnTimers[player].Add(timer);
-            //BuffHelper.RemoveBuff(player, Prefabs.AB_Shapeshift_Mist_Buff);
-            /*if (BuffHelper.BuffPlayer(player, Prefabs.Witch_SheepTransformation_Buff, out var buffEntity, 4, true))
-            {
-                BuffHelper.ModifyBuff(buffEntity, BuffModificationTypes.MovementImpair | BuffModificationTypes.Immaterial);
-            }*/
         };
 
         
@@ -486,13 +482,14 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 	public static void HandleSubdueChannelingTargetDebuff(Player player, Entity buffEntity)
 	{
-
-		if (player.Character.Index > 0 && Team.IsAllies(player.Character.Read<Team>(), player.Character.Read<Team>()))
+		var buff = buffEntity.Read<Buff>();
+		var target = buff.Target;
+		if (target.Index > 0 && Team.IsAllies(player.Character.Read<Team>(), target.Read<Team>()))
 		{
 			player.Interrupt();
 			player.ReceiveMessage("That's the wrong pancake!".Error());
 		}
-		else if (player.Character.Index > 0)
+		else if (target.Index > 0)
 		{
 			var lifetime = buffEntity.Read<LifeTime>();
 			lifetime.Duration += 5;
@@ -577,15 +574,17 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		buffEntity.Remove<ShapeshiftImpairBuff>();
 		var buffer = buffEntity.ReadBuffer<GameplayEventListeners>();
 		buffer.Clear();
-
+		
 		Helper.ApplyStatModifier(buffEntity, BuffModifiers.PancakeSlowRelicSpeed);
 		Helper.BuffPlayer(player, Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Buff, out var grandmaBuffEntity, Helper.NO_DURATION);
-
+		Helper.MakeBuffCcImmune(grandmaBuffEntity);
 		grandmaBuffEntity.Add<DestroyOnAbilityCast>();
 		var scriptBuffShapeshiftDataShared = grandmaBuffEntity.Read<Script_Buff_Shapeshift_DataShared>();
 		scriptBuffShapeshiftDataShared.RemoveOnDamageTaken = false;
 		grandmaBuffEntity.Write(scriptBuffShapeshiftDataShared);
 		grandmaBuffEntity.Remove<ModifyMovementSpeedBuff>();
+		Helper.ModifyBuff(grandmaBuffEntity, BuffModificationTypes.TargetSpellImpaired);
+		Helper.MakeBuffCcImmune(grandmaBuffEntity);
 		Helper.FixIconForShapeshiftBuff(player, grandmaBuffEntity, Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Group);
 
 		Helper.RemoveNewAbilitiesFromBuff(grandmaBuffEntity);
@@ -1037,10 +1036,18 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 	public void HandleOnPlayerDamageReported(Player source, Player target, PrefabGUID type, float damage)
 	{
-		if (!source.IsInCaptureThePancake()) return;
+		if (!source.IsInCaptureThePancake() || !source.IsInCaptureThePancake()) return;
 
 		if (type == Prefabs.SCT_Type_DamageDone || type == Prefabs.SCT_Type_CritDamage || type == Prefabs.SCT_Type_Absorb || type == Prefabs.SCT_Type_DamageDoneWeak || type == Prefabs.SCT_Type_Damage)
 		{
+			if (!PlayerDamageDealt.ContainsKey(source)) 
+			{
+				PlayerDamageDealt[source] = 0;
+			}
+			if (!PlayerDamageReceived.ContainsKey(target))
+			{
+				PlayerDamageReceived[target] = 0;
+			}
 			PlayerDamageDealt[source] += damage;
 			PlayerDamageReceived[target] += damage;
 		}

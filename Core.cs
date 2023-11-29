@@ -31,10 +31,10 @@ public static class Core
 	public static IDataStorage<PlayerMuteInfo> muteDataRepository;
 	public static IDataStorage<PlayerBanInfo> banDataRepository;
 	public static IDataStorage<PlayerConfigOptions> playerConfigOptionsRepository;
+	public static IDataStorage<PlayerBulletHellData> playerBulletHellDataRepository;
 	public static DefaultGameMode defaultGameMode;
 	public static CaptureThePancakeGameMode captureThePancakeGameMode;
 	public static DominationGameMode dominationGameMode;
-	public static BulletHellGameMode bulletHellGameMode;
 	public static Matchmaking1v1GameMode matchmaking1v1GameMode;
     public static SpectatingGameMode spectatingGameMode;
     public static bool HasInitialized = false;
@@ -50,12 +50,18 @@ public static class Core
 	public static TraderSyncSystem traderSyncSystem = VWorld.Server.GetExistingSystem<TraderSyncSystem>();
 	public static ServerBootstrapSystem serverBootstrapSystem = VWorld.Server.GetExistingSystem<ServerBootstrapSystem>();
 	public static GameDataSystem gameDataSystem = VWorld.Server.GetExistingSystem<GameDataSystem>();
+	
 
 
 	public static void Initialize()
 	{
+		PlayerService.LoadAllPlayers();
+		PvpArenaConfig.Load();
+		PlayerJewels.Load();
+		PlayerLegendaries.Load();
 		CaptureThePancakeConfig.Load();
 		DominationConfig.Load();
+		BulletHellManager.Initialize();
 		if (PvpArenaConfig.Config.Database.UseDatabaseStorage)
 		{
 			matchmaking1V1DataRepository = new PlayerMatchmaking1v1DataStorage();
@@ -63,6 +69,7 @@ public static class Core
 			banDataRepository = new PlayerBanInfoStorage();
 			muteDataRepository = new PlayerMuteInfoStorage();
 			playerConfigOptionsRepository = new PlayerConfigOptionsStorage();
+			playerBulletHellDataRepository = new PlayerBulletHellDataStorage();
 		}
 		else
 		{
@@ -71,6 +78,7 @@ public static class Core
 			banDataRepository = new PlayerJsonDataStorage<PlayerBanInfo>("Bepinex/config/PvpArena/banned_players.json");
 			muteDataRepository = new PlayerJsonDataStorage<PlayerMuteInfo>("Bepinex/config/PvpArena/muted_steam_ids.json");
 			playerConfigOptionsRepository = new PlayerJsonDataStorage<PlayerConfigOptions>("Bepinex/config/PvpArena/player_config_options.json");
+			playerBulletHellDataRepository = new PlayerJsonDataStorage<PlayerBulletHellData>("Bepinex/config/PvpArena/player_bullet_hell_data.json");
 		}
 		
 
@@ -99,19 +107,15 @@ public static class Core
 		query = VWorld.Server.EntityManager.CreateEntityQuery(queryDesc);
 		Listener.AddListener(query, new ScrollingCombatTextListener());
 
-		//ScrollingCombatTextMessage
-
 		/*discordBot = new DiscordBot();
 		discordBot.InitializeAsync();*/
-
-		/*sqlHandler = new SQLHandler();
-		sqlHandler.InitializeAsync();*/
 
 		matchmaking1V1DataRepository.LoadDataAsync();
 		pointsDataRepository.LoadDataAsync();
 		banDataRepository.LoadDataAsync();
 		muteDataRepository.LoadDataAsync();
 		playerConfigOptionsRepository.LoadDataAsync();
+		playerBulletHellDataRepository.LoadDataAsync();
 
 		defaultGameMode = new DefaultGameMode();
 		defaultGameMode.Initialize();
@@ -124,7 +128,6 @@ public static class Core
 
 		captureThePancakeGameMode = new CaptureThePancakeGameMode(); //wait until a match has started to initialize
 		dominationGameMode = new DominationGameMode();
-		bulletHellGameMode = new BulletHellGameMode();
 
 		if (PvpArenaConfig.Config.PointSystemEnabled)
 		{
@@ -136,13 +139,15 @@ public static class Core
 
 	public static void Dispose()
 	{
+		BulletHellManager.Dispose();
         defaultGameMode.Dispose();
         matchmaking1v1GameMode.Dispose();
         if (captureThePancakeGameMode != null)
         {
-            BulletHellhelper.EndMatch();
+            CaptureThePancakeHelper.EndMatch();
         }
         spectatingGameMode.Dispose();
+		LoginPointsService.DisposeTimersForOnlinePlayers();
 		PersistPlayerSubData();
 		Listener.Dispose();
 	}

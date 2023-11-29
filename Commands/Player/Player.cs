@@ -69,6 +69,7 @@ public class Player
 	public PlayerBanInfo BanInfo { get; set; } = new PlayerBanInfo();
 	public PlayerMuteInfo MuteInfo { get; set; } = new PlayerMuteInfo();
 	public PlayerConfigOptions ConfigOptions { get; set; } = new PlayerConfigOptions();
+	public PlayerBulletHellData PlayerBulletHellData { get; set; } = new PlayerBulletHellData();
 
 	private void SetUser(Entity user)
 	{
@@ -126,6 +127,7 @@ public class Player
 		PlayerPointsData.SteamID = SteamID;
 		MatchmakingData1v1.SteamID = SteamID;
 		ConfigOptions.SteamID = SteamID;
+		PlayerBulletHellData.SteamID = SteamID;
 	}
 
 	private string GetName()

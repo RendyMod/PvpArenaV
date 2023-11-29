@@ -74,11 +74,8 @@ public static class OnUserConnectedPatch
 					{
 						var player = PlayerService.GetPlayerFromUser(User);
 						PlayerService.OnlinePlayers.TryAdd(player, true);
-						// TODO : Check everything is working and fix this
-						//Action action = () =>
-						//	LoginPointsService.AwardPoints(player, PvpArenaConfig.Config.PointsPerIntervalOnline);
-						//player.PlayerPointsData.OnlineTimer = ActionScheduler.RunActionEveryInterval(action,
-						//	60 * PvpArenaConfig.Config.IntervalDurationInMinutes);
+						Action action = () => LoginPointsService.AwardPoints(player, PvpArenaConfig.Config.PointsPerIntervalOnline);
+						player.PlayerPointsData.OnlineTimer = ActionScheduler.RunActionEveryInterval(action, 60 * PvpArenaConfig.Config.IntervalDurationInMinutes);
 						if (player.BanInfo.IsBanned())
 						{
 							Helper.KickPlayer(player.SteamID);

@@ -53,6 +53,10 @@ namespace PvpArena.Services
 				{
 					player.ConfigOptions = (PlayerConfigOptions)(object)data;
 				}
+				else if (typeof(T) == typeof(PlayerBulletHellData))
+				{
+					player.PlayerBulletHellData = (PlayerBulletHellData)(object)data;
+				}
 				// Add more conditions for other types as necessary
 			}
 		}
@@ -84,6 +88,10 @@ namespace PvpArena.Services
 				else if (typeof(T) == typeof(PlayerConfigOptions) && player.ConfigOptions is T configOptions)
 				{
 					dataList.Add(configOptions);
+				}
+				else if (typeof(T) == typeof(PlayerBulletHellData) && player.PlayerBulletHellData is T playerBulletHellData)
+				{
+					dataList.Add(playerBulletHellData);
 				}
 			}
 

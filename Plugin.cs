@@ -39,9 +39,7 @@ public class Plugin : BasePlugin, IRunOnInitialized
 		Harmony = new Harmony(MyPluginInfo.PLUGIN_GUID);
 		Harmony.PatchAll(System.Reflection.Assembly.GetExecutingAssembly());
 		// Register all commands in the assembly with VCF
-		PvpArenaConfig.Load();
-		PlayerJewels.Load();
-		PlayerLegendaries.Load();
+		Core.Initialize();
 	}
 
 	public override bool Unload()
@@ -256,9 +254,8 @@ public class Plugin : BasePlugin, IRunOnInitialized
 			MatchmakingService.Start();
 		}
 
-		PlayerService.LoadAllPlayers();
+		
 		Unity.Debug.Log("Loading player data");
-		Core.Initialize();
 	}
 
 	private static void HandleDebugSettings()

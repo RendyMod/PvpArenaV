@@ -6,9 +6,11 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using ProjectM;
+using ProjectM.Terrain.MapMaker;
 using PvpArena.Helpers;
 using PvpArena.Models;
 using Unity.Mathematics;
+using Unity.Physics.Authoring;
 
 namespace PvpArena.Configs;
 public class ConfigDtos
@@ -43,6 +45,11 @@ public class ConfigDtos
 		}
 	}
 
+	public class TemplateUnitSpawn
+	{
+		public UnitSpawn UnitSpawn { get; set; }
+		public int Quantity { get; set; }
+	}
 
 	public class UnitSpawn
 	{
@@ -101,12 +108,13 @@ public class ConfigDtos
 	public class CircleZoneDto
 	{
 		public float CenterX { get; set; }
+        public float CenterY { get; set; } = 0;
 		public float CenterZ { get; set; }
 		public float Radius { get; set; }
 
 		public CircleZone ToCircleZone()
 		{
-			return new CircleZone(new float3(CenterX, 0, CenterZ), Radius);
+			return new CircleZone(new float3(CenterX, CenterY, CenterZ), Radius);
 		}
 
 		public static CircleZoneDto FromCircleZone(CircleZone zone)
@@ -114,10 +122,17 @@ public class ConfigDtos
 			return new CircleZoneDto
 			{
 				CenterX = zone.Center.x,
+				CenterY = zone.Center.y, //this isn't used for any calculations
 				CenterZ = zone.Center.z,
 				Radius = zone.Radius
 			};
 		}
+	}
+
+	public class BulletHellArenaDto
+	{
+		public CircleZoneDto FightZone { get; set; }
+		public TemplateUnitSpawn TemplateUnitSpawn { get; set; }
 	}
 
 	public class CapturePointDto

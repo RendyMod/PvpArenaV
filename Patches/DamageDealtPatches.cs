@@ -38,24 +38,32 @@ public static class DealDamageSystemPatch
 		var entities = __instance._Query.ToEntityArray(Allocator.Temp);
 		foreach (var entity in entities)
 		{
-			var dealDamageEvent = entity.Read<DealDamageEvent>();
-			if (dealDamageEvent.SpellSource.Index > 0)
+			try
 			{
-				var owner = dealDamageEvent.SpellSource.Read<EntityOwner>().Owner;
-				if (owner.Index > 0 && owner.Has<PlayerCharacter>())
+				var dealDamageEvent = entity.Read<DealDamageEvent>();
+				if (dealDamageEvent.SpellSource.Index > 0)
 				{
-					var player = PlayerService.GetPlayerFromCharacter(owner);
-					GameEvents.RaisePlayerDealtDamage(player, entity);
+
+					var owner = dealDamageEvent.SpellSource.Read<EntityOwner>().Owner;
+					if (owner.Index > 0 && owner.Has<PlayerCharacter>())
+					{
+						var player = PlayerService.GetPlayerFromCharacter(owner);
+						GameEvents.RaisePlayerDealtDamage(player, entity);
+					}
+					else if (dealDamageEvent.Target.Has<PlayerCharacter>())
+					{
+						var player = PlayerService.GetPlayerFromCharacter(dealDamageEvent.Target);
+						GameEvents.RaisePlayerReceivedDamage(player, entity);
+					}
+					else if (dealDamageEvent.Target.Has<CastleHeartConnection>())
+					{
+						VWorld.Server.EntityManager.DestroyEntity(entity);
+					}
 				}
-				else if (dealDamageEvent.Target.Has<PlayerCharacter>())
-				{
-					var player = PlayerService.GetPlayerFromCharacter(dealDamageEvent.Target);
-					GameEvents.RaisePlayerReceivedDamage(player, entity);
-				}
-				else if (dealDamageEvent.Target.Has<CastleHeartConnection>())
-				{
-					VWorld.Server.EntityManager.DestroyEntity(entity);
-				}
+			}
+			catch
+			{
+				Plugin.PluginLog.LogInfo("An error occurred in the deal damage system");
 			}
 		}
 	}
@@ -67,7 +75,7 @@ public class ScrollingCombatTextListener : EntityQueryListener
 	{
 		var sct = entity.Read<ScrollingCombatTextMessage>();
 		if (sct.Value == 0) { return; }
-		if (sct.Source._Entity.Has<PlayerCharacter>() && sct.Source._Entity.Has<PlayerCharacter>()) 
+		if (sct.Source._Entity.Has<PlayerCharacter>() && sct.Target._Entity.Has<PlayerCharacter>()) 
 		{
 			var sourceEntity = sct.Source._Entity;
 			var sourcePlayer = PlayerService.GetPlayerFromCharacter(sourceEntity);
