@@ -17,6 +17,8 @@ using PvpArena.Services;
 using UnityEngine;
 using PvpArena.Factories;
 using System.Linq;
+using PvpArena.Persistence.MySql;
+using PvpArena.Models;
 
 namespace PvpArena.Patches;
 
@@ -40,6 +42,7 @@ public static class TraderPurchaseSystemPatch
 			if (Player.PlayerPointsData.TotalPoints >= cost)
 			{
 				Player.PlayerPointsData.TotalPoints -= cost;
+				Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { Player.PlayerPointsData });
 				Player.ReceiveMessage($"Purchased for {cost} VPoints. New total points: {Player.PlayerPointsData.TotalPoints}".Success());
 
 				RefillStock(purchaseEvent, trader);

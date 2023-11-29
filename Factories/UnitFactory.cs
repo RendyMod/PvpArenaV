@@ -540,7 +540,9 @@ public class Trader : Unit
 
 	public override void Modify(Entity e)
 	{
-		e.Remove<AggroConsumer>();
+		var aggroConsumer = e.Read<AggroConsumer>();
+		aggroConsumer.Active.Value = false;
+		e.Write(aggroConsumer);
 		var _tradeOutputBuffer = e.ReadBuffer<TradeOutput>();
 		var _traderEntryBuffer = e.ReadBuffer<TraderEntry>();
 		var _tradeCostBuffer = e.ReadBuffer<TradeCost>();
