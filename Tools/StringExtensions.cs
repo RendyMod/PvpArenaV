@@ -1,3 +1,5 @@
+using System;
+using System.Globalization;
 using System.Text;
 using UnityEngine;
 
@@ -75,5 +77,30 @@ public static class StringExtensions
 	public static string NeutralTeam(this string _string)
 	{
 		return Warning(_string);
+	}
+	
+	public static string ConvertToEngineeringNotation(this float _value)
+	{
+		_value = (int)_value;
+		
+		if (_value == 0)
+			return "0"; // Return 0 if the input value is zero
+
+		// Define the suffixes for engineering notation
+		string[] suffixes = { "", "K", "M", "G", "T", "P", "E", "Z", "Y" };
+
+		int exponent = (int)Math.Floor(Math.Log10(Math.Abs(_value)) / 3); // Calculate the exponent
+
+		// Ensure the exponent is within the range of the suffixes array
+		exponent = Math.Max(-suffixes.Length + 1, Math.Min(exponent, suffixes.Length - 1));
+
+		float newValue = _value / (float)Math.Pow(10, exponent * 3); // Calculate the new value
+		string formattedValue = newValue.ToString("0.0", CultureInfo.InvariantCulture); // Format to one decimal place
+		formattedValue = formattedValue.Replace(',', '.'); // Replace commas with periods
+		
+		if (_value >= 10000)
+			return $"{formattedValue}{suffixes[exponent]}"; // Return the value with the appropriate suffix
+		else
+			return _value.ToString();
 	}
 }

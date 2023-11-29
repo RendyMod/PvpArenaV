@@ -792,7 +792,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 				string message;
 				if (isTeammate)
 				{
-					message = $"{colorizedName} is stealing the enemy's {"pancake".Emphasize()}! Help them!";
+					message = $"{colorizedName} is stealing the enemy's {"pancake".Emphasize()}!";
 				}
 				else
 				{
@@ -1205,19 +1205,19 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		{
 			Player = player,
 			Kills = playerKills[player],
-			Deaths = playerDeaths.ContainsKey(player) ? playerDeaths[player] : 0
+			Deaths = playerDeaths.ContainsKey(player) ? playerDeaths[player] : 0,
+			Damage = PlayerDamageDealt.ContainsKey(player) ? PlayerDamageDealt[player] : 0,
 		})
 		.OrderByDescending(player => player.Kills)
 		.ToList();
-
-		var damageSorted = PlayerDamageDealt.OrderByDescending(kvp => kvp.Value);
-
+		
 		// Send individual and team stats to each player
 		foreach (var receiver in playerKills.Keys)
 		{
 			// Calculate and send team totals
 			SendTeamTotals(receiver, team1, team2);
 
+			receiver.ReceiveMessage("Player Detail".Warning());
 			// Send individual stats
 			foreach (var stat in playerStats)
 			{
@@ -1225,15 +1225,8 @@ public class CaptureThePancakeGameMode : BaseGameMode
 				string colorizedPlayerName = isStatPlayerAlly ? stat.Player.Name.FriendlyTeam() : stat.Player.Name.EnemyTeam();
 				string colorizedKills = isStatPlayerAlly ? stat.Kills.ToString().FriendlyTeam() : stat.Kills.ToString().EnemyTeam();
 				string colorizedDeaths = isStatPlayerAlly ? stat.Deaths.ToString().EnemyTeam() : stat.Deaths.ToString().FriendlyTeam();
-				receiver.ReceiveMessage($"{colorizedPlayerName} - Kills: {colorizedKills}, Deaths: {colorizedDeaths}".White());
-			}
-
-			receiver.ReceiveMessage("Total PvP Damage Dealt / Taken".White());
-			foreach (var kvp in damageSorted)
-			{
-				bool isStatPlayerAlly = receiver.MatchmakingTeam == kvp.Key.MatchmakingTeam;
-				string colorizedPlayerName = isStatPlayerAlly ? kvp.Key.Name.FriendlyTeam() : kvp.Key.Name.EnemyTeam();
-				receiver.ReceiveMessage($"{colorizedPlayerName} - {Math.Round(kvp.Value)} / {Math.Round(PlayerDamageReceived[kvp.Key])}".White());
+				string colorizedDamages = isStatPlayerAlly ? stat.Damage.ConvertToEngineeringNotation().FriendlyTeam() : stat.Damage.ConvertToEngineeringNotation().EnemyTeam();
+				receiver.ReceiveMessage($"{colorizedPlayerName} - K/D: {colorizedKills} / {colorizedDeaths} - DMG: {colorizedDamages}".White());
 			}
 		}
 	}
@@ -1244,6 +1237,8 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		var team2Kills = team2.Sum(player => playerKills.ContainsKey(player) ? playerKills[player] : 0);
 		var team1Deaths = team1.Sum(player => playerDeaths.ContainsKey(player) ? playerDeaths[player] : 0);
 		var team2Deaths = team2.Sum(player => playerDeaths.ContainsKey(player) ? playerDeaths[player] : 0);
+		var team1Damages = team1.Sum(player => PlayerDamageDealt.ContainsKey(player) ? PlayerDamageDealt[player] : 0);
+		var team2Damages = team2.Sum(player => PlayerDamageDealt.ContainsKey(player) ? PlayerDamageDealt[player] : 0);
 
 		string team1NameColorized;
 		string team2NameColorized;
@@ -1251,28 +1246,41 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		string team2KillsColorized;
 		string team1DeathsColorized;
 		string team2DeathsColorized;
+		string team1DamagesColorized;
+		string team2DamagesColorized;
 
 		if (receiver.MatchmakingTeam == 1)
 		{
 			team1NameColorized = "Team 1".FriendlyTeam();
 			team2NameColorized = "Team 2".EnemyTeam();
+			
 			team1KillsColorized = team1Kills.ToString().FriendlyTeam();
 			team2KillsColorized = team2Kills.ToString().EnemyTeam();
+			
 			team1DeathsColorized = team1Deaths.ToString().EnemyTeam();
 			team2DeathsColorized = team2Deaths.ToString().FriendlyTeam();
+			
+			team1DamagesColorized = team1Damages.ConvertToEngineeringNotation().EnemyTeam();
+			team2DamagesColorized = team2Damages.ConvertToEngineeringNotation().FriendlyTeam();
 		}
 		else
 		{
 			team1NameColorized = "Team 1".EnemyTeam();
 			team2NameColorized = "Team 2".FriendlyTeam();
+			
 			team1KillsColorized = team1Kills.ToString().EnemyTeam();
 			team2KillsColorized = team2Kills.ToString().FriendlyTeam();
+			
 			team1DeathsColorized = team1Deaths.ToString().FriendlyTeam();
 			team2DeathsColorized = team2Deaths.ToString().EnemyTeam();
+			
+			team1DamagesColorized = team1Damages.ConvertToEngineeringNotation().FriendlyTeam();
+			team2DamagesColorized = team2Damages.ConvertToEngineeringNotation().EnemyTeam();
 		}
 
-		receiver.ReceiveMessage($"{team1NameColorized} - Kills: {team1KillsColorized}, Deaths: {team1DeathsColorized}".White());
-		receiver.ReceiveMessage($"{team2NameColorized} - Kills: {team2KillsColorized}, Deaths: {team2DeathsColorized}".White());
+		receiver.ReceiveMessage("Team Recap".Warning());
+		receiver.ReceiveMessage($"{team1NameColorized} - K/D: {team1KillsColorized} / {team1DeathsColorized} - DMG: {team1DamagesColorized}".White());
+		receiver.ReceiveMessage($"{team2NameColorized} - K/D: {team2KillsColorized} / {team2DeathsColorized} - DMG: {team2DamagesColorized}".White());
 	}
 
 	public override void ResetPlayer(Player player)
