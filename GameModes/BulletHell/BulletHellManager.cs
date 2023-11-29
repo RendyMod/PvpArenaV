@@ -120,7 +120,6 @@ public static class BulletHellManager
 	{
 		SpawnUnits(arena);
 		player.CurrentState = Player.PlayerState.BulletHell;
-		player.MatchmakingTeam = 1;
 		player.Reset(true, true);
 		Helper.SetDefaultBlood(player, BulletHellConfig.Config.DefaultBlood.ToLower());
 		player.Teleport(arena.FightZone.Center);

@@ -106,6 +106,51 @@ public class PlayerBanInfo : PlayerData
 	}
 }
 
+public class PlayerImprisonInfo : PlayerData
+{
+	public override ulong SteamID { get; set; }
+	public DateTime ImprisonedDate { get; set; }
+	public int ImprisonDurationDays { get; set; } // Use -1 for permanent bans
+	public string Reason { get; set; } // Optional: The reason for the ban
+	public int PrisonCellNumber { get; set; }
+
+	public PlayerImprisonInfo() { }
+
+	public DateTime? GetImprisonExpirationDate()
+	{
+		if (ImprisonDurationDays == -1)
+		{
+			return null; // No expiration date
+		}
+		return ImprisonedDate.AddDays(ImprisonDurationDays);
+	}
+
+	private bool IsImprisonExpired()
+	{
+		// If duration is -1, the mute never expires
+		if (ImprisonDurationDays == -1)
+		{
+			return false;
+		}
+		// Otherwise, compare with the current date to see if the mute has expired
+		return DateTime.UtcNow >= GetImprisonExpirationDate();
+	}
+
+	public bool IsImprisoned()
+	{
+		if (SteamID == 0 || ImprisonedDate == DateTime.MinValue)
+		{
+			return false;
+		}
+		if (IsImprisonExpired())
+		{
+			ImprisonService.UnimprisonPlayer(SteamID);
+			return false;
+		}
+		return true;
+	}
+}
+
 public class PlayerMuteInfo : PlayerData
 {
 	public override ulong SteamID { get; set; }

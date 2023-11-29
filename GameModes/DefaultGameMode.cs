@@ -147,11 +147,7 @@ public class DefaultGameMode : BaseGameMode
 		var blood = player.Character.Read<Blood>();
 		Helper.SetPlayerBlood(player, blood.BloodType, blood.Quality);
 	}
-	/*public override void HandleOnPlayerRespawn(Player player)
-	{
-		if (!player.IsInDefaultMode()) return;
 
-	}*/
 	public override void HandleOnPlayerChatCommand(Player player, CommandAttribute command)
 	{
 		if (!player.IsInDefaultMode()) return;
@@ -177,9 +173,8 @@ public class DefaultGameMode : BaseGameMode
 		{
 			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 			Helper.ToggleBuffsOnPlayer(player);
-			
 		}
-		else
+		else if (Shapeshifts.ContainsKey(enterShapeshiftEvent.Shapeshift))
 		{
 			foreach (var shapeshift in Shapeshifts)
 			{
@@ -201,6 +196,11 @@ public class DefaultGameMode : BaseGameMode
 					} 					
 				}
 			}
+		}
+		else
+		{
+			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
+			player.ReceiveMessage("That form is disabled in this mode".Error());
 		}
 	}
 	public override void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)

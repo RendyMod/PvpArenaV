@@ -89,6 +89,9 @@ public static class GameEvents
 	public delegate void PlayerProjectileCreatedHandler(Player player, Entity projectile);
 	public static event PlayerProjectileCreatedHandler OnProjectileCreated;
 
+	public delegate void PlayerChatMessageHandler(Player player, Entity eventEntity);
+	public static event PlayerChatMessageHandler OnPlayerChatMessage;
+
 	public delegate void DelayedSpawnEventHandler(Unit unit, int timeUntilSpawn);
 	public static event DelayedSpawnEventHandler OnDelayedSpawn;
 
@@ -218,6 +221,11 @@ public static class GameEvents
 	public static void RaisePlayerDamageReported(Player source, Player target, PrefabGUID type, float damage)
 	{
 		OnPlayerDamageReported?.Invoke(source, target, type, damage);
+	}
+
+	public static void RaisePlayerChatMessage(Player player, Entity eventEntity)
+	{
+		OnPlayerChatMessage?.Invoke(player, eventEntity);
 	}
 
 	public static void RaiseGameFrameUpdate()

@@ -614,7 +614,7 @@ public class DominationGameMode : BaseGameMode
 				if (gameWon)
 				{
 					ReportStats();
-					BulletHellhelper.EndMatch();
+					DominationHelper.EndMatch();
 				}
 			});
 		}

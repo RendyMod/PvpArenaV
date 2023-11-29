@@ -38,8 +38,6 @@ public class Plugin : BasePlugin, IRunOnInitialized
 		// Harmony patching
 		Harmony = new Harmony(MyPluginInfo.PLUGIN_GUID);
 		Harmony.PatchAll(System.Reflection.Assembly.GetExecutingAssembly());
-		// Register all commands in the assembly with VCF
-		Core.Initialize();
 	}
 
 	public override bool Unload()
@@ -59,6 +57,7 @@ public class Plugin : BasePlugin, IRunOnInitialized
 
 	public void OnGameInitialized()
 	{
+		Unity.Debug.Log("test");
 		Initialize();
 	}
 
@@ -218,6 +217,7 @@ public class Plugin : BasePlugin, IRunOnInitialized
 		{
 			return;
 		}
+		Core.Initialize();
 		var action = new ScheduledAction(HandleDebugSettings);
 		ActionScheduler.ScheduleAction(action, 30);
 

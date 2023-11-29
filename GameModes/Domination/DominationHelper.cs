@@ -27,7 +27,7 @@ using static RootMotion.FinalIK.Grounding;
 
 namespace PvpArena.GameModes.Domination;
 
-public static class BulletHellhelper
+public static class DominationHelper
 {
 	public static List<Timer> timers = new List<Timer>();
 

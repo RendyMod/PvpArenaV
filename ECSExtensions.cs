@@ -143,5 +143,10 @@ public static class ECSExtensions
 	{
 		Plugin.PluginLog.LogInfo(prefabGuid.LookupName());
 	}
+
+	public static void Destroy(this Entity entity)
+	{
+		VWorld.Server.EntityManager.DestroyEntity(entity);
+	}
 }
 #pragma warning restore CS8500

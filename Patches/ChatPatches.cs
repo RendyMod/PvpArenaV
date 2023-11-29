@@ -10,6 +10,7 @@ using BepInEx.Core.Logging.Interpolation;
 using BepInEx.Logging;
 using System.Collections.Generic;
 using static PvpArena.Frameworks.CommandFramework.CommandFramework;
+using PvpArena.GameModes;
 
 namespace PvpArena.Patches;
 
@@ -25,24 +26,29 @@ public static class ChatMessageSystemPatch
 		{
 			var fromCharacter = entity.Read<FromCharacter>();
 			var chatEvent = entity.Read<ChatMessageEvent>();
-			var Player = PlayerService.GetPlayerFromUser(fromCharacter.User);
+			var player = PlayerService.GetPlayerFromUser(fromCharacter.User);
 			
-			if (CommandHandler.ExecuteCommand(Player, chatEvent.MessageText.ToString()))
+			if (CommandHandler.ExecuteCommand(player, chatEvent.MessageText.ToString()))
 			{
 				VWorld.Server.EntityManager.DestroyEntity(entity);
 			}
-			if (Player.MuteInfo.IsMuted())
+			
+			if (player.MuteInfo.IsMuted())
 			{
-				if (Player.MuteInfo.MuteDurationDays == -1)
+				if (player.MuteInfo.MuteDurationDays == -1)
 				{
-					Player.ReceiveMessage($"You are muted indefinitely. If you feel there is a mistake, you can open a ticket on discord to appeal".Error());
+					player.ReceiveMessage($"You are muted indefinitely. If you feel there is a mistake, you can open a ticket on discord to appeal".Error());
 				}
 				else
 				{
-					Player.ReceiveMessage($"You are muted for {Player.MuteInfo.GetFormattedRemainingMuteTime()}. If you feel there is a mistake, you can open a ticket on discord to appeal".Error());
+					player.ReceiveMessage($"You are muted for {player.MuteInfo.GetFormattedRemainingMuteTime()}. If you feel there is a mistake, you can open a ticket on discord to appeal".Error());
 				}
 				
 				VWorld.Server.EntityManager.DestroyEntity(entity);
+			}
+			if (VWorld.Server.EntityManager.Exists(entity))
+			{
+				GameEvents.RaisePlayerChatMessage(player, entity);
 			}
 		}
 	}

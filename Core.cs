@@ -12,6 +12,7 @@ using PvpArena.GameModes;
 using PvpArena.GameModes.BulletHell;
 using PvpArena.GameModes.CaptureThePancake;
 using PvpArena.GameModes.Domination;
+using PvpArena.GameModes.Prison;
 using PvpArena.Listeners;
 using PvpArena.Models;
 using PvpArena.Patches;
@@ -30,13 +31,16 @@ public static class Core
 	public static IDataStorage<PlayerPoints> pointsDataRepository;
 	public static IDataStorage<PlayerMuteInfo> muteDataRepository;
 	public static IDataStorage<PlayerBanInfo> banDataRepository;
+	public static IDataStorage<PlayerImprisonInfo> imprisonDataRepository;
 	public static IDataStorage<PlayerConfigOptions> playerConfigOptionsRepository;
 	public static IDataStorage<PlayerBulletHellData> playerBulletHellDataRepository;
+	
 	public static DefaultGameMode defaultGameMode;
 	public static CaptureThePancakeGameMode captureThePancakeGameMode;
 	public static DominationGameMode dominationGameMode;
 	public static Matchmaking1v1GameMode matchmaking1v1GameMode;
     public static SpectatingGameMode spectatingGameMode;
+	public static PrisonGameMode prisonGameMode;
     public static bool HasInitialized = false;
 	/*public static DiscordBot discordBot;*/
 	public static SQLHandler sqlHandler;
@@ -61,13 +65,15 @@ public static class Core
 		PlayerLegendaries.Load();
 		CaptureThePancakeConfig.Load();
 		DominationConfig.Load();
-		BulletHellManager.Initialize();
+		PrisonConfig.Load();
+		
 		if (PvpArenaConfig.Config.Database.UseDatabaseStorage)
 		{
 			matchmaking1V1DataRepository = new PlayerMatchmaking1v1DataStorage();
 			pointsDataRepository = new PlayerPointsStorage();
 			banDataRepository = new PlayerBanInfoStorage();
 			muteDataRepository = new PlayerMuteInfoStorage();
+			imprisonDataRepository = new PlayerImprisonInfoStorage();
 			playerConfigOptionsRepository = new PlayerConfigOptionsStorage();
 			playerBulletHellDataRepository = new PlayerBulletHellDataStorage();
 		}
@@ -77,6 +83,7 @@ public static class Core
 			pointsDataRepository = new PlayerJsonDataStorage<PlayerPoints>("BepInEx/config/PvpArena/login_points.json");
 			banDataRepository = new PlayerJsonDataStorage<PlayerBanInfo>("Bepinex/config/PvpArena/banned_players.json");
 			muteDataRepository = new PlayerJsonDataStorage<PlayerMuteInfo>("Bepinex/config/PvpArena/muted_steam_ids.json");
+			imprisonDataRepository = new PlayerJsonDataStorage<PlayerImprisonInfo>("Bepinex/config/PvpArena/imprisoned_players.json");
 			playerConfigOptionsRepository = new PlayerJsonDataStorage<PlayerConfigOptions>("Bepinex/config/PvpArena/player_config_options.json");
 			playerBulletHellDataRepository = new PlayerJsonDataStorage<PlayerBulletHellData>("Bepinex/config/PvpArena/player_bullet_hell_data.json");
 		}
@@ -114,6 +121,7 @@ public static class Core
 		pointsDataRepository.LoadDataAsync();
 		banDataRepository.LoadDataAsync();
 		muteDataRepository.LoadDataAsync();
+		imprisonDataRepository.LoadDataAsync();
 		playerConfigOptionsRepository.LoadDataAsync();
 		playerBulletHellDataRepository.LoadDataAsync();
 
@@ -128,6 +136,11 @@ public static class Core
 
 		captureThePancakeGameMode = new CaptureThePancakeGameMode(); //wait until a match has started to initialize
 		dominationGameMode = new DominationGameMode();
+
+		BulletHellManager.Initialize();
+
+		prisonGameMode = new PrisonGameMode();
+		prisonGameMode.Initialize();
 
 		if (PvpArenaConfig.Config.PointSystemEnabled)
 		{
@@ -146,7 +159,13 @@ public static class Core
         {
             CaptureThePancakeHelper.EndMatch();
         }
+		if (dominationGameMode != null)
+		{
+			DominationHelper.EndMatch();
+		}
+		
         spectatingGameMode.Dispose();
+		prisonGameMode.Dispose();
 		LoginPointsService.DisposeTimersForOnlinePlayers();
 		PersistPlayerSubData();
 		Listener.Dispose();

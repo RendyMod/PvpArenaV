@@ -68,6 +68,7 @@ public class Player
 	public PlayerPoints PlayerPointsData { get; set; } = new PlayerPoints();
 	public PlayerBanInfo BanInfo { get; set; } = new PlayerBanInfo();
 	public PlayerMuteInfo MuteInfo { get; set; } = new PlayerMuteInfo();
+	public PlayerImprisonInfo ImprisonInfo { get; set; } = new PlayerImprisonInfo();
 	public PlayerConfigOptions ConfigOptions { get; set; } = new PlayerConfigOptions();
 	public PlayerBulletHellData PlayerBulletHellData { get; set; } = new PlayerBulletHellData();
 

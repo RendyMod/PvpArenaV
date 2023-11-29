@@ -80,6 +80,7 @@ using PvpArena.GameModes.BulletHell;
 using ProjectM.Debugging;
 using Il2CppSystem.Xml.Schema;
 using UnityEngine.Rendering;
+using PvpArena.Services.Moderation;
 
 namespace PvpArena.Commands.Debug;
 internal class TestCommands
@@ -337,8 +338,8 @@ internal class TestCommands
 		}
 		if (!Team.IsAllies(team1Leader.Character.Read<Team>(), team2Leader.Character.Read<Team>()))
 		{
-			BulletHellhelper.EndMatch();
-			BulletHellhelper.StartMatch(team1Leader, team2Leader);
+			DominationHelper.EndMatch();
+			DominationHelper.StartMatch(team1Leader, team2Leader);
 			sender.ReceiveMessage("Match started".Success());
 		}
 		else
@@ -381,7 +382,7 @@ internal class TestCommands
 	[Command("end-domination", description: "Ends capture the pancake", adminOnly: true)]
 	public void EndDominationCommand(Player sender)
 	{
-		BulletHellhelper.EndMatch();
+		DominationHelper.EndMatch();
 		sender.ReceiveMessage("Match ended".Success());
 	}
 
@@ -394,6 +395,32 @@ internal class TestCommands
 			player = receiver;
 		}
 		BulletHellManager.QueueForMatch(player);
+	}
+
+
+	[Command("imprison", description: "Imprisons a player for a set duration", usage: ".imprison Ash", adminOnly: true)]
+	public void ImprisonCommand(Player sender, Player imprisonedPlayer, int numberOfDays = -1, string reason = "No reason given")
+	{
+		ImprisonService.ImprisonPlayer(imprisonedPlayer.SteamID, numberOfDays);
+		string durationMessage;
+		if (numberOfDays == -1)
+		{
+			durationMessage = "indefinitely";
+		}
+		else
+		{
+			durationMessage = $"for {numberOfDays.ToString()} days";
+		}
+		imprisonedPlayer.ReceiveMessage($"You have been {"imprisoned".Emphasize()} {durationMessage}.".White());
+		sender.ReceiveMessage($"{imprisonedPlayer.Name} has been imprisoned {durationMessage}.");
+	}
+
+	[Command("unimprison", description: "Unimprisons a player for a set duration", usage: ".unimprison Ash", adminOnly: true)]
+	public void ImprisonCommand(Player sender, Player imprisonedPlayer)
+	{
+		ImprisonService.UnimprisonPlayer(imprisonedPlayer.SteamID);
+		imprisonedPlayer.ReceiveMessage($"You have been set free!".White());
+		sender.ReceiveMessage($"{imprisonedPlayer.Name} has been unimprisoned.");
 	}
 
 	[Command("spawn-turret", description: "Spawns a turret at your location", adminOnly: true)]
