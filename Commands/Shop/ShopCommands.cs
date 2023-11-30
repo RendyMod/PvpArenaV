@@ -28,6 +28,7 @@ internal static class ShopCommands
 		Player player = foundPlayer ?? sender;
 		
 		player.PlayerPointsData.TotalPoints += points;
-		sender.ReceiveMessage($"Added {points} points to {player.Name}");
+		Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { player.PlayerPointsData });
+		sender.ReceiveMessage($"Added {points} VPoints to {player.Name}".White());
 	}
 }

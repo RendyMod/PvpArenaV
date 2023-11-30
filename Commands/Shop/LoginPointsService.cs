@@ -11,7 +11,7 @@ public static class LoginPointsService
 	{
 		player.PlayerPointsData.TotalPoints += points;
 		Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { player.PlayerPointsData });
-		player.ReceiveMessage($"You were awarded {points.ToString().Success()} points for being online. New total: {player.PlayerPointsData.TotalPoints.ToString().Success()}".White());
+		player.ReceiveMessage($"You were awarded {points.ToString().Success()} VPoints for being online. New total: {player.PlayerPointsData.TotalPoints.ToString().Success()}".White());
 	}
 
 	public static void SetTimersForOnlinePlayers()

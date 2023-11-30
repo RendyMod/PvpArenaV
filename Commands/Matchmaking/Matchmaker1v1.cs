@@ -10,6 +10,7 @@ using PvpArena.Services;
 using PvpArena.Models;
 using PvpArena.Helpers;
 using PvpArena.Configs;
+using PvpArena.Persistence.MySql.PlayerDatabase;
 
 namespace PvpArena.Matchmaking;
 
@@ -180,7 +181,22 @@ public static class MatchmakingQueue
 			                     $"{newLoserMmr - loser.MatchmakingData1v1.MMR}".Error() +
 			                     " points. New score: ".White() + $"{newLoserMmr}".Warning());
 
-			winner.MatchmakingData1v1.MMR = newWinnerMmr;
+            int pointsToAward = 1;
+            winner.PlayerPointsData.TotalPoints += pointsToAward;
+            loser.PlayerPointsData.TotalPoints += pointsToAward;
+            Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { winner.PlayerPointsData, loser.PlayerPointsData });
+            string pointsName = "VPoint";
+            if (pointsToAward > 1)
+            {
+                pointsName += "s";
+            }
+            string winnerVPointsMessage = $"Received {pointsToAward.ToString().Success()} {pointsName.Emphasize()} for participating in matchmaking. New total: {winner.PlayerPointsData.TotalPoints}".White();
+            string loserVPointsMessage = $"Received {pointsToAward.ToString().Success()} {pointsName.Emphasize()} for participating in matchmaking. New total: {loser.PlayerPointsData.TotalPoints}".White();
+            winner.ReceiveMessage(winnerVPointsMessage);
+            loser.ReceiveMessage(loserVPointsMessage);
+
+
+            winner.MatchmakingData1v1.MMR = newWinnerMmr;
 			loser.MatchmakingData1v1.MMR = newLoserMmr;
 
 			winner.MatchmakingData1v1.Wins += 1;
@@ -215,18 +231,17 @@ public static class MatchmakingQueue
 			// Reset match status.
 			winner.CurrentState = Player.PlayerState.Normal;
 			loser.CurrentState = Player.PlayerState.Normal;
+            string message = $"Re-entering the {"Ranked".Colorify(ExtendedColor.ServerColor)} queue.".White();
 
-			if (winner.MatchmakingData1v1.AutoRequeue)
+            if (winner.MatchmakingData1v1.AutoRequeue)
 			{
-				winner.ReceiveMessage($"Re-entering the " + "Ranked".Colorify(ExtendedColor.ServerColor) +
-				                      "queue.".White());
+				winner.ReceiveMessage(message);
 				Join(winner);
 			}
 
 			if (loser.MatchmakingData1v1.AutoRequeue)
 			{
-				loser.ReceiveMessage($"Re-entering the " + "Ranked".Colorify(ExtendedColor.ServerColor) +
-				                     "queue.".White());
+				loser.ReceiveMessage(message);
 				Join(loser);
 			}
 		}

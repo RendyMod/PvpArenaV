@@ -64,6 +64,7 @@ public class CommandFramework
 			new RolePermissionMiddleware(),
 			new GameModePermissionMiddleware()
 		};
+		private static string[] categoryOrder = new string[] { "Reset CDs & Heal", "Blood Potions", "Witch & Rage Buffs", "Kits", "Jewels", "Legendaries", "Teleport", "Clan", "Misc"};
 
 		static CommandHandler()
 		{
@@ -399,14 +400,14 @@ public class CommandFramework
 				ungroupedCommands.Sort();
 				helpText.AddRange(ungroupedCommands.Select(cmd => cmd.Colorify(ExtendedColor.ServerColor)));
 
-				var sortedCategories = categories.ToImmutableSortedDictionary();
-				// Sort and format each category
-				foreach (var category in sortedCategories)
+				foreach (var categoryName in categoryOrder)
 				{
-					category.Value.Sort();
-					var categoryCommands = string.Join(" / ", category.Value);
-					var categoryEntry = $"{category.Key.Colorify(ExtendedColor.ServerColor)}: {categoryCommands}".Colorify(ExtendedColor.White);
-					helpText.Add(categoryEntry);
+					if (categories.TryGetValue(categoryName, out List<string> categoryCommands))
+					{
+						categoryCommands.Sort();
+						var categoryEntry = $"{categoryName.Colorify(ExtendedColor.ServerColor)}: {string.Join(" / ", categoryCommands)}".Colorify(ExtendedColor.White);
+						helpText.Add(categoryEntry);
+					}
 				}
 			}
 
@@ -417,6 +418,36 @@ public class CommandFramework
 			}
 		}
 
+		[Command(name: "log-all-commands", description: "Logs all commands", usage: ".log-all-commands", adminOnly: true)]
+		public static void LogAllCommandsCommand(Player player)
+		{
+			var loggedCommands = new HashSet<string>();
+
+			foreach (var commandEntry in commandRegistry)
+			{
+				var cmd = commandEntry.Value;
+				var commandName = cmd.CommandAttribute.Name;
+
+				// Skip if this command name has already been logged
+				if (loggedCommands.Contains(commandName))
+				{
+					continue;
+				}
+
+				var commandUsage = string.IsNullOrEmpty(cmd.CommandAttribute.Usage) ? commandName : cmd.CommandAttribute.Usage;
+				var commandDescription = cmd.CommandAttribute.Description ?? "No description";
+				var adminOnly = cmd.CommandAttribute.AdminOnly ? "Admin only" : "User";
+
+				// Format the log string
+				var logString = $"Name: {commandName}, Usage: {commandUsage}, Description: {commandDescription}, Type: {adminOnly}";
+
+				// Log the command details
+				Plugin.PluginLog.LogInfo(logString);
+
+				// Add the command name to the logged commands set
+				loggedCommands.Add(commandName);
+			}
+		}
 	}
 }
 
