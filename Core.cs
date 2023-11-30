@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Threading;
 using Bloodstone.API;
 using Il2CppInterop.Runtime;
 using ProjectM;
@@ -62,6 +64,8 @@ public static class Core
 	
 	public static void Initialize()
 	{
+		Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
+		
 		PlayerService.LoadAllPlayers();
 		PvpArenaConfig.Load();
 		PlayerJewels.Load();
