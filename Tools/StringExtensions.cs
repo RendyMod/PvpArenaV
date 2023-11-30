@@ -95,8 +95,7 @@ public static class StringExtensions
 		exponent = Math.Max(-suffixes.Length + 1, Math.Min(exponent, suffixes.Length - 1));
 
 		float newValue = _value / (float)Math.Pow(10, exponent * 3); // Calculate the new value
-		string formattedValue = newValue.ToString("0.0", CultureInfo.InvariantCulture); // Format to one decimal place
-		formattedValue = formattedValue.Replace(',', '.'); // Replace commas with periods
+		string formattedValue = newValue.ToString("0.0"); // Format to one decimal place
 		
 		if (_value >= 10000)
 			return $"{formattedValue}{suffixes[exponent]}"; // Return the value with the appropriate suffix

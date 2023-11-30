@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Reflection;
 using Bloodstone.API;
 using Epic.OnlineServices;
@@ -22,6 +23,7 @@ using PvpArena.Services;
 using Unity.Entities;
 using static PvpArena.Frameworks.CommandFramework.CommandFramework;
 using static PvpArena.PrefabSpawnerService;
+using System.Threading;
 
 namespace PvpArena;
 
@@ -59,6 +61,8 @@ public static class Core
 
 	public static void Initialize()
 	{
+		Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US"); 
+		
 		PlayerService.LoadAllPlayers();
 		PvpArenaConfig.Load();
 		PlayerJewels.Load();
