@@ -170,14 +170,20 @@ public class ConfigDtos
 		public int Rotation { get; set; }
 	}
 
-	public class JewelConfigDto
+	public class DefaultJewel
 	{
+		public string SpellName { get; set; }
 		public string Mods { get; set; } = "123";
+	}
+
+	public class PlayerDefaultJewel
+	{
+		public DefaultJewel JewelData { get; set; }
+		public ulong SteamID { get; set; }
 	}
 
 	public class DatabaseConfig
 	{
-		public bool UseDatabaseStorage { get; set; } = false;
 		public string Server { get; set; } = "";
 		public int Port { get; set; } = 3306;
 		public string Name { get; set; } = "";

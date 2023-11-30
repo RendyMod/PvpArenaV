@@ -19,6 +19,7 @@ using Il2CppSystem;
 using Unity.Physics;
 using Unity.Jobs;
 using UnityEngine.Jobs;
+using static PvpArena.Configs.ConfigDtos;
 
 namespace PvpArena.Helpers;
 
@@ -74,34 +75,10 @@ public static partial class Helper
 
 	public static void GiveDefaultLegendaries(Player player)
 	{
-		if (PlayerLegendaries.LegendaryWeaponsData.ContainsKey(player.SteamID))
+		List<LegendaryDto> legendaries = Core.defaultLegendaryWeaponStorage.GetLegendaryWeaponsForPlayer(player.SteamID);
+		foreach (var weapon in legendaries)
 		{
-			foreach (var weapon in PlayerLegendaries.LegendaryWeaponsData[player.SteamID])
-			{
-				GenerateLegendaryViaEvent(player, weapon.WeaponName, weapon.Infusion, weapon.Mods);
-			}
+			GenerateLegendaryViaEvent(player, weapon.WeaponName.ToLower(), weapon.Infusion, weapon.Mods);
 		}
-		if ((PlayerLegendaries.LegendaryWeaponsData.ContainsKey(player.SteamID) && PlayerLegendaries.LegendaryWeaponsData[player.SteamID].Count < 5) || !PlayerLegendaries.LegendaryWeaponsData.ContainsKey(player.SteamID))
-		{
-			GenerateLegendaryViaEvent(player, "slashers", PvpArenaConfig.Config.DefaultLegendaries["Slashers"].Infusion,
-	PvpArenaConfig.Config.DefaultLegendaries["Slashers"].Mods);
-			GenerateLegendaryViaEvent(player, "spear", PvpArenaConfig.Config.DefaultLegendaries["Spear"].Infusion,
-				PvpArenaConfig.Config.DefaultLegendaries["Spear"].Mods);
-			GenerateLegendaryViaEvent(player, "axes", PvpArenaConfig.Config.DefaultLegendaries["Axes"].Infusion,
-				PvpArenaConfig.Config.DefaultLegendaries["Axes"].Mods);
-			GenerateLegendaryViaEvent(player, "greatsword", PvpArenaConfig.Config.DefaultLegendaries["GreatSword"].Infusion,
-				PvpArenaConfig.Config.DefaultLegendaries["GreatSword"].Mods);
-			GenerateLegendaryViaEvent(player, "crossbow", PvpArenaConfig.Config.DefaultLegendaries["Crossbow"].Infusion,
-				PvpArenaConfig.Config.DefaultLegendaries["Crossbow"].Mods);
-			GenerateLegendaryViaEvent(player, "pistols", PvpArenaConfig.Config.DefaultLegendaries["Pistols"].Infusion,
-				PvpArenaConfig.Config.DefaultLegendaries["Pistols"].Mods);
-			GenerateLegendaryViaEvent(player, "reaper", PvpArenaConfig.Config.DefaultLegendaries["Reaper"].Infusion,
-				PvpArenaConfig.Config.DefaultLegendaries["Reaper"].Mods);
-			GenerateLegendaryViaEvent(player, "sword", PvpArenaConfig.Config.DefaultLegendaries["Sword"].Infusion,
-				PvpArenaConfig.Config.DefaultLegendaries["Sword"].Mods);
-			GenerateLegendaryViaEvent(player, "mace", PvpArenaConfig.Config.DefaultLegendaries["Mace"].Infusion,
-				PvpArenaConfig.Config.DefaultLegendaries["Mace"].Mods);
-		}
-
 	}
 }

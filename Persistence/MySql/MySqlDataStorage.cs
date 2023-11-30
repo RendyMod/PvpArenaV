@@ -10,6 +10,7 @@ using MySqlConnector;
 using PvpArena.Configs;
 using PvpArena.Models;
 using PvpArena.Persistence.Json;
+using static PvpArena.Configs.ConfigDtos;
 using static PvpArena.Services.PlayerService;
 
 namespace PvpArena.Persistence.MySql;
@@ -19,9 +20,8 @@ public abstract class MySqlDataStorage<T> : IDataStorage<T>
 	protected MySqlConnection _connection;
 	protected string connectionString;
 
-	protected MySqlDataStorage()
+	protected MySqlDataStorage(DatabaseConfig dbConfig)
 	{
-		var dbConfig = PvpArenaConfig.Config.Database;
 		connectionString = $"Server={dbConfig.Server};" +
 							  $"Port={dbConfig.Port};" +
 							  $"Database={dbConfig.Name};" +

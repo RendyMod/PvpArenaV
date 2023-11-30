@@ -81,7 +81,6 @@ internal static class JewelCommands
 				sender.ReceiveMessage("You specified a mod that doesn't exist.".Error());
 				return;
 			}
-			power = Helper.Clamp(power, 0, PvpArenaConfig.Config.MaxJewelPower);
 			Helper.GenerateJewelViaEvent(sender, condensedName, mods, power);
 			sender.ReceiveMessage("Generated jewel!".Success());
 		}

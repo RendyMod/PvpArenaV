@@ -7,11 +7,12 @@ using Il2CppSystem.Xml;
 using MySqlConnector;
 using PvpArena.Models;
 using PvpArena.Services;
+using static PvpArena.Configs.ConfigDtos;
 
-namespace PvpArena.Persistence.MySql;
+namespace PvpArena.Persistence.MySql.PlayerDatabase;
 public class PlayerConfigOptionsStorage : MySqlDataStorage<PlayerConfigOptions>
 {
-	public PlayerConfigOptionsStorage() : base() { }
+	public PlayerConfigOptionsStorage(DatabaseConfig dbConfig) : base(dbConfig) { }
 
 	protected override async Task SaveItemAsync(PlayerConfigOptions data)
 	{
@@ -71,7 +72,7 @@ public class PlayerConfigOptionsStorage : MySqlDataStorage<PlayerConfigOptions>
 		}
 		catch (Exception e)
 		{
-			Plugin.PluginLog.LogInfo($"Exception during player config load: { e.Message }");
+			Plugin.PluginLog.LogInfo($"Exception during player config load: {e.Message}");
 		}
 
 		return dataList;
