@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using ProjectM;
@@ -163,21 +164,25 @@ public static class BulletHellManager
 					float.TryParse(p.PlayerBulletHellData.BestTime, out float longestTime);
 					return longestTime;
 				}).ToList();
-
+				
 				var timeSurvived = arena.stopwatch.ElapsedMilliseconds / 1000.0;
 				var personalRecordTime = float.Parse(player.PlayerBulletHellData.BestTime);
 				var globalRecordTime = float.Parse(sortedPlayers[0].PlayerBulletHellData.BestTime);
-
+				
 				string message = "";
 				if (timeSurvived > globalRecordTime)
 				{
-					message = $"You have set a new global record! New time: {timeSurvived.ToString("F2").Success()}, Old time: {sortedPlayers[0].Name.Error()} - {globalRecordTime.ToString("F2").Error()}".White();
+					message = $"New Record: {timeSurvived.ToString("F2").Success()} / Old Record: {sortedPlayers[0].Name.Error()} - {globalRecordTime.ToString("F2").Error()}".White();
+					player.ReceiveMessage(("You have set a " + "new global record".Emphasize() + "!").White());
+					
 					player.PlayerBulletHellData.BestTime = timeSurvived.ToString("F2");
 					Core.playerBulletHellDataRepository.SaveDataAsync(new List<PlayerBulletHellData> { arena.player.PlayerBulletHellData });
 				}
 				else if (timeSurvived > personalRecordTime)
 				{
-					message = $"You have set a new personal record! New time: {timeSurvived.ToString("F2").Success()}, Old time: {personalRecordTime.ToString("F2").Error()}".White();
+					message = $"New Best Time: {timeSurvived.ToString("F2").Success()} / Old Best Time: {personalRecordTime.ToString("F2").Warning()}".White();
+					player.ReceiveMessage(("You have set your " + "new personal record".Emphasize() + "!").White());
+					
 					player.PlayerBulletHellData.BestTime = timeSurvived.ToString("F2");
 					Core.playerBulletHellDataRepository.SaveDataAsync(new List<PlayerBulletHellData> { player.PlayerBulletHellData });
 				}
