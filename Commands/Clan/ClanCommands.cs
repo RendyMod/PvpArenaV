@@ -17,7 +17,7 @@ internal class ClanCommands
 	{
 		if (sender.User.Read<Team>().Equals(player.User.Read<Team>()))
 		{
-			sender.ReceiveMessage("Already in the same clan".Error());
+			sender.ReceiveMessage("You're already in the same clan!".Error());
 			return;
 		}
 
@@ -32,8 +32,8 @@ internal class ClanCommands
 			Timestamp = System.DateTime.Now
 		};
 		ClanRequestManager.AddRequest(request);
-		sender.ReceiveMessage("Invited to join clan".White());
-		RecipientPlayer.ReceiveMessage($"{RequesterPlayer.Name} invited you to their clan - {".ca".Emphasize()} to accept".White());
+		sender.ReceiveMessage($"Invited {RecipientPlayer.Name.Colorify(ExtendedColor.ClanNameColor)} to join clan..");
+		RecipientPlayer.ReceiveMessage($"{RequesterPlayer.Name.Colorify(ExtendedColor.ClanNameColor)} invited you to their clan - Use {".ca".Emphasize()} to accept.");
 	}
 
 	[Command("request join clan", description: "Request to join a player's clan", usage: ".rjc Ash", aliases: new string[] { "rjc", "req", "request-join-clan" }, adminOnly: false, category: "Clan", includeInHelp: true)]
@@ -41,7 +41,7 @@ internal class ClanCommands
 	{
 		if (sender.User.Read<Team>().Equals(player.User.Read<Team>()))
 		{
-			sender.ReceiveMessage("Already in the same clan".Error());
+			sender.ReceiveMessage("You're already in the same clan!".Error());
 			return;
 		}
 		
@@ -58,13 +58,13 @@ internal class ClanCommands
 		var existingRequest = ClanRequestManager.GetRequest(RequesterPlayer, RecipientPlayer);
 		if (existingRequest != null && !existingRequest.IsExpired())
 		{
-			RequesterPlayer.ReceiveMessage($"{RecipientPlayer.Name} already has a pending request".Warning());
+			RequesterPlayer.ReceiveMessage($"{RecipientPlayer.Name.Colorify(ExtendedColor.ClanNameColor)} already has a pending request".Warning());
 			return;
 		}
 
 		ClanRequestManager.AddRequest(request);
-		sender.ReceiveMessage("Requested to join clan".White());
-		RecipientPlayer.ReceiveMessage($"{RequesterPlayer.Name} wants to join your clan - {".ca".Emphasize()} to accept".White());
+		sender.ReceiveMessage($"Requested to join {RecipientPlayer.Name.Colorify(ExtendedColor.ClanNameColor)}'s clan..");
+		RecipientPlayer.ReceiveMessage($"{RequesterPlayer.Name.Colorify(ExtendedColor.ClanNameColor)} wants to join your clan - {".ca".Emphasize()} to accept");
 	}
 
 	[Command("clan accept", description: "Approves a clan request", usage: ".ca Ash", aliases: new string[] { "clanaccept", "clan-accept", "ca" }, adminOnly: false, category: "Clan", includeInHelp: false)]
@@ -132,18 +132,24 @@ internal class ClanCommands
 		}
 		else
 		{
-			RecipientPlayer.ReceiveMessage($"No active clan requests to approve".Warning());
+			RecipientPlayer.ReceiveMessage($"No active clan requests to approve!".Error());
 		}
 	}
 
 	[Command("leave clan", description: "Leave your clan", usage: ".lc", adminOnly: false, aliases: new string[] { "lc", "leaveclan", "leave-clan" }, category: "Clan", includeInHelp: true)]
 	public void LeaveClanCommand (Player sender)
 	{
-		sender.RemoveFromClan();
-		sender.ReceiveMessage("You have left your clan.".White());
+		var clanEntity = sender.User.Read<User>().ClanEntity._Entity;
+		if (!clanEntity.Exists())
+			sender.ReceiveMessage("You aren't in a clan.".Error());
+		else
+		{
+			sender.RemoveFromClan();
+			sender.ReceiveMessage("You left the clan successfully!");
+		}
 	}
 
-	[Command("rename clan", description: "Leave your clan", usage: ".rnc", adminOnly: false, aliases: new string[] { "rnc", "renameclan", "rename-clan" }, category: "Clan", includeInHelp: true)]
+	[Command("rename clan", description: "Rename your clan", usage: ".rnc", adminOnly: false, aliases: new string[] { "rnc", "renameclan", "rename-clan" }, category: "Clan", includeInHelp: true)]
 	public void RenameClanCommand(Player sender, string name)
 	{
 		var clanEntity = sender.User.Read<User>().ClanEntity._Entity;
@@ -157,12 +163,11 @@ internal class ClanCommands
 			{
 				ClanUtility.SetCharacterClanName(VWorld.Server.EntityManager, sender.User, clanTeam.Name);
 			}
-			sender.ReceiveMessage("You have renamed your clan.".White());
+			sender.ReceiveMessage("You have renamed your clan to " + name.Colorify(ExtendedColor.ClanNameColor) +".");
 		}
 		else
 		{
 			sender.ReceiveMessage("You aren't in a clan.".Error());
-
 		}
 	}
 
@@ -170,6 +175,6 @@ internal class ClanCommands
 	public static void CreateClanCommand(Player sender, string name = "")
 	{
 		Helper.CreateClanForPlayer(sender.User);
-		sender.ReceiveMessage("Clan created.");
+		sender.ReceiveMessage("You successfully created the clan!");
 	}
 }

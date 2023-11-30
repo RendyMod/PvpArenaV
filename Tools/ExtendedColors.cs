@@ -166,6 +166,8 @@ public static class ExtendedColor
         public static readonly Color LightServerColor = new Color32(254, 87, 131, 255);
         public static readonly Color ServerColor = new Color32(217, 46, 120, 255);
         
+        public static readonly Color ClanNameColor = new Color32(86, 150, 225, 255);
+        
         public static string ToHexString (this Color _color)
         {
 	        return ColorUtility.ToHtmlStringRGB(_color);

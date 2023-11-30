@@ -36,7 +36,7 @@ public class RequestManager
 		var existingRequest = GetRequest(request.Recipient, request.Requester);
 		if (existingRequest != null && !existingRequest.IsExpired())
 		{
-			request.Recipient.ReceiveMessage($"{request.Recipient.Name} already has a pending invite".Warning());
+			request.Recipient.ReceiveMessage($"{request.Recipient.Name.Emphasize()} already has a pending invite".Warning());
 		}
 
 		if (!activeRequests.TryGetValue(request.Recipient, out var requesterToRequestMap))
