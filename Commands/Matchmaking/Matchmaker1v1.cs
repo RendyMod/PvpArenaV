@@ -22,7 +22,7 @@ public static class MatchmakingService
 	{
 		if (!initialized)
 		{
-			foreach (var matchmakingArenaLocation in PvpArenaConfig.Config.MatchmakingArenaLocations)
+			foreach (var matchmakingArenaLocation in Core.matchmaking1v1ArenaLocations)
 			{
 				ArenaManager.AddArena(new Arena()
 				{

@@ -16,6 +16,8 @@ using PvpArena.Helpers;
 using UnityEngine.Jobs;
 using PvpArena.Models;
 using System;
+using Il2CppSystem.Data.Common;
+using PvpArena.Persistence.Json;
 
 namespace PvpArena.Patches;
 
@@ -168,21 +170,12 @@ public static class SpawnCharacterSystemPatch
 
 	private static void GiveJewelsAndScheduleEquipment(Player player)
 	{
-		var power = Helper.Clamp(1, 0, PvpArenaConfig.Config.MaxJewelPower);
-
 		var steamId = player.SteamID;
 		// Generate jewels for the character.
 		foreach (var jewel in JewelData.abilityToPrefabDictionary)
 		{
-			if (PlayerJewels.JewelData.ContainsKey(player.SteamID))
-			{
-				if (PlayerJewels.JewelData[steamId].ContainsKey(jewel.Key))
-				{
-					Helper.GenerateJewelViaEvent(player, jewel.Key, PlayerJewels.JewelData[steamId][jewel.Key], power);
-					continue;
-				}
-			}
-			Helper.GenerateJewelViaEvent(player, jewel.Key, PvpArenaConfig.Config.DefaultJewels[jewel.Key].Mods, power);	
+			string mods = Core.defaultJewelStorage.GetModsForSpell(jewel.Key, player.SteamID);
+			Helper.GenerateJewelViaEvent(player, jewel.Key, mods);
 		}
 		ScheduleAction(EquipJewels, player, delay: 2);
 		ScheduleAction(Helper.GiveDefaultLegendaries, player, delay: 3);

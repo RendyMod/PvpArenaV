@@ -96,7 +96,6 @@ public static class PlayerLegendaries
 					}
 				}
 			}
-			Unity.Debug.Log($"done: {LegendaryWeaponsData.Count}");
 			// Write the JSON string to a file
 
 			var options = new JsonSerializerOptions
@@ -111,58 +110,4 @@ public static class PlayerLegendaries
 			Plugin.PluginLog.LogInfo(ex.ToString());
 		}
 	}
-
-	/*public static void ExportLegendariesOld()
-	{
-		try
-		{
-			LegendaryWeaponsData = new Dictionary<ulong, List<LegendaryDto>>();
-			var legendaries = Helper.GetEntitiesByComponentTypes<LegendaryItemInstance>(true);
-			foreach (var legendary in legendaries)
-			{
-				if (legendary.Has<ShatteredItem>()) continue;
-
-				var legendaryModData = legendary.Read<LegendaryItemSpellModSetComponent>();
-				var infusionPrefab = legendaryModData.AbilityMods0.Mod0.Id;
-				//legendary.LogPrefabName();
-				var mod1 = LegendaryData.statModGuidToIndex[legendaryModData.StatMods.Mod0.Id];
-				var mod2 = LegendaryData.statModGuidToIndex[legendaryModData.StatMods.Mod1.Id];
-				var mod3 = LegendaryData.statModGuidToIndex[legendaryModData.StatMods.Mod2.Id];
-				var weaponType = legendary.Read<PrefabGUID>();
-				Helper.TryFindOwnerOfItem(legendary, out var player, out var slot);
-				if (slot != -1)
-				{
-					var legendaryConfigDto = new LegendaryDto
-					{
-						Infusion = LegendaryData.prefabToInfusionDictionary[infusionPrefab],
-						WeaponName = LegendaryData.prefabToWeaponDictionary[weaponType],
-						Mods = $"{mod1}{mod2}{mod3}",
-						Slot = slot
-					};
-					if (LegendaryWeaponsData.ContainsKey(player.SteamID))
-					{
-						LegendaryWeaponsData[player.SteamID].Add(legendaryConfigDto);
-					}
-					else
-					{
-						LegendaryWeaponsData[player.SteamID] = new List<LegendaryDto> { legendaryConfigDto };
-					}
-				}
-			}
-
-			Unity.Debug.Log(LegendaryWeaponsData.Count);
-			// Write the JSON string to a file
-			
-			var options = new JsonSerializerOptions
-			{
-				WriteIndented = true,
-			};
-			var jsonData = JsonSerializer.Serialize(LegendaryWeaponsData, options);
-			File.WriteAllText(FullPath, jsonData);
-		}
-		catch (Exception ex)
-		{
-			Plugin.PluginLog.LogInfo(ex.ToString());
-		}
-	}*/
 }

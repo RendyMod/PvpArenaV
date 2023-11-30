@@ -7,11 +7,12 @@ using System.Threading.Tasks;
 using MySqlConnector;
 using PvpArena.Models;
 using PvpArena.Services;
+using static PvpArena.Configs.ConfigDtos;
 
-namespace PvpArena.Persistence.MySql;
+namespace PvpArena.Persistence.MySql.PlayerDatabase;
 public class PlayerPointsStorage : MySqlDataStorage<PlayerPoints>
 {
-	public PlayerPointsStorage() : base() { }
+	public PlayerPointsStorage(DatabaseConfig dbConfig) : base(dbConfig) { }
 
 	protected async override Task SaveItemAsync(PlayerPoints data)
 	{
@@ -30,7 +31,7 @@ public class PlayerPointsStorage : MySqlDataStorage<PlayerPoints>
 				await command.ExecuteNonQueryAsync();
 			}
 		}
-		catch 
+		catch
 		{
 			Plugin.PluginLog.LogInfo("Exception during player points data store");
 		}

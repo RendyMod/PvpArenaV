@@ -1,8 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
-using System.Reflection;
+using System.Threading;
 using Bloodstone.API;
-using Epic.OnlineServices;
 using Il2CppInterop.Runtime;
 using ProjectM;
 using ProjectM.CastleBuilding;
@@ -19,11 +19,12 @@ using PvpArena.Models;
 using PvpArena.Patches;
 using PvpArena.Persistence.Json;
 using PvpArena.Persistence.MySql;
+using PvpArena.Persistence.MySql.AllDatabases;
+using PvpArena.Persistence.MySql.PlayerDatabase;
 using PvpArena.Services;
 using Unity.Entities;
-using static PvpArena.Frameworks.CommandFramework.CommandFramework;
+using static PvpArena.Configs.ConfigDtos;
 using static PvpArena.PrefabSpawnerService;
-using System.Threading;
 
 namespace PvpArena;
 
@@ -36,7 +37,11 @@ public static class Core
 	public static IDataStorage<PlayerImprisonInfo> imprisonDataRepository;
 	public static IDataStorage<PlayerConfigOptions> playerConfigOptionsRepository;
 	public static IDataStorage<PlayerBulletHellData> playerBulletHellDataRepository;
-	
+    public static DefaultJewelDataStorage defaultJewelStorage;
+    public static DefaultLegendaryWeaponDataStorage defaultLegendaryWeaponStorage;
+	public static MatchmakingArenasDataStorage matchmakingArenaStorage;
+	public static List<ArenaLocationDto> matchmaking1v1ArenaLocations;
+
 	public static DefaultGameMode defaultGameMode;
 	public static CaptureThePancakeGameMode captureThePancakeGameMode;
 	public static DominationGameMode dominationGameMode;
@@ -57,11 +62,9 @@ public static class Core
 	public static ServerBootstrapSystem serverBootstrapSystem = VWorld.Server.GetExistingSystem<ServerBootstrapSystem>();
 	public static GameDataSystem gameDataSystem = VWorld.Server.GetExistingSystem<GameDataSystem>();
 	
-
-
 	public static void Initialize()
 	{
-		Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US"); 
+		Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
 		
 		PlayerService.LoadAllPlayers();
 		PvpArenaConfig.Load();
@@ -72,27 +75,19 @@ public static class Core
 		PrisonConfig.Load();
         TradersConfig.Load();
 
-        if (PvpArenaConfig.Config.Database.UseDatabaseStorage)
-		{
-			matchmaking1V1DataRepository = new PlayerMatchmaking1v1DataStorage();
-			pointsDataRepository = new PlayerPointsStorage();
-			banDataRepository = new PlayerBanInfoStorage();
-			muteDataRepository = new PlayerMuteInfoStorage();
-			imprisonDataRepository = new PlayerImprisonInfoStorage();
-			playerConfigOptionsRepository = new PlayerConfigOptionsStorage();
-			playerBulletHellDataRepository = new PlayerBulletHellDataStorage();
-		}
-		else
-		{
-			matchmaking1V1DataRepository = new PlayerJsonDataStorage<PlayerMatchmaking1v1Data>("BepInEx/config/PvpArena/matchmaking_1v1_data.json");
-			pointsDataRepository = new PlayerJsonDataStorage<PlayerPoints>("BepInEx/config/PvpArena/login_points.json");
-			banDataRepository = new PlayerJsonDataStorage<PlayerBanInfo>("Bepinex/config/PvpArena/banned_players.json");
-			muteDataRepository = new PlayerJsonDataStorage<PlayerMuteInfo>("Bepinex/config/PvpArena/muted_steam_ids.json");
-			imprisonDataRepository = new PlayerJsonDataStorage<PlayerImprisonInfo>("Bepinex/config/PvpArena/imprisoned_players.json");
-			playerConfigOptionsRepository = new PlayerJsonDataStorage<PlayerConfigOptions>("Bepinex/config/PvpArena/player_config_options.json");
-			playerBulletHellDataRepository = new PlayerJsonDataStorage<PlayerBulletHellData>("Bepinex/config/PvpArena/player_bullet_hell_data.json");
-		}
-		
+		matchmaking1V1DataRepository = new PlayerMatchmaking1v1DataStorage(PvpArenaConfig.Config.ServerDatabase);
+		pointsDataRepository = new PlayerPointsStorage(PvpArenaConfig.Config.ServerDatabase);
+		banDataRepository = new PlayerBanInfoStorage(PvpArenaConfig.Config.ServerDatabase);
+		muteDataRepository = new PlayerMuteInfoStorage(PvpArenaConfig.Config.ServerDatabase);
+		imprisonDataRepository = new PlayerImprisonInfoStorage(PvpArenaConfig.Config.ServerDatabase);
+		playerConfigOptionsRepository = new PlayerConfigOptionsStorage(PvpArenaConfig.Config.ServerDatabase);
+		playerBulletHellDataRepository = new PlayerBulletHellDataStorage(PvpArenaConfig.Config.ServerDatabase);
+        defaultJewelStorage = new DefaultJewelDataStorage(PvpArenaConfig.Config.MainDatabase, PvpArenaConfig.Config.ServerDatabase);
+        defaultJewelStorage.LoadAllJewelDataAsync();
+        defaultLegendaryWeaponStorage = new DefaultLegendaryWeaponDataStorage(PvpArenaConfig.Config.MainDatabase, PvpArenaConfig.Config.ServerDatabase);
+		defaultLegendaryWeaponStorage.LoadAllLegendaryDataAsync();
+		matchmakingArenaStorage = new MatchmakingArenasDataStorage(PvpArenaConfig.Config.MainDatabase);
+		matchmaking1v1ArenaLocations = matchmakingArenaStorage.LoadAllArenasAsync().Result;
 
 		EntityQueryOptions options = EntityQueryOptions.Default;
 

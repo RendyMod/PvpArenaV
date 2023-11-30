@@ -7,11 +7,12 @@ using MySqlConnector;
 using ProjectM.Scripting;
 using PvpArena.Models;
 using PvpArena.Services;
+using static PvpArena.Configs.ConfigDtos;
 
-namespace PvpArena.Persistence.MySql;
+namespace PvpArena.Persistence.MySql.PlayerDatabase;
 public class PlayerImprisonInfoStorage : MySqlDataStorage<PlayerImprisonInfo>
 {
-	public PlayerImprisonInfoStorage() : base() { }
+	public PlayerImprisonInfoStorage(DatabaseConfig dbConfig) : base(dbConfig) { }
 
 	protected override async Task SaveItemAsync(PlayerImprisonInfo data)
 	{
@@ -73,7 +74,7 @@ public class PlayerImprisonInfoStorage : MySqlDataStorage<PlayerImprisonInfo>
 			using (var _connection = new MySqlConnection(connectionString))
 			{
 				await _connection.OpenAsync();
-				
+
 				var command = new MySqlCommand("SELECT SteamID, ImprisonedDate, ImprisonDurationDays, Reason, PrisonCellNumber FROM PlayerImprisonInfo;", _connection);
 
 				using (var reader = await command.ExecuteReaderAsync())

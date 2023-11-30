@@ -7,11 +7,12 @@ using MySqlConnector;
 using ProjectM.Scripting;
 using PvpArena.Models;
 using PvpArena.Services;
+using static PvpArena.Configs.ConfigDtos;
 
-namespace PvpArena.Persistence.MySql;
+namespace PvpArena.Persistence.MySql.PlayerDatabase;
 public class PlayerBanInfoStorage : MySqlDataStorage<PlayerBanInfo>
 {
-	public PlayerBanInfoStorage() : base() { }
+	public PlayerBanInfoStorage(DatabaseConfig dbConfig) : base(dbConfig) { }
 
 	protected override async Task SaveItemAsync(PlayerBanInfo data)
 	{
@@ -70,7 +71,7 @@ public class PlayerBanInfoStorage : MySqlDataStorage<PlayerBanInfo>
 			using (var _connection = new MySqlConnection(connectionString))
 			{
 				await _connection.OpenAsync();
-				
+
 				var command = new MySqlCommand("SELECT SteamID, BannedDate, BanDurationDays, Reason FROM PlayerBanInfo;", _connection);
 
 				using (var reader = await command.ExecuteReaderAsync())

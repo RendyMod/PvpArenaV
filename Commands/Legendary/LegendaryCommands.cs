@@ -53,8 +53,6 @@ internal static class LegendaryCommands
 				return;
 			}
 
-			power = Helper.Clamp(power, 0, PvpArenaConfig.Config.MaxLegendaryPower);
-
 			var mod1 = Convert.ToInt32(mods[0].ToString(), 16) - 1;
 			var mod2 = Convert.ToInt32(mods[1].ToString(), 16) - 1;
 			var mod3 = Convert.ToInt32(mods[2].ToString(), 16) - 1;

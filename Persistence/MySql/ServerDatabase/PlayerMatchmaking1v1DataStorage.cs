@@ -6,11 +6,13 @@ using System.Threading.Tasks;
 using MySqlConnector;
 using PvpArena.Models;
 using PvpArena.Services;
+using Stunlock.Sequencer;
+using static PvpArena.Configs.ConfigDtos;
 
-namespace PvpArena.Persistence.MySql;
+namespace PvpArena.Persistence.MySql.PlayerDatabase;
 public class PlayerMatchmaking1v1DataStorage : MySqlDataStorage<PlayerMatchmaking1v1Data>
 {
-	public PlayerMatchmaking1v1DataStorage() : base() { }
+	public PlayerMatchmaking1v1DataStorage(DatabaseConfig dbConfig) : base(dbConfig) { }
 	protected override async Task SaveItemAsync(PlayerMatchmaking1v1Data data)
 	{
 		try

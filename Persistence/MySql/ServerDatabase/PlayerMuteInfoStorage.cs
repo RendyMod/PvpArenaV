@@ -6,11 +6,12 @@ using System.Threading.Tasks;
 using MySqlConnector;
 using PvpArena.Models;
 using PvpArena.Services;
+using static PvpArena.Configs.ConfigDtos;
 
-namespace PvpArena.Persistence.MySql;
+namespace PvpArena.Persistence.MySql.PlayerDatabase;
 public class PlayerMuteInfoStorage : MySqlDataStorage<PlayerMuteInfo>
 {
-	public PlayerMuteInfoStorage() : base() { }
+	public PlayerMuteInfoStorage(DatabaseConfig dbConfig) : base(dbConfig) { }
 
 	protected override async Task SaveItemAsync(PlayerMuteInfo data)
 	{
@@ -99,7 +100,7 @@ public class PlayerMuteInfoStorage : MySqlDataStorage<PlayerMuteInfo>
 		{
 			Plugin.PluginLog.LogInfo("Exception during player mute data load");
 		}
-		
+
 
 		return dataList;
 	}
