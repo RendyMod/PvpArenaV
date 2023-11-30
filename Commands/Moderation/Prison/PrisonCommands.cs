@@ -24,7 +24,7 @@ internal class PrisonCommands
 		{
 			durationMessage = $"for {numberOfDays.ToString().Emphasize()} days";
 		}
-		imprisonedPlayer.ReceiveMessage($"You have been {"imprisoned".Emphasize()} {durationMessage}.".Error());
+		imprisonedPlayer.ReceiveMessage($"You have been imprisoned {durationMessage}.".Error());
 		sender.ReceiveMessage($"{imprisonedPlayer.Name.Colorify(ExtendedColor.ClanNameColor)} has been imprisoned {durationMessage}.".White());
 	}
 
