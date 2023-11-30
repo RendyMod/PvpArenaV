@@ -105,17 +105,13 @@ internal class TestCommands
 	}
 
 	[Command("test2", description: "Used for debugging", adminOnly: true)]
-	public void Test2Command(Player sender)
+	public void Test2Command(Player sender, Player player)
 	{
-		var sortedPlayers = PlayerService.UserCache.Values.OrderByDescending(p =>
-		{
-			float.TryParse(p.PlayerBulletHellData.BestTime, out float longestTime);
-			return longestTime;
-		}).ToList();
-		sender.ReceiveMessage(sender.PlayerBulletHellData.BestTime);
+		Helper.AddPlayerToPlayerClanForce(player.User, sender.User);
+		//Helper.AnnounceSiegeWeapon();
+
+
 	}
-
-
 
 	[Command("test3", description: "Used for debugging", adminOnly: true)]
 	public void Test3Command(Player sender, bool friendly = true)

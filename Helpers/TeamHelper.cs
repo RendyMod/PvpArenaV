@@ -19,6 +19,7 @@ using Il2CppSystem;
 using Unity.Physics;
 using Unity.Jobs;
 using UnityEngine.Jobs;
+using static ProjectM.ForceJoinClanEventSystem_Server;
 
 namespace PvpArena.Helpers;
 
@@ -40,7 +41,7 @@ public static partial class Helper
 		});
 	}
 
-	public static void AddPlayerToPlayerClan(Entity UserJoiningClan, Entity UserInClan)
+	public static void AddPlayerToPlayerClanNatural(Entity UserJoiningClan, Entity UserInClan)
 	{
 		var user = UserJoiningClan.Read<User>();
 		var clanEntity = UserInClan.Read<User>().ClanEntity._Entity;
@@ -67,6 +68,25 @@ public static partial class Helper
 			});
 			ClanUtility.SetCharacterClanName(VWorld.Server.EntityManager, UserJoiningClan, clanEntity.Read<ClanTeam>().Name);
 			ClanUtility.SetCharacterClanName(VWorld.Server.EntityManager, UserInClan, clanEntity.Read<ClanTeam>().Name);
+		}
+	}
+
+	public static void AddPlayerToPlayerClanForce(Entity UserJoiningClan, Entity UserInClan)
+	{
+		TryJoinClanArgs tryJoinClanArgs = new TryJoinClanArgs
+		{
+			Ecb = Core.entityCommandBufferSystem.CreateCommandBuffer(),
+			EntityManager = VWorld.Server.EntityManager,
+			FromUser = UserJoiningClan,
+			TargetUser = UserInClan
+		};
+		try
+		{
+			ForceJoinClanEventSystem_Server.TryJoinClan(ref tryJoinClanArgs);
+		}
+		catch
+		{
+
 		}
 	}
 

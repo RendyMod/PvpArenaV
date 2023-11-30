@@ -143,7 +143,7 @@ public class DefaultGameMode : BaseGameMode
 
 		var pos = player.Position;
 		Helper.RespawnPlayer(player, pos);
-		Helper.Reset(player);
+		ResetPlayer(player);
 		var blood = player.Character.Read<Blood>();
 		Helper.SetPlayerBlood(player, blood.BloodType, blood.Quality);
 	}

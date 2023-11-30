@@ -38,7 +38,7 @@ internal static class MatchmakingCommands
 		sender.ReceiveMessage("Left the queue!".White());
 	}
 
-	[Command("ranked lb", description: "Displays the ranked leaderboard", aliases: new string[] { "lb" }, adminOnly: false, includeInHelp: false, category: "Ranked")]
+	[Command("lb ranked", description: "Displays the ranked leaderboard", aliases: new string[] { "lb" }, adminOnly: false, includeInHelp: false, category: "Ranked")]
 	public static void ShowLeaderboardCommand(Player sender, int pageNumber = 1)
 	{
 		const int playersPerPage = 10; // Number of players to display per page
@@ -111,5 +111,78 @@ internal static class MatchmakingCommands
 		string highlightEnd = player.SteamID == currentPlayerSteam ? "</color>" : "";
 
 		return $"{boldStart}{rank}. {highlightStart}<color={rankColor}>{player.Name}</color>{highlightEnd}{boldEnd} - <color=#808080>{player.MMR}</color> points, W: <color=#00FF00>{player.Wins}</color>, L: <color=#FF0000>{player.Losses}</color>".White();
+	}
+
+	private static string FormatPlayerBulletHellInfo(dynamic player, int rank, ulong currentPlayerSteam, bool bold = false)
+	{
+		string rankColor = "#FFFFFF"; // Default rank color
+		string boldStart = bold ? "<b>" : "";
+		string boldEnd = bold ? "</b>" : "";
+		string highlightStart = player.SteamID == currentPlayerSteam ? "<color=#FFD700>" : ""; // Highlight color if it's the current player
+		string highlightEnd = player.SteamID == currentPlayerSteam ? "</color>" : "";
+
+		return $"{boldStart}{rank}. {highlightStart}<color={rankColor}>{player.Name}</color>{highlightEnd}{boldEnd} - {player.BestTime}".White();
+	}
+
+	[Command("lb-bullet", description: "Displays the ranked leaderboard", adminOnly: false, includeInHelp: false, category: "Ranked")]
+	public static void ShowBulletLeaderboardCommand(Player sender, int pageNumber = 1)
+	{
+		const int playersPerPage = 10; // Number of players to display per page
+
+		// Ensure the page number is positive
+		if (pageNumber < 1)
+		{
+			sender.ReceiveMessage("Page number must be positive.".Error());
+			return;
+		}
+
+		var orderedPlayers = PlayerService.UserCache.Values
+						.Select(player => new {
+							player.SteamID,
+							player.PlayerBulletHellData.BestTime,
+							player.Name // Assuming Name gets the player's display name
+						})
+						.OrderByDescending(player => player.BestTime)
+						.ToList();
+
+		// Calculate start and end indices for the current page
+		int startIndex = (pageNumber - 1) * playersPerPage;
+		int endIndex = Math.Min(startIndex + playersPerPage, orderedPlayers.Count);
+
+		if (orderedPlayers.Count == 0)
+		{
+			sender.ReceiveMessage("No players available on the leaderboard.".Error());
+			return;
+		}
+
+		if (startIndex >= orderedPlayers.Count)
+		{
+			sender.ReceiveMessage("The page number is too high.".Error());
+			return;
+		}
+
+		sender.ReceiveMessage($"--- Bullet Hell Leaderboard (Page {pageNumber.ToString().Colorify(ExtendedColor.LightServerColor)}) ---".White());
+
+		var currentPlayerSteam = sender.SteamID;
+		for (int i = startIndex; i < endIndex; i++)
+		{
+			var player = orderedPlayers[i];
+
+			string playerRankInfo = FormatPlayerBulletHellInfo(player, i + 1, currentPlayerSteam);
+			sender.ReceiveMessage(playerRankInfo);
+		}
+
+		// If current player was not shown in the displayed page, show them at the end
+		int currentPlayerIndex = orderedPlayers.FindIndex(p => p.SteamID == currentPlayerSteam);
+		if (currentPlayerIndex < startIndex || currentPlayerIndex >= endIndex)
+		{
+			if (currentPlayerIndex != -1) // If the player is in the list
+			{
+				sender.ReceiveMessage($"...........................................................".White());
+				var currentPlayer = orderedPlayers[currentPlayerIndex];
+				string playerRankInfo = FormatPlayerBulletHellInfo(currentPlayer, currentPlayerIndex + 1, currentPlayerSteam, bold: true);
+				sender.ReceiveMessage(playerRankInfo);
+			}
+		}
 	}
 }

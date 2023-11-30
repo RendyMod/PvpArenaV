@@ -29,7 +29,7 @@ public class Matchmaking1v1GameMode : BaseGameMode
 		{ "jewel", true },
 		{ "forfeit", true },
 		{ "points", true },
-		{ "ranked lb", true },
+		{ "lb ranked", true },
 	};
 
 	public override void Initialize()

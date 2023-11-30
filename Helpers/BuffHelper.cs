@@ -270,10 +270,9 @@ public static partial class Helper
 				if (buffEntity.Has<LifeTime>())
 				{
 					var lifetime = buffEntity.Read<LifeTime>();
-					lifetime.Duration = 0; //duration must be -1 to stop timer from showing up, but -1 logs errors. 0 shows no errors and usually works, but will crash the client on some buffs like bloodrite
+					lifetime.Duration = 0; //duration must be -1 or 0 to stop timer from showing up, but -1 logs errors. 0 shows no errors and usually works, but will crash the client on some buffs like bloodrite
 					lifetime.EndAction = LifeTimeEndAction.None;
 					buffEntity.Write(lifetime);
-
 				}
 
 				if (buffEntity.Has<RemoveBuffOnGameplayEvent>())

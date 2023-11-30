@@ -203,5 +203,19 @@ public static class CollisionDetectionSystemPatch
 }
 */
 
-
 //public unsafe static void SendSystemMessageToClient(EntityManager entityManager, User user, string messageText)
+
+
+/*[HarmonyPatch(typeof(RemovePvPSafeBuffOnCastleEntrySystem), nameof(RemovePvPSafeBuffOnCastleEntrySystem.OnUpdate))]
+public static class RemovePvPSafeBuffOnCastleEntrySystemPatch
+{
+	public static void Prefix(RemovePvPSafeBuffOnCastleEntrySystem __instance)
+	{
+		__instance.__OnUpdate_LambdaJob0_entityQuery.LogComponentTypes();
+		var entities = __instance.__OnUpdate_LambdaJob0_entityQuery.ToEntityArray(Allocator.Temp);
+		foreach (var entity in entities)
+		{
+			entity.LogComponentTypes();
+		}
+	}
+}*/

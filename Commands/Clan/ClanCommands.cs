@@ -111,7 +111,7 @@ internal class ClanCommands
 					ActionScheduler.ScheduleAction(action, 2);
 				}
 
-				action = new ScheduledAction(Helper.AddPlayerToPlayerClan, new object[] { RequesterPlayer.User, RecipientPlayer.User });
+				action = new ScheduledAction(Helper.AddPlayerToPlayerClanForce, new object[] { RequesterPlayer.User, RecipientPlayer.User });
 				ActionScheduler.ScheduleAction(action, 3);
 			}
 			else if (request.Type == Request.RequestType.ClanInviteRequest)
@@ -126,7 +126,7 @@ internal class ClanCommands
 					ActionScheduler.ScheduleAction(action, 2);
 				}
 				
-				action = new ScheduledAction(Helper.AddPlayerToPlayerClan, new object[] { RecipientPlayer.User, RequesterPlayer.User });
+				action = new ScheduledAction(Helper.AddPlayerToPlayerClanForce, new object[] { RecipientPlayer.User, RequesterPlayer.User });
 				ActionScheduler.ScheduleAction(action, 3);
 			}
 		}

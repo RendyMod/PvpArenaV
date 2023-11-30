@@ -92,7 +92,7 @@ public class DominationGameMode : BaseGameMode
 		{ "jewel", true },
 		{ "forfeit", true },
 		{ "points", true },
-		{ "ranked lb", true },
+		{ "lb ranked", true },
 		{ "bp", true },
 		{ "j", true },
 		{ "lw", true }

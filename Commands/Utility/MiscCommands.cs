@@ -7,6 +7,7 @@ using PvpArena.Models;
 using static PvpArena.Frameworks.CommandFramework.CommandFramework;
 using PvpArena.Configs;
 using PvpArena.Helpers;
+using Unity.Mathematics;
 
 namespace PvpArena.Commands;
 
@@ -76,5 +77,20 @@ internal static class MiscellaneousCommands
 	public static void RecountCommand(Player sender)
 	{
 		DamageRecorderService.ReportDamageResults(sender);
+	}
+
+	[Command("make-new-character", description: "Used for debugging", adminOnly: true)]
+	public static void MakeNewCharacterCommand(Player sender, Player target)
+	{
+		var userData = target.User.Read<User>();
+		userData.LocalCharacter = Entity.Null;
+		target.User.Write(userData);
+		target.Character.Teleport(new float3(0, 0, 0));
+		var entity = Helper.CreateEntityWithComponents<CreateCharacterEvent, FromCharacter, NetworkEventType, ReceiveNetworkEventTag>();
+		entity.Write(new CreateCharacterEvent
+		{
+			Name = "derp"
+		});
+		entity.Write(sender.ToFromCharacter());
 	}
 }

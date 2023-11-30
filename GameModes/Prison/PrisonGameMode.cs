@@ -30,7 +30,7 @@ public class PrisonGameMode : BaseGameMode
 		{ "legendary", true },
 		{ "jewel", true },
 		{ "points", true },
-		{ "ranked lb", true },
+		{ "lb ranked", true },
 		{ "bp", true },
 		{ "r", true },
 		{ "recount", true }
