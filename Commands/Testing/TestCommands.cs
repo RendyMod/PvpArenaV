@@ -399,8 +399,8 @@ internal class TestCommands
 	[Command("save", description: "Used for debugging", adminOnly: true)]
 	public static void SaveCommand(Player sender)
 	{
-		PlayerJewels.ExportJewels();
-		PlayerLegendaries.ExportLegendaries();
+		Core.defaultJewelStorage.ExportJewels();
+		Core.defaultLegendaryWeaponStorage.ExportLegendariesToDatabase();
 
 		sender.ReceiveMessage("Data saved.");
 	}

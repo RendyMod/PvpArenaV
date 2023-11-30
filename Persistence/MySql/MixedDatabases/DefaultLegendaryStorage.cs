@@ -3,8 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Bloodstone.API;
 using MySqlConnector;
+using ProjectM;
 using ProjectM.Scripting;
+using ProjectM.Shared;
 using PvpArena.Data;
 using PvpArena.Models;
 using PvpArena.Services;
@@ -144,8 +147,80 @@ public class DefaultLegendaryWeaponDataStorage
 			ActionScheduler.RunActionOnMainThread(() => { Plugin.PluginLog.LogInfo(ex.ToString()); });
 		}
 
-
-
 		return legendaries;
+	}
+
+	public async Task ExportLegendariesToDatabase()
+	{
+		try
+		{
+			var players = PlayerService.UserCache.Values;
+			ActionScheduler.RunActionOnMainThread(() =>
+			{
+				foreach (var player in players)
+				{
+					var playerLegendaries = new List<LegendaryDto>();
+
+					for (var i = 0; i < 36; i++)
+					{
+						if (InventoryUtilities.TryGetItemAtSlot(VWorld.Server.EntityManager, player.Character, i, out InventoryBuffer item))
+						{
+							if (item.ItemEntity._Entity.Has<LegendaryItemSpellModSetComponent>())
+							{
+								var legendary = item.ItemEntity._Entity;
+								var legendaryModData = legendary.Read<LegendaryItemSpellModSetComponent>();
+								var weaponType = legendary.Read<PrefabGUID>();
+								var infusionPrefab = legendaryModData.AbilityMods0.Mod0.Id;
+								var mod1 = LegendaryData.statModGuidToIndex[legendaryModData.StatMods.Mod0.Id];
+								var mod2 = LegendaryData.statModGuidToIndex[legendaryModData.StatMods.Mod1.Id];
+								var mod3 = LegendaryData.statModGuidToIndex[legendaryModData.StatMods.Mod2.Id];
+								var legendaryConfigDto = new LegendaryDto
+								{
+									Infusion = LegendaryData.prefabToInfusionDictionary[infusionPrefab],
+									WeaponName = LegendaryData.prefabToWeaponDictionary[weaponType],
+									Mods = $"{mod1}{mod2}{mod3}",
+									Slot = i
+								};
+
+								playerLegendaries.Add(legendaryConfigDto);
+							}
+						}
+					};
+					if (playerLegendaries.Any())
+					{
+						InsertPlayerLegendariesToDatabase(player.SteamID, playerLegendaries);
+					}
+				}
+			});
+		}
+		catch (Exception ex)
+		{
+			Plugin.PluginLog.LogInfo(ex.ToString());
+		}
+	}
+
+	private async Task InsertPlayerLegendariesToDatabase(ulong steamId, List<LegendaryDto> legendaries)
+	{
+		using (var connection = new MySqlConnection(serverDatabaseConnectionString))
+		{
+			await connection.OpenAsync();
+			foreach (var legendary in legendaries)
+			{
+				var query = @"
+                INSERT INTO PlayerLegendaryWeapons (SteamID, WeaponName, Infusion, Mods, Slot) 
+                VALUES (@SteamID, @WeaponName, @Infusion, @Mods, @Slot);";
+
+				using (var command = new MySqlCommand(query, connection))
+				{
+					command.Parameters.AddWithValue("@SteamID", steamId);
+					command.Parameters.AddWithValue("@WeaponName", legendary.WeaponName);
+					command.Parameters.AddWithValue("@Infusion", legendary.Infusion);
+					command.Parameters.AddWithValue("@Mods", legendary.Mods);
+					command.Parameters.AddWithValue("@Slot", legendary.Slot);
+
+					await command.ExecuteNonQueryAsync();
+				}
+			}
+		}
 	}
 }
