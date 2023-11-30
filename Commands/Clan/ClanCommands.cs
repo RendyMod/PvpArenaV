@@ -161,7 +161,7 @@ internal class ClanCommands
 			var clanMembers = sender.GetClanMembers();
 			foreach (var clanMember in clanMembers)
 			{
-				ClanUtility.SetCharacterClanName(VWorld.Server.EntityManager, sender.User, clanTeam.Name);
+				ClanUtility.SetCharacterClanName(VWorld.Server.EntityManager, clanMember.User, clanTeam.Name);
 			}
 			sender.ReceiveMessage("You have renamed your clan to " + name.Colorify(ExtendedColor.ClanNameColor) +".");
 		}
