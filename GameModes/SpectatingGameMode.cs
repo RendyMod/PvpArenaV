@@ -60,6 +60,8 @@ public class SpectatingGameMode : BaseGameMode
 		if (!player.IsSpectating()) return;
 
 		Helper.RespawnPlayer(player, PvpArenaConfig.Config.CustomSpawnLocation.ToFloat3());
+		player.CurrentState = Player.PlayerState.Normal;
+		player.ReceiveMessage("You have died and are no longer spectating");
 	}
 	/*public override void HandleOnPlayerRespawn(Player player)
 	{
