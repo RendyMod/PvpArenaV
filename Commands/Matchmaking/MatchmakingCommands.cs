@@ -15,7 +15,7 @@ internal static class MatchmakingCommands
 	{
 		if (!PvpArenaConfig.Config.MatchmakingEnabled)
 		{
-			sender.ReceiveMessage("Matchmaking is currently disabled".Error());
+			sender.ReceiveMessage("Matchmaking is currently disabled!".Error());
 			return;
 		}
 
@@ -29,13 +29,13 @@ internal static class MatchmakingCommands
 	{
 		if (!PvpArenaConfig.Config.MatchmakingEnabled)
 		{
-			sender.ReceiveMessage("Matchmaking is currently disabled".Error());
+			sender.ReceiveMessage("Matchmaking is currently disabled!".Error());
 			return;
 		}
 
 		Matchmaking.MatchmakingQueue.Leave(sender);
 		sender.MatchmakingData1v1.AutoRequeue = false;
-		sender.ReceiveMessage("Left the queue!".White());
+		sender.ReceiveMessage("Left the queue!".Success());
 	}
 
 	[Command("ranked lb", description: "Displays the ranked leaderboard", aliases: new string[] { "lb" }, adminOnly: false, includeInHelp: false, category: "Ranked")]

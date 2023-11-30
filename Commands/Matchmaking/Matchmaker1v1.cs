@@ -17,7 +17,8 @@ public static class MatchmakingService
 {
 	private static ScheduledAction action;
 	private static bool initialized = false;
-	public static void Start()
+
+	public static void Start ()
 	{
 		if (!initialized)
 		{
@@ -30,16 +31,20 @@ public static class MatchmakingService
 					IsOccupied = false
 				});
 			}
+
 			initialized = true;
 		}
+
 		var match = MatchmakingQueue.Matchmaker.FindMatch();
-		while (match != null) {
+		while (match != null)
+		{
 			MatchmakingQueue.MatchManager.StartMatch(match.Item1, match.Item2);
 			match = MatchmakingQueue.Matchmaker.FindMatch();
 		}
+
 		action = new ScheduledAction(Start);
 		ActionScheduler.ScheduleAction(action, 450);
-	}	
+	}
 }
 
 public static class MatchmakingQueue
@@ -47,7 +52,7 @@ public static class MatchmakingQueue
 	private static List<Player> _queue = new List<Player>();
 	public static Dictionary<Player, Player> ActiveMatches = new Dictionary<Player, Player>();
 
-	public static void Join(Player player)
+	public static void Join (Player player)
 	{
 		if (player.IsEligibleForMatchmaking() && !_queue.Contains(player))
 		{
@@ -55,7 +60,7 @@ public static class MatchmakingQueue
 		}
 	}
 
-	public static void Leave(Player player)
+	public static void Leave (Player player)
 	{
 		if (_queue.Contains(player))
 		{
@@ -63,7 +68,7 @@ public static class MatchmakingQueue
 		}
 	}
 
-	public static List<Player> GetQueue()
+	public static List<Player> GetQueue ()
 	{
 		return _queue;
 	}
@@ -74,7 +79,7 @@ public static class MatchmakingQueue
 		private const int MAX_RECENT_MATCHES = 5; // number of recent matches to keep track of
 		private static List<Tuple<Player, Player>> recentMatchedPairs = new List<Tuple<Player, Player>>();
 
-		public static Tuple<Player, Player> FindMatch()
+		public static Tuple<Player, Player> FindMatch ()
 		{
 			var players = GetQueue();
 
@@ -83,7 +88,8 @@ public static class MatchmakingQueue
 			{
 				foreach (var player2 in players.Where(p => p != player1))
 				{
-					if (Math.Abs(player1.MatchmakingData1v1.MMR - player2.MatchmakingData1v1.MMR) <= MMR_TOLERANCE && !WasRecentlyMatched(player1, player2))
+					if (Math.Abs(player1.MatchmakingData1v1.MMR - player2.MatchmakingData1v1.MMR) <= MMR_TOLERANCE &&
+					    !WasRecentlyMatched(player1, player2))
 					{
 						var currentMatchedPair = new Tuple<Player, Player>(player1, player2);
 						AddToRecentMatches(currentMatchedPair);
@@ -109,14 +115,14 @@ public static class MatchmakingQueue
 			return null;
 		}
 
-		private static bool WasRecentlyMatched(Player player1, Player player2)
+		private static bool WasRecentlyMatched (Player player1, Player player2)
 		{
 			return recentMatchedPairs.Any(pair =>
 				(pair.Item1 == player1 && pair.Item2 == player2) ||
 				(pair.Item2 == player1 && pair.Item1 == player2));
 		}
 
-		private static void AddToRecentMatches(Tuple<Player, Player> matchedPair)
+		private static void AddToRecentMatches (Tuple<Player, Player> matchedPair)
 		{
 			recentMatchedPairs.Add(matchedPair);
 			if (recentMatchedPairs.Count > MAX_RECENT_MATCHES)
@@ -128,13 +134,13 @@ public static class MatchmakingQueue
 
 	public class MatchManager
 	{
-		public static void StartMatch(Player p1, Player p2)
+		public static void StartMatch (Player p1, Player p2)
 		{
 			Helper.BuffEntity(p1.Character, Prefabs.Buff_Manticore_ImmaterialHomePos, out var buffEntity);
 			Helper.BuffEntity(p2.Character, Prefabs.Buff_Manticore_ImmaterialHomePos, out buffEntity);
 
-			p1.ReceiveMessage($"Found a match! Prepare for teleportation");
-			p2.ReceiveMessage($"Found a match! Prepare for teleportation");
+			p1.ReceiveMessage("Found a match!".Success() + " Prepare for teleportation..".White());
+			p2.ReceiveMessage("Found a match!".Success() + " Prepare for teleportation..".White());
 
 			ActiveMatches[p1] = p2;
 			ActiveMatches[p2] = p1;
@@ -157,16 +163,22 @@ public static class MatchmakingQueue
 			ActionScheduler.ScheduleAction(action, 90);
 		}
 
-		public static void EndMatch(Player winner, Player loser, bool teleportLoser = true)
+		public static void EndMatch (Player winner, Player loser, bool teleportLoser = true)
 		{
 			ActiveMatches.Remove(winner);
 			ActiveMatches.Remove(loser);
 
-			int newWinnerMmr = MmrCalculator.CalculateNewMmr(winner.MatchmakingData1v1.MMR, loser.MatchmakingData1v1.MMR, true);
-			int newLoserMmr = MmrCalculator.CalculateNewMmr(loser.MatchmakingData1v1.MMR, winner.MatchmakingData1v1.MMR, false);
+			int newWinnerMmr =
+				MmrCalculator.CalculateNewMmr(winner.MatchmakingData1v1.MMR, loser.MatchmakingData1v1.MMR, true);
+			int newLoserMmr =
+				MmrCalculator.CalculateNewMmr(loser.MatchmakingData1v1.MMR, winner.MatchmakingData1v1.MMR, false);
 
-			winner.ReceiveMessage($"<color=green>You won!</color> Gained <color=yellow>{newWinnerMmr - winner.MatchmakingData1v1.MMR}</color> points. New score: <color=yellow>{newWinnerMmr}</color>");
-			loser.ReceiveMessage($"<color=red>You lost.</color> Lost <color=yellow>{newLoserMmr - loser.MatchmakingData1v1.MMR}</color> points. New score: <color=yellow>{newLoserMmr}</color>");
+			winner.ReceiveMessage("You won!".Success() + " Gained ".White() +
+			                      $"{newWinnerMmr - winner.MatchmakingData1v1.MMR}".Success() +
+			                      " points. New score: ".White() + $"{newWinnerMmr}".Warning());
+			loser.ReceiveMessage("You lost.".Error() + " Lost ".White() +
+			                     $"{newLoserMmr - loser.MatchmakingData1v1.MMR}".Error() +
+			                     " points. New score: ".White() + $"{newLoserMmr}".Warning());
 
 			winner.MatchmakingData1v1.MMR = newWinnerMmr;
 			loser.MatchmakingData1v1.MMR = newLoserMmr;
@@ -184,7 +196,8 @@ public static class MatchmakingQueue
 			var action = new ScheduledAction(ReturnPlayers, new object[] { winner, loser, teleportLoser });
 			ActionScheduler.ScheduleAction(action, 90);
 		}
-		private static void ReturnPlayers(Player winner, Player loser, bool teleportLoser = true)
+
+		private static void ReturnPlayers (Player winner, Player loser, bool teleportLoser = true)
 		{
 			Helper.Reset(winner);
 			Helper.Reset(loser);
@@ -205,31 +218,37 @@ public static class MatchmakingQueue
 
 			if (winner.MatchmakingData1v1.AutoRequeue)
 			{
-				winner.ReceiveMessage($"Re-entering the queue");
+				winner.ReceiveMessage($"Re-entering the " + "Ranked".Colorify(ExtendedColor.ServerColor) +
+				                      "queue.".White());
 				Join(winner);
 			}
+
 			if (loser.MatchmakingData1v1.AutoRequeue)
 			{
-				loser.ReceiveMessage($"Re-entering the queue");
+				loser.ReceiveMessage($"Re-entering the " + "Ranked".Colorify(ExtendedColor.ServerColor) +
+				                     "queue.".White());
 				Join(loser);
 			}
 		}
 
-		private static void BringPlayers(Player p1, Player p2, Arena arena)
+		private static void BringPlayers (Player p1, Player p2, Arena arena)
 		{
 			if (p1.User.Read<Team>().Equals(p2.User.Read<Team>()))
 			{
 				if (Core.clanSystem.Outranks(p1.User, p2.User))
 				{
-					p2.ReceiveMessage($"You and your opponent are in the same clan, removing you from clan");
+					p2.ReceiveMessage($"You and your opponent are in the same clan, removing you from clan.."
+						.Warning());
 					p2.RemoveFromClan();
 				}
 				else
 				{
-					p1.ReceiveMessage($"You and your opponent are in the same clan, removing you from clan");
+					p1.ReceiveMessage($"You and your opponent are in the same clan, removing you from clan.."
+						.Warning());
 					p1.RemoveFromClan();
 				}
 			}
+
 			List<Player> players = new List<Player>
 			{
 				p1, p2
@@ -245,26 +264,26 @@ public static class MatchmakingQueue
 			ActionScheduler.ScheduleAction(action, 2);
 		}
 
-		private static void BringPlayersPart2(Player p1, Player p2, Arena arena)
+		private static void BringPlayersPart2 (Player p1, Player p2, Arena arena)
 		{
 			// Teleport players to match location.
 			Helper.ApplyMatchInitializationBuff(p1);
 			Helper.ApplyMatchInitializationBuff(p2);
 			p1.Teleport(arena.Location1);
 			p2.Teleport(arena.Location2);
-			
 		}
 	}
 }
 
 public static class MatchmakingHelper
 {
-	public static Player GetOpponentForPlayer(Player player)
+	public static Player GetOpponentForPlayer (Player player)
 	{
 		if (player != null && MatchmakingQueue.ActiveMatches.TryGetValue(player, out var opponent))
 		{
 			return opponent;
 		}
+
 		return null;
 	}
 }
@@ -282,22 +301,22 @@ public static class ArenaManager
 {
 	private static List<Arena> _arenas = new List<Arena>();
 
-	public static void AddArena(Arena arena)
+	public static void AddArena (Arena arena)
 	{
 		_arenas.Add(arena);
 	}
 
-	public static void RemoveArena(Arena arena)
+	public static void RemoveArena (Arena arena)
 	{
 		_arenas.Remove(arena);
 	}
 
-	public static Arena GetAvailableArena()
+	public static Arena GetAvailableArena ()
 	{
 		return _arenas.FirstOrDefault(arena => !arena.IsOccupied);
 	}
 
-	public static void MarkArenaAsOccupied(Arena arena, Player player1, Player player2)
+	public static void MarkArenaAsOccupied (Arena arena, Player player1, Player player2)
 	{
 		arena.Player1 = player1;
 		arena.Player2 = player2;
@@ -306,7 +325,7 @@ public static class ArenaManager
 		player2.MatchmakingData1v1.CurrentArena = arena;
 	}
 
-	public static void FreeArena(Arena arena)
+	public static void FreeArena (Arena arena)
 	{
 		arena.Player1.MatchmakingData1v1.CurrentArena = default;
 		arena.Player2.MatchmakingData1v1.CurrentArena = default;
