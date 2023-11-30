@@ -116,7 +116,7 @@ public class CommandFramework
 
 			for (int i = input.Length; i > 0; i--)
 			{
-				string potentialCommand = input.Substring(0, i);
+				string potentialCommand = input.Substring(0, i).ToLower();
 				if (commandRegistry.TryGetValue(potentialCommand, out var commandInfo))
 				{
 					// Check if the command is the entire input or followed by a space
@@ -135,6 +135,7 @@ public class CommandFramework
 		public static bool ExecuteCommand(Player player, string input)
 		{
 			if (string.IsNullOrEmpty(input)) return false;
+
 			string prefixUsed = input.Substring(0, 1);
 			if (input.StartsWith(".") || input.StartsWith("ю") || input.StartsWith("Ю"))
 			{
@@ -146,97 +147,84 @@ public class CommandFramework
 				return false;
 			}
 
-			(var matchedCommand, string matchedText) = FindMatchingCommand(input);
-			
-			if (matchedCommand == null) return false;
-
-			int commandLength = matchedText.Length;
-			string argumentsPart = string.Empty;
-
-			// Check if there's text after the command and it's preceded by a space
-			if (commandLength < input.Length && input[commandLength] == ' ')
+			var possibleCommands = GetPossibleCommands(input);
+			foreach (var (commandName, argumentsPart) in possibleCommands)
 			{
-				argumentsPart = input.Substring(commandLength + 1).Trim();
-			}
-			var args = ParseArguments(argumentsPart);
-			var commandMethod = matchedCommand.CommandMethod;
-			var parametersInfo = commandMethod.GetParameters();
-
-			int requiredParametersCount = parametersInfo.Count(p => !p.HasDefaultValue);
-			if (args.Count < requiredParametersCount - 1)
-			{
-				// Generate an error message for missing parameters
-				string[] usageParts = matchedCommand.CommandAttribute.Usage.Split(new[] { ' ' }, 2);
-				string usageArguments = usageParts.Length > 1 ? usageParts[1] : "";
-				string usageMessage = $"Usage: {prefixUsed}{matchedText} {usageArguments}";
-				player.ReceiveMessage(usageMessage.Error());
-				return true;
-			}
-
-			var parameters = new object[parametersInfo.Length];
-			parameters[0] = player;
-			try
-			{
-				for (int i = 1; i < parametersInfo.Length; i++)
+				(var matchedCommand, string matchedText) = FindMatchingCommand(commandName);
+				if (matchedCommand != null)
 				{
-					if (i - 1 < args.Count)
+					var args = ParseArguments(argumentsPart);
+					var commandMethod = matchedCommand.CommandMethod;
+					var parametersInfo = commandMethod.GetParameters();
+
+					int requiredParametersCount = parametersInfo.Count(p => !p.HasDefaultValue);
+					if (args.Count < requiredParametersCount - 1)
 					{
-						// Argument provided, convert it
-						var paramType = parametersInfo[i].ParameterType;
-						if (converters.TryGetValue(paramType, out var converter))
+						// Generate an error message for missing parameters
+						string[] usageParts = matchedCommand.CommandAttribute.Usage.Split(new[] { ' ' }, 2);
+						string usageArguments = usageParts.Length > 1 ? usageParts[1] : "";
+						string usageMessage = $"Usage: {prefixUsed}{matchedText} {usageArguments}";
+						player.ReceiveMessage(usageMessage.Error());
+						return true;
+					}
+
+					var parameters = new object[parametersInfo.Length];
+					parameters[0] = player;
+					try
+					{
+						for (int i = 1; i < parametersInfo.Length; i++)
 						{
-							if (!converter.TryConvert(args[i - 1], paramType, out var convertedValue))
+							if (i - 1 < args.Count)
 							{
-								player.ReceiveMessage($"Invalid value for {parametersInfo[i].Name}".Error());
+								var paramType = parametersInfo[i].ParameterType;
+								if (converters.TryGetValue(paramType, out var converter))
+								{
+									if (!converter.TryConvert(args[i - 1], paramType, out var convertedValue))
+									{
+										player.ReceiveMessage($"Invalid value for {parametersInfo[i].Name}".Error());
+										return true;
+									}
+									parameters[i] = convertedValue;
+								}
+								else if (paramType == typeof(string))
+								{
+									parameters[i] = args[i - 1];
+								}
+								else
+								{
+									player.ReceiveMessage("That command is not set up correctly.".Error());
+									return true;
+								}
+							}
+							else if (parametersInfo[i].HasDefaultValue)
+							{
+								parameters[i] = parametersInfo[i].DefaultValue;
+							}
+							else
+							{
 								return true;
 							}
-							parameters[i] = convertedValue;
 						}
-						else if (paramType == typeof(string))
+						var canExecute = true;
+						foreach (var middleware in middlewares)
 						{
-							parameters[i] = args[i - 1];
+							if (!middleware.CanExecute(player, matchedCommand.CommandAttribute, commandMethod))
+							{
+								canExecute = false;
+								break;
+							}
 						}
-						else
+						if (canExecute)
 						{
-							player.ReceiveMessage("That command is not set up correctly.".Error());
-							return true;
-						}
-					}
-					else if (parametersInfo[i].HasDefaultValue)
-					{
-						// No argument provided, use default value
-						parameters[i] = parametersInfo[i].DefaultValue;
-					}
-					else
-					{
-						return true;
-					}
-				}
-				var canExecute = true;
-				foreach (var middleware in middlewares)
-				{
-					if (!middleware.CanExecute(player, matchedCommand.CommandAttribute, commandMethod))
-					{
-						canExecute = false;
-						break;
-					}
-				}
-				if (canExecute)
-				{
-					if (matchedCommand.CommandMethod.IsStatic)
-					{
-						// Static method invocation
-						GameEvents.RaisePlayerChatCommand((Player)parameters[0], matchedCommand.CommandAttribute);
-						matchedCommand.CommandMethod.Invoke(null, parameters);
-						return true;
-					}
-					else
-					{
-						// Instance method invocation
-						if (matchedCommand.CommandInstance != null && matchedCommand.CommandMethod.DeclaringType.IsInstanceOfType(matchedCommand.CommandInstance))
-						{
-							GameEvents.RaisePlayerChatCommand((Player)parameters[0], matchedCommand.CommandAttribute);
-							matchedCommand.CommandMethod.Invoke(matchedCommand.CommandInstance, parameters);
+							GameEvents.RaisePlayerChatCommand(player, matchedCommand.CommandAttribute);
+							if (matchedCommand.CommandMethod.IsStatic)
+							{
+								matchedCommand.CommandMethod.Invoke(null, parameters);
+							}
+							else if (matchedCommand.CommandInstance != null && matchedCommand.CommandMethod.DeclaringType.IsInstanceOfType(matchedCommand.CommandInstance))
+							{
+								matchedCommand.CommandMethod.Invoke(matchedCommand.CommandInstance, parameters);
+							}
 							return true;
 						}
 						else
@@ -244,18 +232,32 @@ public class CommandFramework
 							return true;
 						}
 					}
-				}
-				else
-				{
-					return true;
+					catch (Exception ex)
+					{
+						Plugin.PluginLog.LogInfo(ex.ToString());
+						player.ReceiveMessage($"An error occurred: {ex.ToString()}".Error());
+						return true;
+					}
 				}
 			}
-			catch (Exception ex)
+
+			return false;
+		}
+
+
+		private static List<(string Command, string Arguments)> GetPossibleCommands(string input)
+		{
+			var possibleCommands = new List<(string Command, string Arguments)>();
+			var words = input.Split(' ');
+
+			for (int i = 1; i <= words.Length; i++)
 			{
-				Plugin.PluginLog.LogInfo(ex.ToString());
-				player.ReceiveMessage($"An error occurred: {ex.ToString()}".Error());
-				return true;
+				var command = string.Join(" ", words.Take(i));
+				var arguments = string.Join(" ", words.Skip(i));
+				possibleCommands.Add((command, arguments));
 			}
+
+			return possibleCommands;
 		}
 
 		public static List<string> ParseArguments(string input)
