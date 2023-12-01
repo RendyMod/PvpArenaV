@@ -201,6 +201,20 @@ internal class TestCommands
 		sender.ReceiveMessage("Spawns enabled until disabled or next restart");
 	}
 
+	[Command(name: "log-hp", description: "Gets the hp of the hovered unit", usage: ".log-hp", adminOnly: true, includeInHelp: false)]
+	public void LogHpCommand(Player sender)
+	{
+		var entity = Helper.GetHoveredEntity(sender.Character);
+		if (entity.Has<Health>())
+		{
+			sender.ReceiveMessage(entity.Read<Health>().Value.ToString().White());
+		}
+		else
+		{
+			sender.ReceiveMessage("That entity has no health component.".White());
+		}
+	}
+
 	[Command(name: "log-zone", description: "Gets the zone assuming you are at the bottom left", usage: ".get-zone", adminOnly: true, includeInHelp: false)]
 	public void GetZoneCommand(Player player, int x, int z)
 	{

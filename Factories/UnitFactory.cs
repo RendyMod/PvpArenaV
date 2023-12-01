@@ -493,7 +493,7 @@ public class Dummy : Unit
     {
         level = 84;
         isInvulnerable = false;
-        maxHealth = 653;
+		maxHealth = 653;
         drawsAggro = true;
         isRooted = true;
         knockbackResistance = false;
@@ -517,12 +517,11 @@ public class Dummy : Unit
         e.Write(woundedConstants);
 
 		var blood = e.Read<BloodConsumeSource>();
-		blood.BloodQuality = 100;
+		blood.BloodQuality = 0;
 		blood.CanBeConsumed = false;
 		e.Write(blood);
 
-		Helper.BuffEntity(e, Prefabs.AB_BloodQualityUnitBuff_Brute, out var bloodAuraBuffEntity, Helper.NO_DURATION);
-
+		Helper.BuffEntity(e, Prefabs.Buff_BloodMoon, out var bloodAuraBuffEntity, Helper.NO_DURATION);
         Helper.ChangeBuffResistances(e, Prefabs.BuffResistance_Vampire);
 	}
 }
