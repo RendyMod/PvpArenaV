@@ -18,21 +18,24 @@ internal class PrisonCommands
 		string durationMessage;
 		if (numberOfDays == -1)
 		{
-			durationMessage = "indefinitely".Emphasize();
+			durationMessage = "indefinitely";
 		}
 		else
 		{
-			durationMessage = $"for {numberOfDays.ToString().Emphasize()} days";
+			durationMessage = $"for {numberOfDays.ToString()} days";
 		}
+		
+		Helper.SendSystemMessageToAllClients($"{imprisonedPlayer.Name.Colorify(ExtendedColor.ClanNameColor)} has been imprisoned {durationMessage}.".Error());
 		imprisonedPlayer.ReceiveMessage($"You have been imprisoned {durationMessage}.".Error());
-		sender.ReceiveMessage($"{imprisonedPlayer.Name.Colorify(ExtendedColor.ClanNameColor)} has been imprisoned {durationMessage}.".White());
+		//sender.ReceiveMessage($"{imprisonedPlayer.Name.Colorify(ExtendedColor.ClanNameColor)} has been imprisoned {durationMessage}.".White());
 	}
 
 	[Command("prison remove", description: "Unimprisons a player for a set duration", usage: ".prison remove Ash", adminOnly: true)]
 	public void ImprisonCommand(Player sender, Player imprisonedPlayer)
 	{
 		ImprisonService.UnimprisonPlayer(imprisonedPlayer.SteamID);
+		Helper.SendSystemMessageToAllClients($"{imprisonedPlayer.Name.Colorify(ExtendedColor.ClanNameColor)} has been unimprisoned.".Success());
 		imprisonedPlayer.ReceiveMessage($"You have been set free!".Success());
-		sender.ReceiveMessage($"{imprisonedPlayer.Name.Colorify(ExtendedColor.ClanNameColor)} has been unimprisoned.".White());
+		//sender.ReceiveMessage($"{imprisonedPlayer.Name.Colorify(ExtendedColor.ClanNameColor)} has been unimprisoned.".White());
 	}
 }

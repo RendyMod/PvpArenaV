@@ -11,7 +11,7 @@ namespace PvpArena.Commands;
 
 internal static class MatchmakingCommands
 {
-	[Command("ranked join", description: "Enters the matchmaking queue", aliases: new string[] { "join" }, adminOnly: false, includeInHelp: false, category: "Ranked")]
+	//[Command("ranked join", description: "Enters the matchmaking queue", aliases: new string[] { "join" }, adminOnly: false, includeInHelp: false, category: "Ranked")]
 	public static void JoinMatchmakingCommand(Player sender, bool autoRequeue = false)
 	{
 		if (!PvpArenaConfig.Config.MatchmakingEnabled)
@@ -25,7 +25,7 @@ internal static class MatchmakingCommands
 		sender.ReceiveMessage($"Joined the queue. Auto Re-queue: {autoRequeue.ToString().Emphasize()}".White());
 	}
 
-	[Command("ranked leave", description: "Leaves the matchmaking queue", aliases: new string[] { "leave" }, adminOnly: false, includeInHelp: false, category: "Ranked")]
+	//[Command("ranked leave", description: "Leaves the matchmaking queue", aliases: new string[] { "leave" }, adminOnly: false, includeInHelp: false, category: "Ranked")]
 	public static void LeaveMatchmakingCommand(Player sender)
 	{
 		if (!PvpArenaConfig.Config.MatchmakingEnabled)
