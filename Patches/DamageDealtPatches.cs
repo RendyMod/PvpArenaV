@@ -136,28 +136,32 @@ public static class AiDamageTakenEventSystemPatch
 			{
 				if (statChangeEvent.StatType == StatType.Health)
 				{
-					var damageDealerPlayer = PlayerService.GetPlayerFromCharacter(source.Read<EntityOwner>().Owner);
-					var targetEntity = statChangeEvent.Entity;
-					var totalDamage = statChangeEvent.Change;
-					float damageShielded = 0;
-					float critDamage = 0;
-					if (Math.Abs(statChangeEvent.OriginalChange) > Math.Abs(statChangeEvent.Change))
+					var damageDealerEntity = source.Read<EntityOwner>().Owner;
+					if (damageDealerEntity.Has<PlayerCharacter>())
 					{
-						totalDamage = statChangeEvent.OriginalChange; //include shielded damage
-						damageShielded = Math.Abs(statChangeEvent.OriginalChange) - Math.Abs(statChangeEvent.Change);
-					}
-					else if (Math.Abs(statChangeEvent.Change) > Math.Abs(statChangeEvent.OriginalChange))
-					{
-						critDamage = Math.Abs(statChangeEvent.Change) - Math.Abs(statChangeEvent.OriginalChange);
-					}
-					var damageInfo = new DamageInfo
-					{
-						TotalDamage = Math.Abs(totalDamage),
-						CritDamage = Math.Abs(critDamage),
-						DamageAbsorbed = Math.Abs(damageShielded)
-					};
+						var damageDealerPlayer = PlayerService.GetPlayerFromCharacter(source.Read<EntityOwner>().Owner);
+						var targetEntity = statChangeEvent.Entity;
+						var totalDamage = statChangeEvent.Change;
+						float damageShielded = 0;
+						float critDamage = 0;
+						if (Math.Abs(statChangeEvent.OriginalChange) > Math.Abs(statChangeEvent.Change))
+						{
+							totalDamage = statChangeEvent.OriginalChange; //include shielded damage
+							damageShielded = Math.Abs(statChangeEvent.OriginalChange) - Math.Abs(statChangeEvent.Change);
+						}
+						else if (Math.Abs(statChangeEvent.Change) > Math.Abs(statChangeEvent.OriginalChange))
+						{
+							critDamage = Math.Abs(statChangeEvent.Change) - Math.Abs(statChangeEvent.OriginalChange);
+						}
+						var damageInfo = new DamageInfo
+						{
+							TotalDamage = Math.Abs(totalDamage),
+							CritDamage = Math.Abs(critDamage),
+							DamageAbsorbed = Math.Abs(damageShielded)
+						};
 
-					GameEvents.RaisePlayerDamageReported(damageDealerPlayer, targetEntity, source.Read<PrefabGUID>(), damageInfo);
+						GameEvents.RaisePlayerDamageReported(damageDealerPlayer, targetEntity, source.Read<PrefabGUID>(), damageInfo);
+					}
 				}
 			}
 		}

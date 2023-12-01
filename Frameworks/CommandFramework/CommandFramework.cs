@@ -136,7 +136,6 @@ public class CommandFramework
 		public static bool ExecuteCommand(Player player, string input)
 		{
 			if (string.IsNullOrEmpty(input)) return false;
-
 			string prefixUsed = input.Substring(0, 1);
 			if (input.StartsWith(".") || input.StartsWith("ю") || input.StartsWith("Ю"))
 			{
@@ -147,7 +146,6 @@ public class CommandFramework
 			{
 				return false;
 			}
-
 			var possibleCommands = GetPossibleCommands(input);
 			foreach (var (commandName, argumentsPart) in possibleCommands)
 			{
@@ -157,8 +155,12 @@ public class CommandFramework
 					var args = ParseArguments(argumentsPart);
 					var commandMethod = matchedCommand.CommandMethod;
 					var parametersInfo = commandMethod.GetParameters();
-
 					int requiredParametersCount = parametersInfo.Count(p => !p.HasDefaultValue);
+					if (parametersInfo.Length == 0)
+					{
+						player.ReceiveMessage("This command is not configured correctly.".Error());
+						return false;
+					}
 					if (args.Count < requiredParametersCount - 1)
 					{
 						// Generate an error message for missing parameters
@@ -168,7 +170,6 @@ public class CommandFramework
 						player.ReceiveMessage(usageMessage.Error());
 						return true;
 					}
-
 					var parameters = new object[parametersInfo.Length];
 					parameters[0] = player;
 					try
@@ -206,6 +207,7 @@ public class CommandFramework
 								return true;
 							}
 						}
+
 						var canExecute = true;
 						foreach (var middleware in middlewares)
 						{
@@ -215,6 +217,7 @@ public class CommandFramework
 								break;
 							}
 						}
+
 						if (canExecute)
 						{
 							GameEvents.RaisePlayerChatCommand(player, matchedCommand.CommandAttribute);

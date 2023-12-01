@@ -26,13 +26,13 @@ public static class ChatMessageSystemPatch
 		{
 			var fromCharacter = entity.Read<FromCharacter>();
 			var chatEvent = entity.Read<ChatMessageEvent>();
-			var player = PlayerService.GetPlayerFromUser(fromCharacter.User);
 			
+			var player = PlayerService.GetPlayerFromUser(fromCharacter.User);
+
 			if (CommandHandler.ExecuteCommand(player, chatEvent.MessageText.ToString()))
 			{
 				VWorld.Server.EntityManager.DestroyEntity(entity);
 			}
-			
 			if (player.MuteInfo.IsMuted())
 			{
 				if (player.MuteInfo.MuteDurationDays == -1)
@@ -43,7 +43,7 @@ public static class ChatMessageSystemPatch
 				{
 					player.ReceiveMessage($"You are muted for {player.MuteInfo.GetFormattedRemainingMuteTime()}. If you feel there is a mistake, you can open a ticket on discord to appeal".Error());
 				}
-				
+
 				VWorld.Server.EntityManager.DestroyEntity(entity);
 			}
 			if (VWorld.Server.EntityManager.Exists(entity))
