@@ -65,7 +65,11 @@ partial class BuffCommands
 	public static void ClearHoveredTargetBuffsCommand(Player sender)
 	{
 		Entity entity = Helper.GetHoveredEntity(sender.Character);
-		Helper.ClearExtraBuffs(entity, true, true);
+		Helper.ClearExtraBuffs(sender.Character, new Helper.ResetOptions
+		{
+			RemoveConsumables = true,
+			RemoveShapeshifts = true
+		});
 
 		sender.ReceiveMessage($"Done: {entity.Read<PrefabGUID>().LookupNameString()}");
 	}
@@ -87,7 +91,11 @@ partial class BuffCommands
 	public void ClearBuffsCommand (Player sender, Player player = null)
 	{
 		var Player = player != null ? player : sender;
-		Helper.ClearExtraBuffs(Player.Character, true, true);
+		Helper.ClearExtraBuffs(Player.Character, new Helper.ResetOptions
+		{
+			RemoveConsumables = true,
+			RemoveShapeshifts = true
+		});
 		sender.ReceiveMessage("Extra buffs cleared.".Success());
 	}
 }

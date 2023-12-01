@@ -309,7 +309,7 @@ public static class CaptureThePancakeHelper
 		{
 			team1Player.CurrentState = Player.PlayerState.CaptureThePancake;
 			team1Player.MatchmakingTeam = 1;
-			team1Player.Reset(true, true);
+			team1Player.Reset(BaseGameMode.ResetOptions);
 			Helper.SetDefaultBlood(team1Player, CaptureThePancakeConfig.Config.DefaultBlood.ToLower());
 			GiveVerminSalvesIfNotPresent(team1Player);
 			action = () => team1Player.Teleport(CaptureThePancakeConfig.Config.Team1PlayerRespawn.ToFloat3());
@@ -330,7 +330,7 @@ public static class CaptureThePancakeHelper
 		{
 			team2Player.CurrentState = Player.PlayerState.CaptureThePancake;
 			team2Player.MatchmakingTeam = 2;
-			team2Player.Reset(true, true);
+			team2Player.Reset(BaseGameMode.ResetOptions);
 			Helper.SetDefaultBlood(team2Player, CaptureThePancakeConfig.Config.DefaultBlood.ToLower());
 			GiveVerminSalvesIfNotPresent(team2Player);
 			action = () => team2Player.Teleport(CaptureThePancakeConfig.Config.Team2PlayerRespawn.ToFloat3());
@@ -439,7 +439,7 @@ public static class CaptureThePancakeHelper
 					Helper.RemoveItemFromInventory(player, Prefabs.Item_Building_Relic_Manticore);
 					player.CurrentState = Player.PlayerState.Normal;
 					player.MatchmakingTeam = 0;
-					player.Reset(true, true);
+					player.Reset(BaseGameMode.ResetOptions);
 					Helper.RespawnPlayer(player, player.Position);
 				}
 			}

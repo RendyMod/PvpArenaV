@@ -19,6 +19,13 @@ namespace PvpArena.GameModes;
 
 public class DefaultGameMode : BaseGameMode
 {
+	public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
+	{
+		ResetCooldowns = true,
+		RemoveShapeshifts = false,
+		RemoveConsumables = false
+	};
+
 	private static List<PrefabGUID> ShapeshiftsToModify = new List<PrefabGUID>
 	{
 		Prefabs.AB_Shapeshift_Wolf_Buff,
@@ -92,6 +99,7 @@ public class DefaultGameMode : BaseGameMode
 		GameEvents.OnItemWasThrown += HandleOnItemWasThrown;
 		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
 		GameEvents.OnPlayerDamageReported += HandleOnPlayerDamageReported;
+		GameEvents.OnPlayerReset += HandleOnPlayerReset;
 	}
 	public override void Dispose()
 	{
@@ -107,6 +115,7 @@ public class DefaultGameMode : BaseGameMode
 		GameEvents.OnItemWasThrown -= HandleOnItemWasThrown;
 		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
 		GameEvents.OnPlayerDamageReported -= HandleOnPlayerDamageReported;
+		GameEvents.OnPlayerReset -= HandleOnPlayerReset;
 	}
 
 	private static Dictionary<string, bool> AllowedCommands = new Dictionary<string, bool>
@@ -118,7 +127,7 @@ public class DefaultGameMode : BaseGameMode
 	{
 		if (!player.IsInDefaultMode()) return;
 
-		ResetPlayer(player);
+		player.Reset(ResetOptions);
 		if (Helper.BuffPlayer(player, Prefabs.Witch_PigTransformation_Buff, out var buffEntity, 3))
 		{
 			buffEntity.Add<BuffModificationFlagData>();
@@ -145,7 +154,7 @@ public class DefaultGameMode : BaseGameMode
 
 		var pos = player.Position;
 		Helper.RespawnPlayer(player, pos);
-		ResetPlayer(player);
+		player.Reset(ResetOptions);
 		var blood = player.Character.Read<Blood>();
 		Helper.SetPlayerBlood(player, blood.BloodType, blood.Quality);
 	}
@@ -164,7 +173,7 @@ public class DefaultGameMode : BaseGameMode
 		if (enterShapeshiftEvent.Shapeshift == Prefabs.AB_Shapeshift_BloodMend_Group)
 		{
 			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
-			Helper.Reset(player);
+			player.Reset(DefaultGameMode.ResetOptions);
 		}
 		else if (enterShapeshiftEvent.Shapeshift == Prefabs.AB_Shapeshift_ShareBlood_ExposeVein_Group)
 		{
@@ -328,9 +337,13 @@ public class DefaultGameMode : BaseGameMode
 		}
 	}
 
-	public override void ResetPlayer(Player player)
+	public void HandleOnPlayerReset(Player player)
 	{
-		player.Reset();
+		if (!player.IsInDefaultMode()) return;
+
+		var sctEntity = Helper.GetPrefabEntityByPrefabGUID(Prefabs.ScrollingCombatTextMessage);
+		ScrollingCombatTextMessage.Create(VWorld.Server.EntityManager, Core.entityCommandBufferSystem.CreateCommandBuffer(), sctEntity, 0, Prefabs.SCT_Type_MAX, player.Position, player.Character, player.Character);
+		Helper.BuffPlayer(player, Prefabs.AB_Shapeshift_NormalForm_Buff, out var buffEntity);
 	}
 
 	public static new Dictionary<string, bool> GetAllowedCommands()

@@ -30,11 +30,18 @@ using Epic.OnlineServices.Stats;
 using static ProjectM.SpawnBuffsAuthoring.SpawnBuffElement_Editor;
 using ProjectM.Shared.Systems;
 using static DamageRecorderService;
+using Cpp2IL.Core.Extensions;
 
 namespace PvpArena.GameModes.CaptureThePancake;
 
 public class CaptureThePancakeGameMode : BaseGameMode
 {
+	public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
+	{
+		RemoveConsumables = true,
+		RemoveShapeshifts = true,
+		ResetCooldowns = false
+	};
 	private static bool MatchActive = false;
 	private static Stopwatch stopwatch = new Stopwatch();
 
@@ -390,7 +397,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
         Action respawnPlayerActionPart2 = () =>
         {
-            ResetPlayer(player);
+            player.Reset(ResetOptions);
             Helper.RemoveBuff(player, Prefabs.AB_Shapeshift_Mist_Buff);
             Helper.BuffPlayer(player, Prefabs.Buff_General_Phasing, out var buffEntity, 3);
             Helper.ApplyStatModifier(buffEntity, BuffModifiers.FastRespawnMoveSpeed);
@@ -412,8 +419,8 @@ public class CaptureThePancakeGameMode : BaseGameMode
         Action makeSpectatorAction = () =>
 		{
 			var respawnDelay = CalculateRespawnDelay();
-            ResetPlayer(player);
-            Helper.BuffPlayer(player, Prefabs.AB_Shapeshift_Mist_Buff, out var buffEntity, respawnDelay);
+			player.Reset(ResetOptions);
+			Helper.BuffPlayer(player, Prefabs.AB_Shapeshift_Mist_Buff, out var buffEntity, respawnDelay);
             Helper.CompletelyRemoveAbilityBarFromBuff(buffEntity);
             Helper.FixIconForShapeshiftBuff(player, buffEntity, Prefabs.AB_Shapeshift_Mist_Group);
             Helper.ModifyBuff(buffEntity, BuffModificationTypes.Invulnerable | BuffModificationTypes.Immaterial | BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.AbilityCastImpair | BuffModificationTypes.PickupItemImpaired | BuffModificationTypes.TargetSpellImpaired, true);
@@ -1282,11 +1289,6 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		receiver.ReceiveMessage("Team Recap".Warning());
 		receiver.ReceiveMessage($"{team1NameColorized} - K/D: {team1KillsColorized} / {team1DeathsColorized} - DMG: {team1DamagesColorized}".White());
 		receiver.ReceiveMessage($"{team2NameColorized} - K/D: {team2KillsColorized} / {team2DeathsColorized} - DMG: {team2DamagesColorized}".White());
-	}
-
-	public override void ResetPlayer(Player player)
-	{
-		player.Reset(false, false, false);
 	}
 }
 

@@ -23,6 +23,8 @@ using PvpArena.Factories;
 using static PvpArena.Factories.UnitFactory;
 using static ProjectM.SpawnBuffsAuthoring.SpawnBuffElement_Editor;
 using UnityEngine;
+using UnityEngine.Rendering;
+using PvpArena.GameModes;
 
 namespace PvpArena.Helpers;
 
@@ -233,21 +235,41 @@ public static partial class Helper
 		});
 	}
 
-	public static void Reset(this Player player, bool removeConsumables = false, bool removeShapeshifts = false, bool includeCooldowns = true, List<string> buffsToIgnore = default)
+    public class ResetOptions
+    {
+        public bool RemoveConsumables = false;
+        public bool RemoveShapeshifts = false;
+        public bool ResetCooldowns = true;
+        public List<string> BuffsToIgnore = default;
+    }
+
+	public static void Reset(this Player player, ResetOptions resetOptions = default)
 	{
-		if (includeCooldowns)
+		if (resetOptions.ResetCooldowns)
 		{
 			ResetCooldown(player.Character);
 		}
 		
-		ClearExtraBuffs(player.Character, removeConsumables, removeShapeshifts, buffsToIgnore);
+		ClearExtraBuffs(player.Character, resetOptions);
 		//delay so that removing gun e / heart strike doesnt dmg you
 		var action = new ScheduledAction(HealEntity, new object[] { player.Character });
 		ActionScheduler.ScheduleAction(action, 3);
 		action = new ScheduledAction(RemoveLeech, new object[] { player.Character }); //hacky temp fix to leech being applied after the heart strike bomb is removed above
 		ActionScheduler.ScheduleAction(action, 3);
 
-		Helper.BuffPlayer(player, Prefabs.AB_Shapeshift_NormalForm_Buff, out var buffEntity);
+        GameEvents.RaisePlayerReset(player);
+    }
+
+	public static void MakeSCT(Player player, PrefabGUID sctPrefab)
+	{
+		var sctEntity = Helper.GetPrefabEntityByPrefabGUID(Prefabs.ScrollingCombatTextMessage);
+		ScrollingCombatTextMessage.Create(VWorld.Server.EntityManager, Core.entityCommandBufferSystem.CreateCommandBuffer(), sctEntity, 0, sctPrefab, player.Position, player.Character, player.Character);
+	}
+
+	public static void MakeSCTLocal(Player player, PrefabGUID sctPrefab)
+	{
+		var sctEntity = Helper.GetPrefabEntityByPrefabGUID(Prefabs.ScrollingCombatTextMessage);
+		ScrollingCombatTextMessage.CreateLocal(VWorld.Server.EntityManager, sctEntity, "hello", player.Position, new float3(0,0,0), player.User, 0f, sctPrefab);
 	}
 
 	public static void RemoveLeech(Entity character)

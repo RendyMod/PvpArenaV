@@ -23,6 +23,13 @@ namespace PvpArena.GameModes.Prison;
 
 public class PrisonGameMode : BaseGameMode
 {
+	public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
+	{
+		ResetCooldowns = true,
+		RemoveShapeshifts = false,
+		RemoveConsumables = false
+	};
+
 	static Dictionary<string, bool> AllowedCommands = new Dictionary<string, bool>
 	{
 		{ "ping", true },
@@ -35,10 +42,6 @@ public class PrisonGameMode : BaseGameMode
 		{ "r", true },
 		{ "recount", true }
 	};
-	public PrisonGameMode()
-	{
-		
-	}
 
 	public override void Initialize()
 	{
@@ -75,7 +78,7 @@ public class PrisonGameMode : BaseGameMode
 	{
 		if (!player.IsImprisoned()) return;
 
-		ResetPlayer(player);
+		player.Reset(ResetOptions);
 		if (Helper.BuffPlayer(player, Prefabs.Witch_PigTransformation_Buff, out var buffEntity, 3))
 		{
 			buffEntity.Add<BuffModificationFlagData>();
@@ -101,7 +104,7 @@ public class PrisonGameMode : BaseGameMode
 		if (!player.IsImprisoned()) return;
 		var pos = ImprisonService.GetPlayerCellCoordinates(player);
 		Helper.RespawnPlayer(player, pos);
-		Helper.Reset(player);
+		player.Reset(ResetOptions);
 		var blood = player.Character.Read<Blood>();
 		Helper.SetPlayerBlood(player, blood.BloodType, blood.Quality);
 	}
@@ -119,7 +122,7 @@ public class PrisonGameMode : BaseGameMode
 		if (enterShapeshiftEvent.Shapeshift == Prefabs.AB_Shapeshift_BloodMend_Group)
 		{
 			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
-			Helper.Reset(player);
+			player.Reset(ResetOptions);
 		}
 		else if (enterShapeshiftEvent.Shapeshift == Prefabs.AB_Shapeshift_ShareBlood_ExposeVein_Group)
 		{
@@ -197,11 +200,6 @@ public class PrisonGameMode : BaseGameMode
 			eventEntity.Destroy();
 			player.ReceiveMessage("The prison walls are too thick for anyone to hear you.".Error());
 		}
-	}
-
-	public override void ResetPlayer(Player player)
-	{
-		player.Reset();
 	}
 
 	public static new Dictionary<string, bool> GetAllowedCommands()

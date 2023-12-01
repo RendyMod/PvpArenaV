@@ -121,7 +121,7 @@ public static class BulletHellManager
 	{
 		SpawnUnits(arena);
 		player.CurrentState = Player.PlayerState.BulletHell;
-		player.Reset(true, true);
+		player.Reset(BaseGameMode.ResetOptions);
 		Helper.SetDefaultBlood(player, BulletHellConfig.Config.DefaultBlood.ToLower());
 		player.Teleport(arena.FightZone.Center);
 		Helper.BuffPlayer(player, Helper.CustomBuff, out var buffEntity, Helper.NO_DURATION);
@@ -149,7 +149,7 @@ public static class BulletHellManager
 				{
 					player.CurrentState = Player.PlayerState.Normal;
 					player.MatchmakingTeam = 0;
-					player.Reset(true, true);
+					player.Reset(BaseGameMode.ResetOptions);
 					if (!player.IsAlive)
 					{
 						Helper.RespawnPlayer(player, BulletHellConfig.Config.RespawnPoint.ToFloat3());

@@ -17,6 +17,13 @@ namespace PvpArena.GameModes;
 
 public class SpectatingGameMode : BaseGameMode
 {
+	public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
+	{
+		RemoveConsumables = false,
+		RemoveShapeshifts = true,
+		ResetCooldowns = true
+	};
+
 	public override void Initialize()
 	{
 		GameEvents.OnPlayerDeath += HandleOnPlayerDeath;
@@ -59,7 +66,7 @@ public class SpectatingGameMode : BaseGameMode
 	{
 		if (!player.IsSpectating()) return;
 
-		ResetPlayer(player);
+		player.Reset(SpectatingGameMode.ResetOptions);
 		Helper.RespawnPlayer(player, PvpArenaConfig.Config.CustomSpawnLocation.ToFloat3());
 		player.CurrentState = Player.PlayerState.Normal;
 		player.ReceiveMessage("You have died and are no longer spectating");
@@ -132,11 +139,6 @@ public class SpectatingGameMode : BaseGameMode
 		{
 			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 		}
-	}
-
-	public override void ResetPlayer(Player player)
-	{
-		player.Reset();
 	}
 
 	public static new Dictionary<string, bool> GetAllowedCommands()

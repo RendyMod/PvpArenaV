@@ -401,4 +401,11 @@ internal class TestCommands
 		entity.Write(sender.Character.Read<Team>());
 		entity.Write(sender.Character.Read<TeamReference>());
 	}
+
+	[Command("make-sct", description: "Used for debugging", adminOnly: true)]
+	public static void MakeSctCommand(Player sender, PrefabGUID sctPrefab)
+	{
+		Helper.MakeSCT(sender, sctPrefab);
+	}
+	
 }

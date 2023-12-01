@@ -11,34 +11,24 @@ using Unity.Transforms;
 using Bloodstone.API;
 using PvpArena.Helpers;
 using static PvpArena.Frameworks.CommandFramework.CommandFramework;
-using PvpArena.Factories;
 using System.Threading;
 using PvpArena.Services;
-using UnityEngine;
-using static MagicaCloth.PhysicsManagerTeamData;
-using Unity.Physics.Authoring;
 using static PvpArena.Factories.UnitFactory;
-using ProjectM.Shared;
-using ProjectM.UI;
-using ProjectM.Sequencer;
-using ProjectM.Debugging;
-using ProjectM.Gameplay.Systems;
 using ProjectM.CastleBuilding;
-using Unity.Collections;
-using MS.Internal.Xml.XPath;
-using static RootMotion.FinalIK.InteractionObject;
-using ProjectM.Audio;
 using System.Linq;
-using Unity.DebugDisplay;
 using PvpArena.GameModes.Domination.PvpArena.Models;
-using System.Runtime.CompilerServices;
-using UnityEngine.Jobs;
-using Unity.Services.Core.Threading.Internal;
 
 namespace PvpArena.GameModes.Domination;
 
 public class DominationGameMode : BaseGameMode
 {
+	public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
+	{
+		ResetCooldowns = false,
+		RemoveShapeshifts = true,
+		RemoveConsumables = false,
+		BuffsToIgnore = buffsToIgnore
+	};
 	public static bool MatchActive = false;
 	private static bool Overtime = false;
 
@@ -330,7 +320,7 @@ public class DominationGameMode : BaseGameMode
 		};
 		var timer = ActionScheduler.RunActionOnceAfterDelay(respawnAction, 2.9);
 		QueuedRespawns.Add(timer);
-		ResetPlayer(player);
+		player.Reset(ResetOptions);
 		
 		var blood = player.Character.Read<Blood>();
 		Helper.SetPlayerBlood(player, blood.BloodType, blood.Quality);
@@ -813,11 +803,6 @@ public class DominationGameMode : BaseGameMode
 
 		receiver.ReceiveMessage($"{team1NameColorized} - Kills: {team1KillsColorized}, Deaths: {team1DeathsColorized}".White());
 		receiver.ReceiveMessage($"{team2NameColorized} - Kills: {team2KillsColorized}, Deaths: {team2DeathsColorized}".White());
-	}
-
-	public override void ResetPlayer(Player player)
-	{
-		player.Reset(false, false, true, buffsToIgnore);
 	}
 }
 

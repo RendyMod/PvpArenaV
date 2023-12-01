@@ -10,6 +10,7 @@ using static PvpArena.Frameworks.CommandFramework.CommandFramework;
 using PvpArena.Helpers;
 using PvpArena.Data;
 using PvpArena.Configs;
+using PvpArena.GameModes;
 
 namespace PvpArena.Commands;
 
@@ -146,6 +147,7 @@ internal class TeleportCommands
 		}
 		else
 		{
+			sender.Reset(BaseGameMode.ResetOptions);
 			sender.CurrentState = Player.PlayerState.Spectating;
 			Helper.BuffPlayer(sender, Prefabs.Admin_Observe_Invisible_Buff, out var buffEntity, Helper.NO_DURATION);
 			Helper.RemoveBuffModifications(buffEntity, BuffModificationTypes.DisableMapCollision);

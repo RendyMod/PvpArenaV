@@ -11,6 +11,7 @@ using PvpArena.Models;
 using PvpArena.Helpers;
 using PvpArena.Configs;
 using PvpArena.Persistence.MySql.PlayerDatabase;
+using PvpArena.GameModes;
 
 namespace PvpArena.Matchmaking;
 
@@ -268,9 +269,11 @@ public static class MatchmakingQueue
 			{
 				p1, p2
 			};
+
+
 			foreach (var player in players)
 			{
-				Helper.Reset(player, true);
+				player.Reset(Matchmaking1v1GameMode.ResetOptions);
 				Helper.BuffPlayer(player, Prefabs.AB_InvisibilityAndImmaterial_Buff, out var buffEntity, 1);
 				Helper.SetDefaultBlood(player, PvpArenaConfig.Config.DefaultArenaBlood);
 			}
