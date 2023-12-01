@@ -8,8 +8,10 @@ using PvpArena.Data;
 using PvpArena.Factories;
 using PvpArena.Helpers;
 using PvpArena.Models;
+using Unity.Collections;
 using Unity.Entities;
 using static PvpArena.Frameworks.CommandFramework.CommandFramework;
+using static PvpArena.Helpers.Helper;
 
 namespace PvpArena.Commands.Utility;
 internal class SpawnCommands
@@ -23,11 +25,13 @@ internal class SpawnCommands
 	}
 
 	[Command("spawn-dummy", description: "Spawns a turret at your location", adminOnly: true)]
-	public static void SpawnDummyCommand(Player sender)
+	public static void SpawnDummyCommand(Player sender, int spawnSnapMode = 5)
 	{
 		var turret = new Dummy();
-		UnitFactory.SpawnUnit(turret, sender.Position);
-		sender.ReceiveMessage($"Spawned turret!".Success());
+		
+		var spawnPosition = Helper.GetSnappedHoverPosition(sender, (SnapMode)spawnSnapMode);
+		UnitFactory.SpawnUnit(turret, spawnPosition);
+		sender.ReceiveMessage($"Spawned dummy!".Success());
 	}
 
 	[Command("spawn-boss", description: "Spawns a boss at your location", adminOnly: true)]

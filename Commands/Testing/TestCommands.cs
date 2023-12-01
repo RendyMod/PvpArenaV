@@ -88,29 +88,23 @@ internal class TestCommands
 {
 
 	[Command("test", description: "Used for debugging", adminOnly: true)]
-	public void TestCommand(Player sender, int rotationMode = 0)
+	public void TestCommand(Player sender)
 	{
-		var prefab = Helper.GetPrefabEntityByPrefabGUID(Prefabs.ScrollingCombatTextMessage);
-		var commandBuffer = Core.entityCommandBufferSystem.CreateCommandBuffer();
-		string myCustomText = "Your custom message here";
-		var bytes = Encoding.UTF8.GetBytes(myCustomText);
-		var assetGuid = AssetGuid.FromBytes(bytes);
-		
-		var entity = ScrollingCombatTextMessage.Create(VWorld.Server.EntityManager, commandBuffer, prefab, assetGuid, sender.Position, sender.Position, sender.Character, 0f, Prefabs.SCT_Type_InfoMessage, sender.User);
-		
-		/*var sct = entity.Read<ScrollingCombatTextMessage>();
-		sct.OverrideText = "HELLO THERE";
-		entity.Write(sct);*/
-		//ScrollingCombatTextMessage.CreateLocal(VWorld.Server.EntityManager, prefab, new FixedString512("testinggg"), sender.Position, sender.Position, sender.Character);
+		var entity = Helper.GetHoveredEntity(sender.Character);
+		var buffs = Helper.GetEntityBuffs(entity);
+		foreach (var buff in buffs)
+		{
+			if (buff.Has<ChangeKnockbackResistanceBuff>())
+			{
+				buff.LogPrefabName();
+			}
+		}
 	}
 
 	[Command("test2", description: "Used for debugging", adminOnly: true)]
 	public void Test2Command(Player sender, Player player)
 	{
-		Helper.AddPlayerToPlayerClanForce(player.User, sender.User);
-		//Helper.AnnounceSiegeWeapon();
-
-
+		Helper.MakePlayerCcDefault(player);
 	}
 
 	[Command("test3", description: "Used for debugging", adminOnly: true)]
@@ -297,22 +291,15 @@ internal class TestCommands
 	}
 
 	[Command(name: "get-coordinates", description: "Logs centered coordinates of mouse position", usage: ".get-coordinates", adminOnly: true, includeInHelp: false)]
-	public void GetCoordinatesCommand(Player player, string test1 = "hi", int num = 4)
+	public void GetCoordinatesCommand(Player sender, int snapMode = (int)Helper.SnapMode.Center)
 	{
-		var input = player.Character.Read<EntityInput>();
-		float3 aimPosition = input.AimPosition;
-
-		// Centering X and Z coordinates
-		float centeredX = (float)System.Math.Floor(aimPosition.x) + 0.5f;
-		float centeredZ = (float)System.Math.Floor(aimPosition.z) + 0.5f;
+		var snappedAimPosition = Helper.GetSnappedHoverPosition(sender, (Helper.SnapMode)snapMode);
 
 		// Format and log the coordinates
-		string logMessage = $"\"X\": {centeredX},\n\"Y\": {aimPosition.y},\n\"Z\": {centeredZ}";
+		string logMessage = $"\"X\": {snappedAimPosition.x},\n\"Y\": {snappedAimPosition.y},\n\"Z\": {snappedAimPosition.z}";
+		sender.ReceiveMessage(logMessage.White());
 		Plugin.PluginLog.LogInfo(logMessage);
 	}
-
-
-
 
 	[Command("get-nearby-structures", description: "Used for debugging", adminOnly: true)]
 	public static void GetNearbyCommand(Player sender, int range = 10)

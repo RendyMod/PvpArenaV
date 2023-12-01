@@ -10,6 +10,7 @@ using ProjectM;
 using ProjectM.CastleBuilding;
 using ProjectM.ContentTesting;
 using ProjectM.Debugging;
+using ProjectM.Gameplay.Scripting;
 using ProjectM.Hybrid;
 using ProjectM.Network;
 using ProjectM.Pathfinding;
@@ -26,6 +27,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Properties.Generated;
 using Unity.Transforms;
+using UnityEngine.Rendering.HighDefinition;
 using static ProjectM.DeathEventListenerSystem;
 using static ProjectM.SpawnBuffsAuthoring.SpawnBuffElement_Editor;
 using static PvpArena.Configs.ConfigDtos;
@@ -244,6 +246,19 @@ public static class UnitFactory
 		return hash;
 	}
 
+    public static float3 GetSpawnPositionOfEntity(Entity entity)
+    {
+        if (entity.Has<ResistanceData>())
+        {
+            var resistanceData = entity.Read<ResistanceData>();
+            return new float3(resistanceData.HolyResistance_DamageAbsorbPerRating, resistanceData.HolyResistance_DamageReductionPerRating, resistanceData.SilverResistance_DamageReductionPerRating);
+        }
+        else
+        {
+            return float3.zero;
+        }
+    }
+
 
 	private static void StoreMetaDataOnUnit(Unit unit, Entity e, float3 position, Player player = null)
 	{
@@ -252,6 +267,9 @@ public static class UnitFactory
 		resistanceData.FireResistance_DamageReductionPerRating = unit.Team;
 		resistanceData.FireResistance_RedcuedIgiteChancePerRating = position.GetHashCode(); //going to use position to identify spawn point 
 		resistanceData.GarlicResistance_IncreasedExposureFactorPerRating = StringToFloatHash(unit.Category);
+        resistanceData.HolyResistance_DamageAbsorbPerRating = position.x;
+        resistanceData.HolyResistance_DamageReductionPerRating = position.y;
+        resistanceData.SilverResistance_DamageReductionPerRating = position.z;
 		e.Write(resistanceData);
 		if (player != null)
 		{
@@ -442,35 +460,32 @@ public class AngramBoss : Boss
 
 public class Dummy : Unit
 {
-	public Dummy() : base(Prefabs.CHAR_VampireMale)
+    public static readonly int ResetTime = 5;
+	public static readonly PrefabGUID PrefabGUID = Prefabs.CHAR_TargetDummy_Footman;
+	public Dummy() : base(PrefabGUID)
 	{
 		level = 84;
 		isInvulnerable = false;
-		maxHealth = 100000;
+		maxHealth = 653;
 		drawsAggro = true;
-		isRooted = true;
+		isRooted = false;
 		knockbackResistance = false;
+        category = "dummy";
 	}
 
 	public override void Modify(Entity e, Entity buffEntity)
 	{
 		base.Modify(e);
-		var unitStats = e.Read<UnitStats>();
-		unitStats.PassiveHealthRegen.Value = 100000;
-		unitStats.HealthRecovery.Value = 100000;
-		e.Write(unitStats);
 
-		buffEntity.Add<HealingBuff>();
-		buffEntity.Write(new HealingBuff
-		{
-			AffectRecovery = true,
-			HealingPerSecond = 100000
-		});
+        var aggroConsumer = e.Read<AggroConsumer>();
+        aggroConsumer.Active.Value = false;
+        e.Write(aggroConsumer);
 
-		Helper.AddItemToInventory(e, Prefabs.Item_Boots_T08_Shadowmoon, 1, out var item);
-		Helper.AddItemToInventory(e, Prefabs.Item_Chest_T08_Shadowmoon, 1, out item);
-		Helper.AddItemToInventory(e, Prefabs.Item_Gloves_T08_Shadowmoon, 1, out item);
-		Helper.AddItemToInventory(e, Prefabs.Item_Legs_T08_Shadowmoon, 1, out item);
+        var woundedConstants = e.Read<WoundedConstants>();
+        woundedConstants.HealthFactor = 0;
+        woundedConstants.TriggerKnockbackOnWounded = false;
+        e.Write(woundedConstants);
+        Helper.ChangeBuffResistances(e, Prefabs.BuffResistance_Vampire);
 	}
 }
 

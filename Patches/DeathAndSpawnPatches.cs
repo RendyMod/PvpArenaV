@@ -18,6 +18,7 @@ using PvpArena.Models;
 using System;
 using Il2CppSystem.Data.Common;
 using PvpArena.Persistence.Json;
+using PvpArena.Factories;
 
 namespace PvpArena.Patches;
 
@@ -38,6 +39,15 @@ public static class DeathAndSpawnPatches
 			else
 			{
 				GameEvents.RaiseUnitDeath(killCall.Killed, killCall);
+				if (killCall.Killed.Read<PrefabGUID>() == Prefabs.CHAR_TargetDummy_Footman)
+				{
+					var spawnPosition = UnitFactory.GetSpawnPositionOfEntity(killCall.Killed);
+					if (spawnPosition.x != 0 && spawnPosition.y != 0 && spawnPosition.z != 0)
+					{
+						Dummy dummy = new Dummy();
+						UnitFactory.SpawnUnit(dummy, spawnPosition);
+					}
+				}
 			}
 		}
 	}

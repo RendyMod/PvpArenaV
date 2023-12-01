@@ -49,7 +49,7 @@ public class LogCommands
 	}
 
 
-	[Command("log-position", description: "Logs components of hovered entity", adminOnly: true)]
+	[Command("log-position", description: "Logs position of hovered entity", adminOnly: true)]
 	public void LogPositionCommand(Player sender)
 	{
 		var entity = Helper.GetHoveredEntity(sender.Character);

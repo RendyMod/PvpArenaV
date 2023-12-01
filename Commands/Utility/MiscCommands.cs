@@ -93,4 +93,15 @@ internal static class MiscellaneousCommands
 		});
 		entity.Write(sender.ToFromCharacter());
 	}
+
+	[Command("unlock", description: "Unlock all spells", adminOnly: false)]
+	public static void UnlockCommand(Player sender, Player player = null)
+	{
+		Player targetPlayer = sender;
+		if (player != null)
+		{
+			targetPlayer = player;
+		}
+		Helper.Unlock(targetPlayer);
+	}
 }

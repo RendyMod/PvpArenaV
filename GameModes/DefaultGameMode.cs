@@ -12,6 +12,8 @@ using PvpArena.Helpers;
 using ProjectM.Gameplay.Systems;
 using ProjectM.CastleBuilding;
 using PvpArena.Services;
+using PvpArena.Factories;
+using static DamageRecorderService;
 
 namespace PvpArena.GameModes;
 
@@ -310,10 +312,6 @@ public class DefaultGameMode : BaseGameMode
 		if (!player.IsInDefaultMode()) return;
 
 		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
-		if (damageDealtEvent.Target.Has<PlayerCharacter>())
-		{
-			DamageRecorderService.RecordDamageDealtInitial(player, damageDealtEvent);
-		}
 		
 		var isStructure = (damageDealtEvent.Target.Has<CastleHeartConnection>());
 		if (isStructure)
@@ -322,9 +320,12 @@ public class DefaultGameMode : BaseGameMode
 		}
 	}
 
-	public void HandleOnPlayerDamageReported(Player source, Player target, PrefabGUID type, float damageDealt)
+	public void HandleOnPlayerDamageReported(Player source, Entity target, PrefabGUID ability, DamageInfo damageInfo)
 	{
-		DamageRecorderService.RecordDamageDoneFinal(source, damageDealt, type);
+		if (target.Has<PlayerCharacter>() || target.Read<PrefabGUID>() == Dummy.PrefabGUID)
+		{
+			DamageRecorderService.RecordDamageDone(source, ability, damageInfo);
+		}
 	}
 
 	public override void ResetPlayer(Player player)

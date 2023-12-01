@@ -151,7 +151,7 @@ public static class ECSExtensions
 
 	public static bool Exists(this Entity entity)
 	{
-		return VWorld.Server.EntityManager.Exists(entity);
+		return entity.Index > 0 && VWorld.Server.EntityManager.Exists(entity);
 	}
 }
 #pragma warning restore CS8500

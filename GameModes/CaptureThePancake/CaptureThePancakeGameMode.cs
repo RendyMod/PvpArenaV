@@ -29,6 +29,7 @@ using AsmResolver.PE.Exceptions;
 using Epic.OnlineServices.Stats;
 using static ProjectM.SpawnBuffsAuthoring.SpawnBuffElement_Editor;
 using ProjectM.Shared.Systems;
+using static DamageRecorderService;
 
 namespace PvpArena.GameModes.CaptureThePancake;
 
@@ -577,14 +578,13 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		
 		Helper.ApplyStatModifier(buffEntity, BuffModifiers.PancakeSlowRelicSpeed);
 		Helper.BuffPlayer(player, Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Buff, out var grandmaBuffEntity, Helper.NO_DURATION);
-		Helper.MakeBuffCcImmune(grandmaBuffEntity);
 		grandmaBuffEntity.Add<DestroyOnAbilityCast>();
 		var scriptBuffShapeshiftDataShared = grandmaBuffEntity.Read<Script_Buff_Shapeshift_DataShared>();
 		scriptBuffShapeshiftDataShared.RemoveOnDamageTaken = false;
 		grandmaBuffEntity.Write(scriptBuffShapeshiftDataShared);
 		grandmaBuffEntity.Remove<ModifyMovementSpeedBuff>();
 		Helper.ModifyBuff(grandmaBuffEntity, BuffModificationTypes.TargetSpellImpaired);
-		Helper.MakeBuffCcImmune(grandmaBuffEntity);
+		Helper.MakePlayerCcImmune(player);
 		Helper.FixIconForShapeshiftBuff(player, grandmaBuffEntity, Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Group);
 
 		Helper.RemoveNewAbilitiesFromBuff(grandmaBuffEntity);
@@ -665,7 +665,8 @@ public class CaptureThePancakeGameMode : BaseGameMode
         if (prefabGuid == Prefabs.Buff_General_RelicCarryDebuff)
         {
             Helper.RemoveBuff(player, Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Buff);
-        }
+			Helper.MakePlayerCcDefault(player);
+		}
         else if (prefabGuid == Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Buff)
         {
             if (player.IsAlive)
@@ -1034,23 +1035,23 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		
 	}
 
-	public void HandleOnPlayerDamageReported(Player source, Player target, PrefabGUID type, float damage)
+	public void HandleOnPlayerDamageReported(Player source, Entity target, PrefabGUID ability, DamageInfo damageInfo)
 	{
+		if (!target.Has<PlayerCharacter>()) return;
+
+		var targetPlayer = PlayerService.GetPlayerFromCharacter(target);
 		if (!source.IsInCaptureThePancake() || !source.IsInCaptureThePancake()) return;
 
-		if (type == Prefabs.SCT_Type_DamageDone || type == Prefabs.SCT_Type_CritDamage || type == Prefabs.SCT_Type_Absorb || type == Prefabs.SCT_Type_DamageDoneWeak || type == Prefabs.SCT_Type_Damage)
+		if (!PlayerDamageDealt.ContainsKey(source)) 
 		{
-			if (!PlayerDamageDealt.ContainsKey(source)) 
-			{
-				PlayerDamageDealt[source] = 0;
-			}
-			if (!PlayerDamageReceived.ContainsKey(target))
-			{
-				PlayerDamageReceived[target] = 0;
-			}
-			PlayerDamageDealt[source] += damage;
-			PlayerDamageReceived[target] += damage;
+			PlayerDamageDealt[source] = 0;
 		}
+		if (!PlayerDamageReceived.ContainsKey(targetPlayer))
+		{
+			PlayerDamageReceived[targetPlayer] = 0;
+		}
+		PlayerDamageDealt[source] += damageInfo.TotalDamage;
+		PlayerDamageReceived[targetPlayer] += damageInfo.TotalDamage;
 	}
 
 
@@ -1260,8 +1261,8 @@ public class CaptureThePancakeGameMode : BaseGameMode
 			team1DeathsColorized = team1Deaths.ToString().EnemyTeam();
 			team2DeathsColorized = team2Deaths.ToString().FriendlyTeam();
 			
-			team1DamagesColorized = team1Damages.ConvertToEngineeringNotation().EnemyTeam();
-			team2DamagesColorized = team2Damages.ConvertToEngineeringNotation().FriendlyTeam();
+			team1DamagesColorized = team1Damages.ConvertToEngineeringNotation().FriendlyTeam();
+			team2DamagesColorized = team2Damages.ConvertToEngineeringNotation().EnemyTeam();
 		}
 		else
 		{
@@ -1274,8 +1275,8 @@ public class CaptureThePancakeGameMode : BaseGameMode
 			team1DeathsColorized = team1Deaths.ToString().FriendlyTeam();
 			team2DeathsColorized = team2Deaths.ToString().EnemyTeam();
 			
-			team1DamagesColorized = team1Damages.ConvertToEngineeringNotation().FriendlyTeam();
-			team2DamagesColorized = team2Damages.ConvertToEngineeringNotation().EnemyTeam();
+			team1DamagesColorized = team1Damages.ConvertToEngineeringNotation().EnemyTeam();
+			team2DamagesColorized = team2Damages.ConvertToEngineeringNotation().FriendlyTeam();
 		}
 
 		receiver.ReceiveMessage("Team Recap".Warning());

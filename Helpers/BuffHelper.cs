@@ -27,6 +27,7 @@ public static partial class Helper
 	public static PrefabGUID CustomBuff = Prefabs.Buff_InCombat_Manticore; //good blank slate for adding modifiers, but doesn't persist through death. May show mob in combat
 	public static PrefabGUID CustomBuff2 = Prefabs.Buff_Manticore_ImmaterialHomePos; //good blank slate for adding modifiers, but doesn't persist through death
 	public static PrefabGUID CustomBuff3 = Prefabs.Buff_BloodQuality_T01_OLD; //experimental blank slate
+	public static PrefabGUID CustomBuff4 = Prefabs.Buff_BloodQuality_T02_OLD; //experimental blank slate
 	public static void ApplyMatchInitializationBuff(Player player)
 	{
 		Helper.BuffPlayer(player, Prefabs.Buff_General_Gloomrot_LightningStun, out var buffEntity, 5);
@@ -93,9 +94,9 @@ public static partial class Helper
 		buffer.Add(statMod);
 	}
 
-	public static List<PrefabGUID> GetEntityBuffs(Entity entity)
+	public static List<Entity> GetEntityBuffs(Entity entity)
 	{
-		List<PrefabGUID> entityBuffs = new List<PrefabGUID>();
+		List<Entity> entityBuffs = new List<Entity>();
 		if (entity.Has<BuffBuffer>())
 		{
 			var buffs = entity.ReadBuffer<BuffBuffer>();
@@ -103,7 +104,7 @@ public static partial class Helper
 			{
 				if (buff.Entity.Read<EntityOwner>().Owner != entity)
 				{
-					entityBuffs.Add(buff.PrefabGuid);
+					entityBuffs.Add(buff.Entity);
 				}
 			}
 		}
@@ -113,7 +114,7 @@ public static partial class Helper
 		{
 			if (buffEntity.Read<EntityOwner>().Owner == entity)
 			{
-				entityBuffs.Add(buffEntity.Read<PrefabGUID>());
+				entityBuffs.Add(buffEntity);
 			}
 		}
 		return entityBuffs;
@@ -220,8 +221,10 @@ public static partial class Helper
 			User = PlayerService.UserCache.Keys.ElementAt(0),
 			Character = entity
 		};
-
-		des.ApplyBuff(fromCharacter, buffEvent);
+		if (!TryGetBuff(entity, buff, out buffEntity)) //don't try to buff them if they already have the buff
+		{
+			des.ApplyBuff(fromCharacter, buffEvent);
+		}
 		if (TryGetBuff(entity, buff, out buffEntity))
 		{
 			if (!effectsOnStart)
@@ -258,12 +261,21 @@ public static partial class Helper
 
 			if (duration > 0 && duration != DEFAULT_DURATION)
 			{
-				if (buffEntity.Has<LifeTime>())
+				if (buffEntity.Has<Age>()) //if we try to buff with a buff they already have, reset the age
 				{
-					var lifetime = buffEntity.Read<LifeTime>();
-					lifetime.Duration = duration;
-					buffEntity.Write(lifetime);
+					var age = buffEntity.Read<Age>();
+					age.Value = 0;
+					buffEntity.Write(age);
 				}
+				if (!buffEntity.Has<LifeTime>())
+				{
+					buffEntity.Add<LifeTime>();
+				}
+				buffEntity.Write(new LifeTime
+				{
+					EndAction = LifeTimeEndAction.Destroy,
+					Duration = duration
+				});
 			}
 			else if (duration == NO_DURATION)
 			{
@@ -413,15 +425,5 @@ public static partial class Helper
 				DestroyUtility.Destroy(VWorld.Server.EntityManager, buff.Entity, DestroyDebugReason.TryRemoveBuff);
 			}
 		}
-	}
-
-	public static void MakeBuffCcImmune(Entity e)
-	{
-		e.Add<BuffResistances>();
-		e.Write(new BuffResistances
-		{
-			SettingsEntity = ModifiableEntity.CreateFixed(Helper.GetPrefabEntityByPrefabGUID(Prefabs.BuffResistance_Golem)),
-			InitialSettingGuid = Prefabs.BuffResistance_Golem
-		});
 	}
 }

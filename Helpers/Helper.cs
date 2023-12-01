@@ -21,6 +21,8 @@ using Unity.Jobs;
 using UnityEngine.Jobs;
 using PvpArena.Factories;
 using static PvpArena.Factories.UnitFactory;
+using static ProjectM.SpawnBuffsAuthoring.SpawnBuffElement_Editor;
+using UnityEngine;
 
 namespace PvpArena.Helpers;
 
@@ -351,8 +353,77 @@ public static partial class Helper
 		}
 	}
 
-	public static void AnnounceSiegeWeapon()
+    public static void ChangeBuffResistances(Entity entity, PrefabGUID prefabGuid)
+	{
+        entity.Add<BuffResistances>();
+        var prefabEntity = GetPrefabEntityByPrefabGUID(prefabGuid);
+        entity.Write(new BuffResistances
+        {
+            InitialSettingGuid = prefabGuid,
+            SettingsEntity = ModifiableEntity.CreateFixed(prefabEntity)
+        });
+    }
+
+    public static void MakePlayerCcImmune(Player player)
+    {
+        player.Character.Add<BuffResistances>();
+        player.Character.Write(new BuffResistances
+        {
+            SettingsEntity = ModifiableEntity.Create(player.Character, VWorld.Server.EntityManager, Helper.GetPrefabEntityByPrefabGUID(Prefabs.BuffResistance_Golem)),
+            InitialSettingGuid = Prefabs.BuffResistance_Golem
+        });
+    }
+
+    public static void MakePlayerCcDefault(Player player)
+    {
+        player.Character.Add<BuffResistances>();
+        player.Character.Write(new BuffResistances
+        {
+            SettingsEntity = ModifiableEntity.Create(player.Character, VWorld.Server.EntityManager, Helper.GetPrefabEntityByPrefabGUID(Prefabs.BuffResistance_Vampire)),
+            InitialSettingGuid = Prefabs.BuffResistance_Vampire
+        });
+    }
+
+    public static void AnnounceSiegeWeapon()
 	{
 		CreateEntityWithComponents<AnnounceSiegeWeapon, SpawnTag, DestroyOnSpawn, PrefabGUID>();
 	}
+
+    public enum SnapMode
+    {
+        NorthWest = 1, North, NorthEast, West, Center, East, SouthWest, South, SouthEast
+    }
+
+    public static float3 GetSnappedHoverPosition(Player player, SnapMode mode)
+    {
+        float3 originalPosition = player.Character.Read<EntityInput>().AimPosition;
+        // Calculate the bottom-left corner of the tile
+        float tileX = Mathf.Floor(originalPosition.x / 5) * 5;
+        float tileZ = Mathf.Floor(originalPosition.z / 5) * 5;
+
+        // Adjust position based on the snap mode
+        switch (mode)
+        {
+            case SnapMode.NorthWest:
+                return new float3(tileX, originalPosition.y, tileZ + 5);
+            case SnapMode.North:
+                return new float3(tileX + 2.5f, originalPosition.y, tileZ + 5);
+            case SnapMode.NorthEast:
+                return new float3(tileX + 5, originalPosition.y, tileZ + 5);
+            case SnapMode.West:
+                return new float3(tileX, originalPosition.y, tileZ + 2.5f);
+            case SnapMode.Center:
+                return new float3(tileX + 2.5f, originalPosition.y, tileZ + 2.5f);
+            case SnapMode.East:
+                return new float3(tileX + 5, originalPosition.y, tileZ + 2.5f);
+            case SnapMode.SouthWest:
+                return new float3(tileX, originalPosition.y, tileZ);
+            case SnapMode.South:
+                return new float3(tileX + 2.5f, originalPosition.y, tileZ);
+            case SnapMode.SouthEast:
+                return new float3(tileX + 5, originalPosition.y, tileZ);
+            default:
+                return originalPosition; // Default case to handle unexpected mode
+        }
+    }
 }

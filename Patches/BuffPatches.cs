@@ -17,6 +17,8 @@ using ProjectM.Sequencer;
 using PvpArena.GameModes;
 using PvpArena.Services;
 using static ProjectM.SpawnBuffsAuthoring.SpawnBuffElement_Editor;
+using PvpArena.Helpers;
+using PvpArena.Factories;
 
 namespace PvpArena.Patches;
 
@@ -84,6 +86,15 @@ public static class BuffDebugSystemPatch
 				{
 					var player = PlayerService.GetPlayerFromCharacter(owner);
 					GameEvents.RaisePlayerBuffRemoved(player, entity);
+				}
+				else if (owner.Read<PrefabGUID>() == Prefabs.CHAR_TargetDummy_Footman && entity.Read<PrefabGUID>() == Helper.CustomBuff4)
+				{
+					var spawnPosition = UnitFactory.GetSpawnPositionOfEntity(owner);
+					owner.Teleport(spawnPosition);
+					var health = owner.Read<Health>();
+					health.Value = health.MaxHealth;
+					health.MaxRecoveryHealth = health.MaxHealth;
+					owner.Write(health);
 				}
 			}
 			entities.Dispose();

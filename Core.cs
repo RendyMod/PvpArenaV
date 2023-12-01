@@ -103,7 +103,7 @@ public static class Core
 		var query = VWorld.Server.EntityManager.CreateEntityQuery(queryDesc);
 		Listener.AddListener(query, new ManuallySpawnedStructureListener());
 
-		queryDesc = new EntityQueryDesc
+		/*queryDesc = new EntityQueryDesc
 		{
 			All = new ComponentType[]
 			{
@@ -112,7 +112,8 @@ public static class Core
 			Options = options
 		};
 		query = VWorld.Server.EntityManager.CreateEntityQuery(queryDesc);
-		Listener.AddListener(query, new ScrollingCombatTextListener());
+		Listener.AddListener(query, new ScrollingCombatTextListener());*/
+		//---------------------------------------------
 
 		/*discordBot = new DiscordBot();
 		discordBot.InitializeAsync();*/

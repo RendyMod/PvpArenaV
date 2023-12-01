@@ -8,6 +8,7 @@ using ProjectM.Network;
 using PvpArena.Factories;
 using PvpArena.Models;
 using Unity.Entities;
+using static DamageRecorderService;
 using static ProjectM.DeathEventListenerSystem;
 using static PvpArena.Frameworks.CommandFramework.CommandFramework;
 
@@ -80,7 +81,7 @@ public static class GameEvents
 	public delegate void PlayerDamageDealtHandler(Player player, Entity eventEntity);
 	public static event PlayerDamageDealtHandler OnPlayerDamageDealt;
 
-	public delegate void PlayerDamageReported(Player source, Player target, PrefabGUID type, float damageDealt);
+	public delegate void PlayerDamageReported(Player source, Entity target, PrefabGUID ability, DamageInfo damageInfo);
 	public static event PlayerDamageReported OnPlayerDamageReported;
 
 	public delegate void PlayerDamageReceivedHandler(Player player, Entity eventEntity);
@@ -218,9 +219,9 @@ public static class GameEvents
 		OnDelayedSpawn?.Invoke(unit, timeUntilSpawn);
 	}
 
-	public static void RaisePlayerDamageReported(Player source, Player target, PrefabGUID type, float damage)
+	public static void RaisePlayerDamageReported(Player source, Entity target, PrefabGUID ability, DamageInfo damageInfo)
 	{
-		OnPlayerDamageReported?.Invoke(source, target, type, damage);
+		OnPlayerDamageReported?.Invoke(source, target, ability, damageInfo);
 	}
 
 	public static void RaisePlayerChatMessage(Player player, Entity eventEntity)
