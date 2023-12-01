@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using ProjectM;
 using ProjectM.Network;
+using PvpArena.Helpers;
 using PvpArena.Models;
 using Unity.Entities;
 using static ProjectM.DeathEventListenerSystem;
@@ -26,7 +27,7 @@ public abstract class BaseGameMode
 	public abstract void HandleOnItemWasThrown(Player player, Entity eventEntity);
 	public abstract void HandleOnPlayerDamageDealt(Player player, Entity eventEntity);
 	public abstract void HandleOnPlayerChatCommand(Player player, CommandAttribute command);
-	public abstract void ResetPlayer(Player player);
+
 	private static Dictionary<string, bool> AllowedCommands = new Dictionary<string, bool>
 	{
 		{ "all", true }
@@ -35,5 +36,12 @@ public abstract class BaseGameMode
 	{
 		return AllowedCommands;
 	}
+
+	//use this for joining / leaving any match, but use the actual game mode's reset for resetting from within a match itself
+	public static Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
+	{
+		RemoveConsumables = true,
+		RemoveShapeshifts = true
+	};
 }
 

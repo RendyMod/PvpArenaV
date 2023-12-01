@@ -21,6 +21,13 @@ namespace PvpArena.GameModes;
 
 public class Matchmaking1v1GameMode : BaseGameMode
 {
+	public static Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
+	{
+		ResetCooldowns = true,
+		RemoveConsumables = true,
+		RemoveShapeshifts = true
+	};
+
 	private static Dictionary<string, bool> AllowedCommands = new Dictionary<string, bool>
 	{
 		{ "ping", true },
@@ -31,6 +38,11 @@ public class Matchmaking1v1GameMode : BaseGameMode
 		{ "points", true },
 		{ "lb ranked", true },
 	};
+
+	public Matchmaking1v1GameMode()
+	{
+		ResetOptions = new Helper.ResetOptions();
+	}
 
 	public override void Initialize()
 	{
@@ -62,7 +74,7 @@ public class Matchmaking1v1GameMode : BaseGameMode
 	{
 		if (!player.IsIn1v1()) return;
 
-		Helper.Reset(player, false, true);
+		Helper.Reset(player, ResetOptions);
 		if (Helper.BuffPlayer(player, Prefabs.Witch_PigTransformation_Buff, out var buffEntity, 3))
 		{
 			buffEntity.Add<BuffModificationFlagData>();
@@ -166,12 +178,7 @@ public class Matchmaking1v1GameMode : BaseGameMode
 		}
 	}
 
-    public override void ResetPlayer(Player player)
-    {
-        player.Reset();
-    }
-
-    public static new Dictionary<string, bool> GetAllowedCommands()
+	public static new Dictionary<string, bool> GetAllowedCommands()
 	{
 		return AllowedCommands;
 	}

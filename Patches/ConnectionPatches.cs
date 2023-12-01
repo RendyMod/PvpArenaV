@@ -84,7 +84,10 @@ public static class OnUserConnectedPatch
 						if (player.Character.Index > 0)
 						{
 							GameEvents.RaisePlayerConnected(player);
-							Helper.Reset(player, false, true);
+							Helper.Reset(player, new Helper.ResetOptions
+							{
+								RemoveShapeshifts = true
+							});
 							if (player.IsAdmin)
 							{
 								//admins WILL be grandmas >:(

@@ -93,6 +93,9 @@ public static class GameEvents
 	public delegate void PlayerChatMessageHandler(Player player, Entity eventEntity);
 	public static event PlayerChatMessageHandler OnPlayerChatMessage;
 
+	public delegate void PlayerResetHandler(Player player);
+	public static event PlayerResetHandler OnPlayerReset;
+
 	public delegate void DelayedSpawnEventHandler(Unit unit, int timeUntilSpawn);
 	public static event DelayedSpawnEventHandler OnDelayedSpawn;
 
@@ -227,6 +230,11 @@ public static class GameEvents
 	public static void RaisePlayerChatMessage(Player player, Entity eventEntity)
 	{
 		OnPlayerChatMessage?.Invoke(player, eventEntity);
+	}
+
+	public static void RaisePlayerReset(Player player)
+	{
+		OnPlayerReset?.Invoke(player);
 	}
 
 	public static void RaiseGameFrameUpdate()

@@ -304,7 +304,7 @@ public static partial class Helper
 	}
 
 
-	public static void ClearExtraBuffs(Entity unit, bool removeConsumables = false, bool removeShapeshifts = false, List<string> buffsToIgnore = default)
+	public static void ClearExtraBuffs(Entity unit, ResetOptions resetOptions = default)
 	{
 		if (unit.Has<BuffBuffer>())
 		{
@@ -320,21 +320,21 @@ public static partial class Helper
 				"General_Disconnected"
 			};
 
-			if (!removeConsumables && !removeShapeshifts)
+			if (!resetOptions.RemoveConsumables && !resetOptions.RemoveShapeshifts)
 			{
 				stringsToIgnore.Add("Shapeshift");
 			}
 
-			if (!removeConsumables)
+			if (!resetOptions.RemoveConsumables)
 			{
 				stringsToIgnore.Add("UseRelic");
 				stringsToIgnore.Add("AB_Consumable");
 				stringsToIgnore.Add("Buff_BloodMoon");
 			}
 
-			if (buffsToIgnore != null && buffsToIgnore.Count > 0)
+			if (resetOptions.BuffsToIgnore != null && resetOptions.BuffsToIgnore.Count > 0)
 			{
-				stringsToIgnore.AddRange(buffsToIgnore);
+				stringsToIgnore.AddRange(resetOptions.BuffsToIgnore);
 			}
 
 			foreach (var buff in buffs)

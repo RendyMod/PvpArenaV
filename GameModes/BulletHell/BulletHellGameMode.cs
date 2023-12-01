@@ -21,15 +21,20 @@ namespace PvpArena.GameModes.BulletHell;
 
 public class BulletHellGameMode : BaseGameMode
 {
-	public Player player = null;
+    public Player player = null;
 	public bool HasStarted = false;
 	public List<Timer> Timers = new List<Timer>();
 	public Stopwatch stopwatch = new Stopwatch();
 	public int ArenaNumber = 0;
 	public CircleZone FightZone;
 	public TemplateUnitSpawn UnitSpawns = new TemplateUnitSpawn();
+    public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
+    {
+        RemoveConsumables = true,
+        RemoveShapeshifts = true,
+    };
 
-	public BulletHellGameMode(CircleZone fightZone, TemplateUnitSpawn unitSpawns, int arenaNumber)
+    public BulletHellGameMode(CircleZone fightZone, TemplateUnitSpawn unitSpawns, int arenaNumber)
 	{
 		FightZone = fightZone;
 		UnitSpawns = unitSpawns;
@@ -87,7 +92,7 @@ public class BulletHellGameMode : BaseGameMode
 	{
 		if (!player.IsInBulletHell() || player != this.player) return;
 
-		ResetPlayer(player);
+		player.Reset(ResetOptions);
 		if (Helper.BuffPlayer(player, Prefabs.Witch_PigTransformation_Buff, out var buffEntity, 3))
 		{
 			buffEntity.Add<BuffModificationFlagData>();
@@ -102,8 +107,8 @@ public class BulletHellGameMode : BaseGameMode
 
 		var pos = player.Position;
 		Helper.RespawnPlayer(player, pos);
-		player.Reset();
-		var blood = player.Character.Read<Blood>();
+        player.Reset(ResetOptions);
+        var blood = player.Character.Read<Blood>();
 		Helper.SetPlayerBlood(player, blood.BloodType, blood.Quality);
 		BulletHellManager.EndMatch(this);
 		//end match and tp to training + report time and record score
@@ -190,11 +195,6 @@ public class BulletHellGameMode : BaseGameMode
 			player.ReceiveMessage("You have gone out of bounds!".Error());
 			BulletHellManager.EndMatch(this);
 		}
-	}
-
-	public override void ResetPlayer(Player player)
-	{
-		player.Reset();
 	}
 
 	public static new Dictionary<string, bool> GetAllowedCommands()
