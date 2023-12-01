@@ -12,7 +12,6 @@ using ProjectM.Gameplay.Systems;
 using System.Collections.Generic;
 using ProjectM.Network;
 using Stunlock.Network;
-using PvpArena.Matchmaking;
 using PvpArena.Services;
 using ProjectM.UI;
 using ProjectM.LightningStorm;

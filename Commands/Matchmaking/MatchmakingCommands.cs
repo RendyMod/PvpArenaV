@@ -5,6 +5,7 @@ using PvpArena.Services;
 using static PvpArena.Frameworks.CommandFramework.CommandFramework;
 using PvpArena.Models;
 using PvpArena.Configs;
+using PvpArena.GameModes.Matchmaking1v1;
 
 namespace PvpArena.Commands;
 
@@ -20,7 +21,7 @@ internal static class MatchmakingCommands
 		}
 
 		sender.MatchmakingData1v1.AutoRequeue = autoRequeue;
-		Matchmaking.MatchmakingQueue.Join(sender);
+		MatchmakingQueue.Join(sender);
 		sender.ReceiveMessage($"Joined the queue. Auto Re-queue: {autoRequeue.ToString().Emphasize()}".White());
 	}
 
@@ -33,7 +34,7 @@ internal static class MatchmakingCommands
 			return;
 		}
 
-		Matchmaking.MatchmakingQueue.Leave(sender);
+		MatchmakingQueue.Leave(sender);
 		sender.MatchmakingData1v1.AutoRequeue = false;
 		sender.ReceiveMessage("Left the queue!".Success());
 	}

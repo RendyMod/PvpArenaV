@@ -1,32 +1,8 @@
-using PvpArena.Commands;
 using HarmonyLib;
-using Il2CppSystem;
 using ProjectM;
 using Unity.Collections;
-using Unity.Entities;
-using Unity.Mathematics;
-using Unity.Transforms;
-using Bloodstone.API;
 using PvpArena.Data;
 using ProjectM.Gameplay.Systems;
-using System.Collections.Generic;
-using ProjectM.Network;
-using Stunlock.Network;
-using PvpArena.Matchmaking;
-using PvpArena.Services;
-using ProjectM.UI;
-using ProjectM.LightningStorm;
-using ProjectM.Sequencer;
-using Il2CppInterop.Common.Attributes;
-using Il2CppInterop.Runtime;
-using ProjectM.Debugging;
-using static ProjectM.Gameplay.Systems.DealDamageSystem;
-using System.Runtime.InteropServices;
-using ProjectM.CastleBuilding;
-using ProjectM.Presentation;
-using PvpArena.GameModes;
-using ProjectM.Gameplay.Scripting;
-using static ProjectM.HitColliderCast;
 
 namespace PvpArena.Patches;
 

@@ -1,6 +1,5 @@
 using HarmonyLib;
 using ProjectM;
-using PvpArena.Matchmaking;
 using PvpArena.Models;
 using PvpArena.Services;
 

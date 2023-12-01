@@ -1,5 +1,4 @@
 using System;
-using PvpArena.Matchmaking;
 using Unity.Mathematics;
 using System.Text.Json.Serialization;
 using static PvpArena.Services.PlayerService;
@@ -11,6 +10,7 @@ using PvpArena.Persistence;
 using System.ComponentModel.DataAnnotations.Schema;
 using PvpArena.Configs;
 using PvpArena.Services.Moderation;
+using PvpArena.GameModes.Matchmaking1v1;
 
 namespace PvpArena.Models;
 

@@ -11,16 +11,15 @@ using PvpArena.Models;
 using PvpArena.Helpers;
 using PvpArena.Configs;
 using PvpArena.Persistence.MySql.PlayerDatabase;
-using PvpArena.GameModes;
 
-namespace PvpArena.Matchmaking;
+namespace PvpArena.GameModes.Matchmaking1v1;
 
 public static class MatchmakingService
 {
 	private static ScheduledAction action;
 	private static bool initialized = false;
 
-	public static void Start ()
+	public static void Start()
 	{
 		if (!initialized)
 		{
@@ -54,7 +53,7 @@ public static class MatchmakingQueue
 	private static List<Player> _queue = new List<Player>();
 	public static Dictionary<Player, Player> ActiveMatches = new Dictionary<Player, Player>();
 
-	public static void Join (Player player)
+	public static void Join(Player player)
 	{
 		if (player.IsEligibleForMatchmaking() && !_queue.Contains(player))
 		{
@@ -62,7 +61,7 @@ public static class MatchmakingQueue
 		}
 	}
 
-	public static void Leave (Player player)
+	public static void Leave(Player player)
 	{
 		if (_queue.Contains(player))
 		{
@@ -70,7 +69,7 @@ public static class MatchmakingQueue
 		}
 	}
 
-	public static List<Player> GetQueue ()
+	public static List<Player> GetQueue()
 	{
 		return _queue;
 	}
@@ -81,7 +80,7 @@ public static class MatchmakingQueue
 		private const int MAX_RECENT_MATCHES = 5; // number of recent matches to keep track of
 		private static List<Tuple<Player, Player>> recentMatchedPairs = new List<Tuple<Player, Player>>();
 
-		public static Tuple<Player, Player> FindMatch ()
+		public static Tuple<Player, Player> FindMatch()
 		{
 			var players = GetQueue();
 
@@ -91,7 +90,7 @@ public static class MatchmakingQueue
 				foreach (var player2 in players.Where(p => p != player1))
 				{
 					if (Math.Abs(player1.MatchmakingData1v1.MMR - player2.MatchmakingData1v1.MMR) <= MMR_TOLERANCE &&
-					    !WasRecentlyMatched(player1, player2))
+						!WasRecentlyMatched(player1, player2))
 					{
 						var currentMatchedPair = new Tuple<Player, Player>(player1, player2);
 						AddToRecentMatches(currentMatchedPair);
@@ -117,14 +116,14 @@ public static class MatchmakingQueue
 			return null;
 		}
 
-		private static bool WasRecentlyMatched (Player player1, Player player2)
+		private static bool WasRecentlyMatched(Player player1, Player player2)
 		{
 			return recentMatchedPairs.Any(pair =>
-				(pair.Item1 == player1 && pair.Item2 == player2) ||
-				(pair.Item2 == player1 && pair.Item1 == player2));
+				pair.Item1 == player1 && pair.Item2 == player2 ||
+				pair.Item2 == player1 && pair.Item1 == player2);
 		}
 
-		private static void AddToRecentMatches (Tuple<Player, Player> matchedPair)
+		private static void AddToRecentMatches(Tuple<Player, Player> matchedPair)
 		{
 			recentMatchedPairs.Add(matchedPair);
 			if (recentMatchedPairs.Count > MAX_RECENT_MATCHES)
@@ -136,7 +135,7 @@ public static class MatchmakingQueue
 
 	public class MatchManager
 	{
-		public static void StartMatch (Player p1, Player p2)
+		public static void StartMatch(Player p1, Player p2)
 		{
 			Helper.BuffEntity(p1.Character, Prefabs.Buff_Manticore_ImmaterialHomePos, out var buffEntity);
 			Helper.BuffEntity(p2.Character, Prefabs.Buff_Manticore_ImmaterialHomePos, out buffEntity);
@@ -165,7 +164,7 @@ public static class MatchmakingQueue
 			ActionScheduler.ScheduleAction(action, 90);
 		}
 
-		public static void EndMatch (Player winner, Player loser, bool teleportLoser = true)
+		public static void EndMatch(Player winner, Player loser, bool teleportLoser = true)
 		{
 			ActiveMatches.Remove(winner);
 			ActiveMatches.Remove(loser);
@@ -176,28 +175,28 @@ public static class MatchmakingQueue
 				MmrCalculator.CalculateNewMmr(loser.MatchmakingData1v1.MMR, winner.MatchmakingData1v1.MMR, false);
 
 			winner.ReceiveMessage("You won!".Success() + " Gained ".White() +
-			                      $"{newWinnerMmr - winner.MatchmakingData1v1.MMR}".Success() +
-			                      " points. New score: ".White() + $"{newWinnerMmr}".Warning());
+								  $"{newWinnerMmr - winner.MatchmakingData1v1.MMR}".Success() +
+								  " points. New score: ".White() + $"{newWinnerMmr}".Warning());
 			loser.ReceiveMessage("You lost.".Error() + " Lost ".White() +
-			                     $"{newLoserMmr - loser.MatchmakingData1v1.MMR}".Error() +
-			                     " points. New score: ".White() + $"{newLoserMmr}".Warning());
+								 $"{newLoserMmr - loser.MatchmakingData1v1.MMR}".Error() +
+								 " points. New score: ".White() + $"{newLoserMmr}".Warning());
 
-            int pointsToAward = 1;
-            winner.PlayerPointsData.TotalPoints += pointsToAward;
-            loser.PlayerPointsData.TotalPoints += pointsToAward;
-            Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { winner.PlayerPointsData, loser.PlayerPointsData });
-            string pointsName = "VPoint";
-            if (pointsToAward > 1)
-            {
-                pointsName += "s";
-            }
-            string winnerVPointsMessage = $"Received {pointsToAward.ToString().Success()} {pointsName.Emphasize()} for participating in matchmaking. New total: {winner.PlayerPointsData.TotalPoints}".White();
-            string loserVPointsMessage = $"Received {pointsToAward.ToString().Success()} {pointsName.Emphasize()} for participating in matchmaking. New total: {loser.PlayerPointsData.TotalPoints}".White();
-            winner.ReceiveMessage(winnerVPointsMessage);
-            loser.ReceiveMessage(loserVPointsMessage);
+			int pointsToAward = 1;
+			winner.PlayerPointsData.TotalPoints += pointsToAward;
+			loser.PlayerPointsData.TotalPoints += pointsToAward;
+			Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { winner.PlayerPointsData, loser.PlayerPointsData });
+			string pointsName = "VPoint";
+			if (pointsToAward > 1)
+			{
+				pointsName += "s";
+			}
+			string winnerVPointsMessage = $"Received {pointsToAward.ToString().Success()} {pointsName.Emphasize()} for participating in matchmaking. New total: {winner.PlayerPointsData.TotalPoints}".White();
+			string loserVPointsMessage = $"Received {pointsToAward.ToString().Success()} {pointsName.Emphasize()} for participating in matchmaking. New total: {loser.PlayerPointsData.TotalPoints}".White();
+			winner.ReceiveMessage(winnerVPointsMessage);
+			loser.ReceiveMessage(loserVPointsMessage);
 
 
-            winner.MatchmakingData1v1.MMR = newWinnerMmr;
+			winner.MatchmakingData1v1.MMR = newWinnerMmr;
 			loser.MatchmakingData1v1.MMR = newLoserMmr;
 
 			winner.MatchmakingData1v1.Wins += 1;
@@ -214,10 +213,10 @@ public static class MatchmakingQueue
 			ActionScheduler.ScheduleAction(action, 90);
 		}
 
-		private static void ReturnPlayers (Player winner, Player loser, bool teleportLoser = true)
+		private static void ReturnPlayers(Player winner, Player loser, bool teleportLoser = true)
 		{
-			Helper.Reset(winner);
-			Helper.Reset(loser);
+			winner.Reset(Helper.ResetOptions.EndMatch);
+			loser.Reset(Helper.ResetOptions.EndMatch);
 
 			// Teleport players back to their original location.
 			winner.Teleport(winner.MatchmakingData1v1.ReturnLocation);
@@ -232,9 +231,9 @@ public static class MatchmakingQueue
 			// Reset match status.
 			winner.CurrentState = Player.PlayerState.Normal;
 			loser.CurrentState = Player.PlayerState.Normal;
-            string message = $"Re-entering the {"Ranked".Colorify(ExtendedColor.ServerColor)} queue.".White();
+			string message = $"Re-entering the {"Ranked".Colorify(ExtendedColor.ServerColor)} queue.".White();
 
-            if (winner.MatchmakingData1v1.AutoRequeue)
+			if (winner.MatchmakingData1v1.AutoRequeue)
 			{
 				winner.ReceiveMessage(message);
 				Join(winner);
@@ -247,7 +246,7 @@ public static class MatchmakingQueue
 			}
 		}
 
-		private static void BringPlayers (Player p1, Player p2, Arena arena)
+		private static void BringPlayers(Player p1, Player p2, Arena arena)
 		{
 			if (p1.User.Read<Team>().Equals(p2.User.Read<Team>()))
 			{
@@ -273,7 +272,7 @@ public static class MatchmakingQueue
 
 			foreach (var player in players)
 			{
-				player.Reset(Matchmaking1v1GameMode.ResetOptions);
+				player.Reset(Helper.ResetOptions.EndMatch);
 				Helper.BuffPlayer(player, Prefabs.AB_InvisibilityAndImmaterial_Buff, out var buffEntity, 1);
 				Helper.SetDefaultBlood(player, PvpArenaConfig.Config.DefaultArenaBlood);
 			}
@@ -282,7 +281,7 @@ public static class MatchmakingQueue
 			ActionScheduler.ScheduleAction(action, 2);
 		}
 
-		private static void BringPlayersPart2 (Player p1, Player p2, Arena arena)
+		private static void BringPlayersPart2(Player p1, Player p2, Arena arena)
 		{
 			// Teleport players to match location.
 			Helper.ApplyMatchInitializationBuff(p1);
@@ -295,7 +294,7 @@ public static class MatchmakingQueue
 
 public static class MatchmakingHelper
 {
-	public static Player GetOpponentForPlayer (Player player)
+	public static Player GetOpponentForPlayer(Player player)
 	{
 		if (player != null && MatchmakingQueue.ActiveMatches.TryGetValue(player, out var opponent))
 		{
@@ -319,22 +318,22 @@ public static class ArenaManager
 {
 	private static List<Arena> _arenas = new List<Arena>();
 
-	public static void AddArena (Arena arena)
+	public static void AddArena(Arena arena)
 	{
 		_arenas.Add(arena);
 	}
 
-	public static void RemoveArena (Arena arena)
+	public static void RemoveArena(Arena arena)
 	{
 		_arenas.Remove(arena);
 	}
 
-	public static Arena GetAvailableArena ()
+	public static Arena GetAvailableArena()
 	{
 		return _arenas.FirstOrDefault(arena => !arena.IsOccupied);
 	}
 
-	public static void MarkArenaAsOccupied (Arena arena, Player player1, Player player2)
+	public static void MarkArenaAsOccupied(Arena arena, Player player1, Player player2)
 	{
 		arena.Player1 = player1;
 		arena.Player2 = player2;
@@ -343,7 +342,7 @@ public static class ArenaManager
 		player2.MatchmakingData1v1.CurrentArena = arena;
 	}
 
-	public static void FreeArena (Arena arena)
+	public static void FreeArena(Arena arena)
 	{
 		arena.Player1.MatchmakingData1v1.CurrentArena = default;
 		arena.Player2.MatchmakingData1v1.CurrentArena = default;

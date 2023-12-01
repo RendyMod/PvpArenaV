@@ -6,7 +6,6 @@ using Bloodstone.API;
 using PvpArena.Data;
 using ProjectM.Network;
 using Stunlock.Network;
-using PvpArena.Matchmaking;
 using PvpArena.Services;
 using System;
 using PvpArena.Helpers;
@@ -14,6 +13,7 @@ using PvpArena.GameModes;
 using PvpArena.Models;
 using PvpArena.Configs;
 using PvpArena.Frameworks.CommandFramework;
+using PvpArena.GameModes.Matchmaking1v1;
 
 namespace PvpArena.Patches;
 

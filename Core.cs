@@ -13,6 +13,7 @@ using PvpArena.GameModes;
 using PvpArena.GameModes.BulletHell;
 using PvpArena.GameModes.CaptureThePancake;
 using PvpArena.GameModes.Domination;
+using PvpArena.GameModes.Matchmaking1v1;
 using PvpArena.GameModes.Prison;
 using PvpArena.Listeners;
 using PvpArena.Models;

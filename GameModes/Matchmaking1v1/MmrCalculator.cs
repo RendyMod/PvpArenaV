@@ -1,6 +1,6 @@
 using System;
 
-namespace PvpArena.Matchmaking;
+namespace PvpArena.GameModes.Matchmaking1v1;
 
 public static class MmrCalculator
 {

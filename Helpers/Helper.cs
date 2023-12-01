@@ -240,19 +240,29 @@ public static partial class Helper
         public bool RemoveConsumables = false;
         public bool RemoveShapeshifts = false;
         public bool ResetCooldowns = true;
-        public List<string> BuffsToIgnore = default;
+        public List<string> BuffsToIgnore = new List<string>();
+
+        public static ResetOptions Default => new ResetOptions();
+        public static ResetOptions EndMatch = new ResetOptions
+        {
+            RemoveConsumables = true,
+            RemoveShapeshifts = true,
+            ResetCooldowns = true,
+            BuffsToIgnore = new List<string>()
+        };
     }
 
-	public static void Reset(this Player player, ResetOptions resetOptions = default)
+	public static void Reset(this Player player, ResetOptions resetOptions = null)
 	{
-		if (resetOptions.ResetCooldowns)
+        resetOptions ??= ResetOptions.Default;
+
+        if (resetOptions.ResetCooldowns)
 		{
-			ResetCooldown(player.Character);
+            ResetCooldown(player.Character);
 		}
-		
-		ClearExtraBuffs(player.Character, resetOptions);
-		//delay so that removing gun e / heart strike doesnt dmg you
-		var action = new ScheduledAction(HealEntity, new object[] { player.Character });
+        ClearExtraBuffs(player.Character, resetOptions);
+        //delay so that removing gun e / heart strike doesnt dmg you
+        var action = new ScheduledAction(HealEntity, new object[] { player.Character });
 		ActionScheduler.ScheduleAction(action, 3);
 		action = new ScheduledAction(RemoveLeech, new object[] { player.Character }); //hacky temp fix to leech being applied after the heart strike bomb is removed above
 		ActionScheduler.ScheduleAction(action, 3);

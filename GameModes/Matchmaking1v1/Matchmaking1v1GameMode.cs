@@ -10,18 +10,17 @@ using ProjectM.Gameplay.Systems;
 using ProjectM.Network;
 using PvpArena.Data;
 using PvpArena.Helpers;
-using PvpArena.Matchmaking;
 using PvpArena.Models;
 using PvpArena.Services;
 using Unity.Entities;
 using static ProjectM.DeathEventListenerSystem;
 using static PvpArena.Frameworks.CommandFramework.CommandFramework;
 
-namespace PvpArena.GameModes;
+namespace PvpArena.GameModes.Matchmaking1v1;
 
 public class Matchmaking1v1GameMode : BaseGameMode
 {
-	public static Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
+	public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
 	{
 		ResetCooldowns = true,
 		RemoveConsumables = true,
@@ -74,13 +73,13 @@ public class Matchmaking1v1GameMode : BaseGameMode
 	{
 		if (!player.IsIn1v1()) return;
 
-		Helper.Reset(player, ResetOptions);
+		player.Reset(Helper.ResetOptions.EndMatch);
 		if (Helper.BuffPlayer(player, Prefabs.Witch_PigTransformation_Buff, out var buffEntity, 3))
 		{
 			buffEntity.Add<BuffModificationFlagData>();
 			buffEntity.Write(BuffModifiers.PigModifications);
 		}
-		
+
 		var loser = player;
 		var winner = MatchmakingHelper.GetOpponentForPlayer(player);
 		MatchmakingQueue.MatchManager.EndMatch(winner, loser);
@@ -104,17 +103,17 @@ public class Matchmaking1v1GameMode : BaseGameMode
 
 		var winner = MatchmakingHelper.GetOpponentForPlayer(player);
 		MatchmakingQueue.MatchManager.EndMatch(winner, player, false);
-		Helper.Reset(player);
+		player.Reset(Helper.ResetOptions.EndMatch);
 
 		var blood = player.Character.Read<Blood>();
 		Helper.SetPlayerBlood(player, blood.BloodType, blood.Quality);
 	}
-/*	public override void HandleOnPlayerRespawn(Player player)
-	{
-		if (!player.IsIn1v1()) return;
+	/*	public override void HandleOnPlayerRespawn(Player player)
+		{
+			if (!player.IsIn1v1()) return;
 
-		
-	}*/
+
+		}*/
 	public void HandleOnGameModeBegin(Player player)
 	{
 		if (!player.IsIn1v1()) return;
@@ -155,7 +154,7 @@ public class Matchmaking1v1GameMode : BaseGameMode
 	{
 		if (!player.IsIn1v1()) return;
 
-		
+
 		MatchmakingQueue.MatchManager.EndMatch(MatchmakingHelper.GetOpponentForPlayer(player), player, false);
 	}
 
@@ -171,7 +170,7 @@ public class Matchmaking1v1GameMode : BaseGameMode
 		if (!player.IsIn1v1()) return;
 
 		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
-		var isStructure = (damageDealtEvent.Target.Has<CastleHeartConnection>());
+		var isStructure = damageDealtEvent.Target.Has<CastleHeartConnection>();
 		if (isStructure)
 		{
 			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
