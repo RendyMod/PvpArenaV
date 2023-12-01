@@ -124,7 +124,7 @@ internal static class MatchmakingCommands
 		return $"{boldStart}{rank}. {highlightStart}<color={rankColor}>{player.Name}</color>{highlightEnd}{boldEnd} - {player.BestTime}".White();
 	}
 
-	[Command("lb-bullet", description: "Displays the ranked leaderboard", adminOnly: false, includeInHelp: false, category: "Ranked")]
+	[Command("lb bullet", description: "Displays the ranked leaderboard", adminOnly: false, includeInHelp: false, category: "Ranked")]
 	public static void ShowBulletLeaderboardCommand(Player sender, int pageNumber = 1)
 	{
 		const int playersPerPage = 10; // Number of players to display per page
