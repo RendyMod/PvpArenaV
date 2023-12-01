@@ -120,6 +120,11 @@ public class Plugin : BasePlugin, IRunOnInitialized
 		var itemData = prefabEntity.Read<ItemData>();
 		itemData.RemoveOnConsume = false;
 		prefabEntity.Write(itemData);
+		
+		prefabEntity = Helper.GetPrefabEntityByPrefabGUID(Prefabs.Item_Consumable_TrippyShroom);
+		itemData = prefabEntity.Read<ItemData>();
+		itemData.RemoveOnConsume = false;
+		prefabEntity.Write(itemData);
 
 		var entities = Helper.GetPrefabEntitiesByComponentTypes<AbilityGroupConsumeItemOnCast>();
 		foreach (var entity in entities)

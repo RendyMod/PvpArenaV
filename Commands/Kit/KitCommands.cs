@@ -57,4 +57,12 @@ public static class KitCommands
 		
 		sender.ReceiveMessage("Gave:".Success()+ " Healing potions".White());
 	}
+	
+	[Command("od", description: "Gives trippy shroom", usage: ".od", aliases: new string[] {"od"}, adminOnly: false, includeInHelp: false, category: "Trippy Shroom")]
+	public static void OverdoseShroomCommand(Player sender)
+	{
+		Helper.AddItemToInventory(sender.Character, Prefabs.Item_Consumable_TrippyShroom, 1, out Entity itemEntity);
+		
+		sender.ReceiveMessage("Gave:".Success()+ " Trippy Shroom".White());
+	}
 }

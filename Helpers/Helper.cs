@@ -78,14 +78,16 @@ public static partial class Helper
 		return System.Math.Max(min, System.Math.Min(value, max));
 	}
 
-	public static void Unlock(Player player)
+	public static void Unlock (Player player, bool unlockContent = false)
 	{
 		var fromCharacter = player.ToFromCharacter();
 		Core.debugEventsSystem.UnlockAllResearch(fromCharacter);
 		Core.debugEventsSystem.UnlockAllVBloods(fromCharacter);
 		Core.debugEventsSystem.CompleteAllAchievements(fromCharacter);
 		UnlockAllWaypoints(player);
-		UnlockAllContent(fromCharacter);
+        
+		if (unlockContent)
+			UnlockAllContent(fromCharacter);
 	}
 
 	public static void UnlockAllContent(FromCharacter fromCharacter)
