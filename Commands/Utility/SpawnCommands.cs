@@ -35,11 +35,14 @@ internal class SpawnCommands
 	}
 
 	[Command("spawn-boss", description: "Spawns a boss at your location", adminOnly: true)]
-	public static void SpawnBossCommand(Player sender, PrefabGUID _prefab, int team = 10, int level = 84)
+	public static void SpawnBossCommand(Player sender, PrefabGUID _prefab, int spawnSnapMode = 5)
 	{
-		var turret = new Boss(_prefab, team, level);
-		turret.MaxHealth = 3000;
-		UnitFactory.SpawnUnit(turret, sender.Position);
+		var spawnPosition = Helper.GetSnappedHoverPosition(sender, (SnapMode)spawnSnapMode);
+		var boss = new Boss(_prefab);
+		boss.IsRooted = false;
+		boss.MaxHealth = 25000;
+		boss.Level = 250;
+		UnitFactory.SpawnUnit(boss, spawnPosition);
 		sender.ReceiveMessage($"Spawned boss!".Success());
 	}
 
