@@ -48,6 +48,19 @@ public static class DealDamageSystemPatch
 			try
 			{
 				var dealDamageEvent = entity.Read<DealDamageEvent>();
+				if (UnitFactory.HasCategory(dealDamageEvent.Target, "dummy"))
+				{
+					if (Helper.TryGetBuff(dealDamageEvent.Target, Helper.CustomBuff4, out var buffEntity))
+					{
+						var age = buffEntity.Read<Age>();
+						age.Value = 0;
+						buffEntity.Write(age);
+					}
+					else
+					{
+						Helper.BuffEntity(dealDamageEvent.Target, Helper.CustomBuff4, out buffEntity, Dummy.ResetTime);
+					}
+				}
 				if (dealDamageEvent.SpellSource.Index > 0)
 				{
 					var owner = dealDamageEvent.SpellSource.Read<EntityOwner>().Owner;
@@ -64,19 +77,6 @@ public static class DealDamageSystemPatch
 					else if (dealDamageEvent.Target.Has<CastleHeartConnection>())
 					{
 						VWorld.Server.EntityManager.DestroyEntity(entity);
-					}
-				}
-				if (dealDamageEvent.Target.Read<PrefabGUID>() == Prefabs.CHAR_TargetDummy_Footman)
-				{
-					if (Helper.TryGetBuff(dealDamageEvent.Target, Helper.CustomBuff4, out var buffEntity))
-					{
-						var age = buffEntity.Read<Age>();
-						age.Value = 0;
-						buffEntity.Write(age);
-					}
-					else
-					{
-						Helper.BuffEntity(dealDamageEvent.Target, Helper.CustomBuff4, out buffEntity, Dummy.ResetTime);
 					}
 				}
 			}

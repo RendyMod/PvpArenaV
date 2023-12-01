@@ -338,6 +338,19 @@ public static class UnitFactory
 		}
 		e.Write(health);
 	}
+
+	public static bool HasCategory(Entity entity, string category)
+	{
+		if (entity.Has<CanFly>() && entity.Has<ResistanceData>())
+		{
+			var resistances = entity.Read<ResistanceData>();
+			if (StringToFloatHash(category) == resistances.GarlicResistance_IncreasedExposureFactorPerRating)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
 }
 
 public class Unit
@@ -461,30 +474,55 @@ public class AngramBoss : Boss
 public class Dummy : Unit
 {
     public static readonly int ResetTime = 5;
-	public static readonly PrefabGUID PrefabGUID = Prefabs.CHAR_TargetDummy_Footman;
-	public Dummy() : base(PrefabGUID)
+    public static readonly PrefabGUID PrefabGUID = Prefabs.CHAR_TargetDummy_Footman;
+	private bool Aggro = false;
+	public Dummy(PrefabGUID prefabGuid, bool aggro = true) : base(PrefabGUID)
 	{
 		level = 84;
 		isInvulnerable = false;
 		maxHealth = 653;
 		drawsAggro = true;
-		isRooted = false;
+		isRooted = true;
 		knockbackResistance = false;
         category = "dummy";
+        PrefabGuid = prefabGuid;
+		Aggro = aggro;
 	}
 
-	public override void Modify(Entity e, Entity buffEntity)
+    public Dummy() : base(PrefabGUID)
+    {
+        level = 84;
+        isInvulnerable = false;
+        maxHealth = 653;
+        drawsAggro = true;
+        isRooted = true;
+        knockbackResistance = false;
+        category = "dummy";
+    }
+
+    public override void Modify(Entity e, Entity buffEntity)
 	{
 		base.Modify(e);
 
-        var aggroConsumer = e.Read<AggroConsumer>();
-        aggroConsumer.Active.Value = false;
-        e.Write(aggroConsumer);
+		if (!Aggro)
+		{
+			var aggroConsumer = e.Read<AggroConsumer>();
+			aggroConsumer.Active.Value = false;
+			e.Write(aggroConsumer);
+		}
 
         var woundedConstants = e.Read<WoundedConstants>();
         woundedConstants.HealthFactor = 0;
         woundedConstants.TriggerKnockbackOnWounded = false;
         e.Write(woundedConstants);
+
+		var blood = e.Read<BloodConsumeSource>();
+		blood.BloodQuality = 100;
+		blood.CanBeConsumed = false;
+		e.Write(blood);
+
+		Helper.BuffEntity(e, Prefabs.AB_BloodQualityUnitBuff_Brute, out var bloodAuraBuffEntity, Helper.NO_DURATION);
+
         Helper.ChangeBuffResistances(e, Prefabs.BuffResistance_Vampire);
 	}
 }

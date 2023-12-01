@@ -82,6 +82,7 @@ using Il2CppSystem.Xml.Schema;
 using UnityEngine.Rendering;
 using PvpArena.Services.Moderation;
 using Unity.Core;
+using ProjectM.Shared.Systems;
 
 namespace PvpArena.Commands.Debug;
 internal class TestCommands
@@ -102,9 +103,12 @@ internal class TestCommands
 	}
 
 	[Command("test2", description: "Used for debugging", adminOnly: true)]
-	public void Test2Command(Player sender, Player player)
+	public void Test2Command(Player sender)
 	{
-		Helper.MakePlayerCcDefault(player);
+		var entity = Helper.GetHoveredEntity(sender.Character);
+		var buffer = entity.ReadBuffer<BloodQualityUnitBuff>();
+		buffer.Clear();
+		entity.Remove<BloodQualityUnitBuff>();
 	}
 
 	[Command("test3", description: "Used for debugging", adminOnly: true)]

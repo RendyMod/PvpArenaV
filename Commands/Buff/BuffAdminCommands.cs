@@ -74,7 +74,15 @@ partial class BuffCommands
 		sender.ReceiveMessage($"Done: {entity.Read<PrefabGUID>().LookupNameString()}");
 	}
 
-	[Command("list-target-buffs", description: "Lists the buffs a hovered character has", adminOnly: true)]
+    [Command("remove-target-buff", description: "Removes a buff", adminOnly: true)]
+    public void UnbuffTargetCommand(Player sender, PrefabGUID buffGuid)
+    {
+        var entity = Helper.GetHoveredEntity(sender.Character);
+        Helper.RemoveBuff(entity, buffGuid);
+        sender.ReceiveMessage("Removed buff.".Success());
+    }
+
+    [Command("list-target-buffs", description: "Lists the buffs a hovered character has", adminOnly: true)]
 	public void ListTargetBuffsCommand(Player sender)
 	{
 		var target = Helper.GetHoveredEntity(sender.Character);

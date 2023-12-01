@@ -11,6 +11,7 @@ using ProjectM.Shared;
 using PvpArena.Data;
 using PvpArena.Models;
 using PvpArena.Services;
+using Steamworks;
 using static PvpArena.Configs.ConfigDtos;
 
 namespace PvpArena.Persistence.MySql.AllDatabases;
@@ -41,15 +42,7 @@ public class DefaultLegendaryWeaponDataStorage
 	{
 		// Load default legendaries for all players
 		_defaultLegendaryWeapons = await LoadDefaultLegendariesAsync();
-
-		// Load player-specific legendaries for each player
-		// This assumes you have a way to get a list of all player SteamIDs
-		_playerLegendaryWeapons = new Dictionary<ulong, List<LegendaryDto>>();
-		var playerSteamIds = PlayerService.SteamIdCache.Keys; // Implement this method based on your system
-		foreach (var steamId in playerSteamIds)
-		{
-			_playerLegendaryWeapons[steamId] = await LoadPlayerSpecificLegendariesAsync(steamId);
-		}
+		_playerLegendaryWeapons = await LoadPlayerSpecificLegendariesAsync();
 	}
 
 	public List<LegendaryDto> GetLegendaryWeaponsForPlayer(ulong steamId)
@@ -59,7 +52,7 @@ public class DefaultLegendaryWeaponDataStorage
 		_defaultLegendaryWeapons ??= new List<LegendaryDto>();
 
 		// Check if the player has specific legendaries
-		if (_playerLegendaryWeapons.TryGetValue(steamId, out var playerLegendaries) && playerLegendaries.Any())
+		if (_playerLegendaryWeapons.TryGetValue(steamId, out var playerLegendaries) && playerLegendaries.Count >= 5)
 		{
 			return playerLegendaries;
 		}
@@ -68,42 +61,43 @@ public class DefaultLegendaryWeaponDataStorage
 		return _defaultLegendaryWeapons;
 	}
 
-	private async Task<List<LegendaryDto>> LoadPlayerSpecificLegendariesAsync(ulong steamId)
+	private async Task<Dictionary<ulong, List<LegendaryDto>>> LoadPlayerSpecificLegendariesAsync()
 	{
-		var legendaries = new List<LegendaryDto>();
+		var playerLegendaries = new Dictionary<ulong, List<LegendaryDto>>();
 
 		var query = @"
-        SELECT WeaponName, Infusion, Mods, Slot
-        FROM DefaultLegendaries
-        WHERE SteamID = @SteamID;";
+        SELECT SteamID, WeaponName, Infusion, Mods, Slot
+        FROM PlayerLegendaryWeapons;";
 
 		using (var connection = new MySqlConnection(serverDatabaseConnectionString))
 		{
 			await connection.OpenAsync();
 
 			using (var command = new MySqlCommand(query, connection))
+			using (var reader = await command.ExecuteReaderAsync())
 			{
-				command.Parameters.AddWithValue("@SteamID", steamId);
-
-				using (var reader = await command.ExecuteReaderAsync())
+				while (await reader.ReadAsync())
 				{
-					while (await reader.ReadAsync())
+					ulong steamId = reader.GetUInt64("SteamID");
+					var legendary = new LegendaryDto
 					{
-						var legendary = new LegendaryDto
-						{
-							WeaponName = reader.GetString("WeaponName"),
-							Infusion = reader.IsDBNull(reader.GetOrdinal("Infusion")) ? null : reader.GetString("Infusion"),
-							Mods = reader.IsDBNull(reader.GetOrdinal("Mods")) ? null : reader.GetString("Mods"),
-							Slot = reader.GetInt32("Slot")
-						};
+						WeaponName = reader.GetString("WeaponName"),
+						Infusion = reader.IsDBNull(reader.GetOrdinal("Infusion")) ? null : reader.GetString("Infusion"),
+						Mods = reader.IsDBNull(reader.GetOrdinal("Mods")) ? null : reader.GetString("Mods"),
+						Slot = reader.GetInt32("Slot")
+					};
 
-						legendaries.Add(legendary);
+					if (!playerLegendaries.ContainsKey(steamId))
+					{
+						playerLegendaries[steamId] = new List<LegendaryDto>();
 					}
+
+					playerLegendaries[steamId].Add(legendary);
 				}
 			}
 		}
 
-		return legendaries;
+		return playerLegendaries;
 	}
 
 	// Load default legendaries

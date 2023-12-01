@@ -20,6 +20,7 @@ using Unity.Physics;
 using Unity.Jobs;
 using UnityEngine.Jobs;
 using static PvpArena.Configs.ConfigDtos;
+using Il2CppSystem.Collections.Generic;
 
 namespace PvpArena.Helpers;
 
@@ -75,7 +76,12 @@ public static partial class Helper
 
 	public static void GiveDefaultLegendaries(Player player)
 	{
-		List<LegendaryDto> legendaries = Core.defaultLegendaryWeaponStorage.GetLegendaryWeaponsForPlayer(player.SteamID);
+        System.Collections.Generic.List<LegendaryDto> legendaries = Core.defaultLegendaryWeaponStorage.GetLegendaryWeaponsForPlayer(player.SteamID);
+		legendaries = legendaries
+			.OrderBy(weapon => weapon.Slot == -1)
+			.ThenBy(weapon => weapon.Slot)
+			.ToList();
+
 		foreach (var weapon in legendaries)
 		{
 			GenerateLegendaryViaEvent(player, weapon.WeaponName.ToLower(), weapon.Infusion, weapon.Mods);

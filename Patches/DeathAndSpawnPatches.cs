@@ -39,12 +39,12 @@ public static class DeathAndSpawnPatches
 			else
 			{
 				GameEvents.RaiseUnitDeath(killCall.Killed, killCall);
-				if (killCall.Killed.Read<PrefabGUID>() == Prefabs.CHAR_TargetDummy_Footman)
+				if (UnitFactory.HasCategory(killCall.Killed, "dummy"))
 				{
 					var spawnPosition = UnitFactory.GetSpawnPositionOfEntity(killCall.Killed);
 					if (spawnPosition.x != 0 && spawnPosition.y != 0 && spawnPosition.z != 0)
 					{
-						Dummy dummy = new Dummy();
+						Dummy dummy = new Dummy(killCall.Killed.Read<PrefabGUID>(), killCall.Killed.Read<AggroConsumer>().Active.Value);
 						UnitFactory.SpawnUnit(dummy, spawnPosition);
 					}
 				}

@@ -159,7 +159,7 @@ public class ConfigDtos
 		public string WeaponName { get; set; } = "spear";
 		public string Infusion { get; set; } = "storm";
 		public string Mods { get; set; } = "123";
-		public int Slot { get; set; } = 0;
+		public int Slot { get; set; } = -1;
 	}
 
 	public class StructureDto

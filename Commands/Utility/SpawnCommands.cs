@@ -24,24 +24,38 @@ internal class SpawnCommands
 		sender.ReceiveMessage($"Spawned turret!".Success());
 	}
 
-	[Command("spawn-dummy", description: "Spawns a turret at your location", adminOnly: true)]
-	public static void SpawnDummyCommand(Player sender, int spawnSnapMode = 5)
+	[Command("spawn-dummy-prefab", description: "Spawns a dummy at your location", adminOnly: true)]
+	public static void SpawnDummyCommand(Player sender, PrefabGUID prefabGuid, int spawnSnapMode = 5)
 	{
-		var turret = new Dummy();
+		var dummy = new Dummy(prefabGuid, true);
 		
 		var spawnPosition = Helper.GetSnappedHoverPosition(sender, (SnapMode)spawnSnapMode);
-		UnitFactory.SpawnUnit(turret, spawnPosition);
+		UnitFactory.SpawnUnit(dummy, spawnPosition);
+		sender.ReceiveMessage($"Spawned dummy!".Success());
+	}
+
+	[Command("spawn-dummy", description: "Spawns a dummy at your location", adminOnly: true)]
+	public static void SpawnDummyCommand(Player sender, int spawnSnapMode = 5)
+	{
+		var dummy = new Dummy();
+		
+		var spawnPosition = Helper.GetSnappedHoverPosition(sender, (SnapMode)spawnSnapMode);
+		UnitFactory.SpawnUnit(dummy, spawnPosition);
 		sender.ReceiveMessage($"Spawned dummy!".Success());
 	}
 
 	[Command("spawn-boss", description: "Spawns a boss at your location", adminOnly: true)]
-	public static void SpawnBossCommand(Player sender, PrefabGUID _prefab, int spawnSnapMode = 5)
+	public static void SpawnBossCommand(Player sender, PrefabGUID _prefab, int level = 100, int spawnSnapMode = 5, int hp = -1)
 	{
 		var spawnPosition = Helper.GetSnappedHoverPosition(sender, (SnapMode)spawnSnapMode);
 		var boss = new Boss(_prefab);
 		boss.IsRooted = false;
-		boss.MaxHealth = 25000;
-		boss.Level = 250;
+		if (hp > 0)
+		{
+			boss.MaxHealth = hp;
+		}
+		
+		boss.Level = level;
 		UnitFactory.SpawnUnit(boss, spawnPosition);
 		sender.ReceiveMessage($"Spawned boss!".Success());
 	}
@@ -67,12 +81,12 @@ internal class SpawnCommands
 	}
 
 	[Command("spawn-prefab", description: "Used for debugging", adminOnly: true)]
-	public static void SpawnPrefabCommand(Player sender, PrefabGUID _prefab, int rotationMode = 1)
+	public static void SpawnPrefabCommand(Player sender, PrefabGUID _prefab, int rotationMode = 1, int spawnSnapMode = 5)
 	{
-		PrefabSpawnerService.SpawnWithCallback(_prefab, sender.Position, (System.Action<Entity>)((Entity e) =>
+		var spawnPosition = Helper.GetSnappedHoverPosition(sender, (SnapMode)spawnSnapMode);
+		PrefabSpawnerService.SpawnWithCallback(_prefab, spawnPosition, (System.Action<Entity>)((Entity e) =>
 		{
 			e.LogComponentTypes();
-			Helper.BuffEntity(e, Prefabs.Buff_Voltage_Stage2, out var buffEntity, (float)Helper.NO_DURATION);
 			sender.ReceiveMessage("Spawned prefab!".Success());
 		}), rotationMode);
 	}
@@ -122,8 +136,9 @@ internal class SpawnCommands
 	}
 
 	[Command("spawn-merchant", usage: ".spawn-chest rage", adminOnly: true)]
-	public static void SpawnMerchantCommand(Player sender, string merchantName)
+	public static void SpawnMerchantCommand(Player sender, string merchantName, int spawnSnapMode = 5)
 	{
+		var spawnPosition = Helper.GetSnappedHoverPosition(sender, (SnapMode)spawnSnapMode);
 		foreach (var trader in TradersConfig.Config.Traders)
 		{
 			if (trader.UnitSpawn.Description.ToLower() == merchantName.ToLower())
@@ -136,7 +151,7 @@ internal class SpawnCommands
 				unit.DrawsAggro = false;
 				unit.KnockbackResistance = true;
 				unit.MaxHealth = 10000;
-				UnitFactory.SpawnUnit(unit, sender.Position);
+				UnitFactory.SpawnUnit(unit, spawnPosition);
 				/*UnitFactory.SpawnUnit(unit, trader.UnitSpawn.Location.ToFloat3());*/
 			}
 		}

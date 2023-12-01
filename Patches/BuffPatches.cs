@@ -82,19 +82,22 @@ public static class BuffDebugSystemPatch
 			foreach (var entity in entities)
 			{
 				var owner = entity.Read<EntityOwner>().Owner;
-				if (owner.Has<PlayerCharacter>())
+				if (owner.Exists())
 				{
-					var player = PlayerService.GetPlayerFromCharacter(owner);
-					GameEvents.RaisePlayerBuffRemoved(player, entity);
-				}
-				else if (owner.Read<PrefabGUID>() == Prefabs.CHAR_TargetDummy_Footman && entity.Read<PrefabGUID>() == Helper.CustomBuff4)
-				{
-					var spawnPosition = UnitFactory.GetSpawnPositionOfEntity(owner);
-					owner.Teleport(spawnPosition);
-					var health = owner.Read<Health>();
-					health.Value = health.MaxHealth;
-					health.MaxRecoveryHealth = health.MaxHealth;
-					owner.Write(health);
+					if (owner.Has<PlayerCharacter>())
+					{
+						var player = PlayerService.GetPlayerFromCharacter(owner);
+						GameEvents.RaisePlayerBuffRemoved(player, entity);
+					}
+					else if (entity.Read<PrefabGUID>() == Helper.CustomBuff4 && UnitFactory.HasCategory(owner, "dummy"))
+					{
+						var spawnPosition = UnitFactory.GetSpawnPositionOfEntity(owner);
+						owner.Teleport(spawnPosition);
+						var health = owner.Read<Health>();
+						health.Value = health.MaxHealth;
+						health.MaxRecoveryHealth = health.MaxHealth;
+						owner.Write(health);
+					}
 				}
 			}
 			entities.Dispose();

@@ -32,7 +32,6 @@ public static class BuildingPermissions
 	public static void Prefix(PlaceTileModelSystem __instance)
 	{
 		var entities = __instance._DismantleTileQuery.ToEntityArray(Allocator.Temp);
-			
 		foreach (var entity in entities)
 		{
 			var fromCharacter = entity.Read<FromCharacter>();
@@ -43,10 +42,9 @@ public static class BuildingPermissions
 				VWorld.Server.EntityManager.DestroyEntity(entity);
 			}
 		}
-
+		entities.Dispose();
 
 		entities = __instance._BuildTileQuery.ToEntityArray(Allocator.Temp);
-
 		foreach (var entity in entities)
 		{
 			var fromCharacter = entity.Read<FromCharacter>();
@@ -57,9 +55,9 @@ public static class BuildingPermissions
 				VWorld.Server.EntityManager.DestroyEntity(entity);
 			}
 		}
+		entities.Dispose();
 
 		entities = __instance._MoveTileQuery.ToEntityArray(Allocator.Temp);
-
 		foreach (var entity in entities)
 		{
 			var fromCharacter = entity.Read<FromCharacter>();
@@ -70,9 +68,9 @@ public static class BuildingPermissions
 				VWorld.Server.EntityManager.DestroyEntity(entity);
 			}
 		}
+		entities.Dispose();
 
 		entities = __instance._BuildWallpaperQuery.ToEntityArray(Allocator.Temp);
-
 		foreach (var entity in entities)
 		{
 			var fromCharacter = entity.Read<FromCharacter>();
@@ -83,5 +81,6 @@ public static class BuildingPermissions
 				VWorld.Server.EntityManager.DestroyEntity(entity);
 			}
 		}
+		entities.Dispose();
 	}
 }
