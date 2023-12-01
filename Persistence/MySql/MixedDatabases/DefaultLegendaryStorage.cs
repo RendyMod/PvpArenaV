@@ -204,23 +204,29 @@ public class DefaultLegendaryWeaponDataStorage
 		using (var connection = new MySqlConnection(serverDatabaseConnectionString))
 		{
 			await connection.OpenAsync();
-			foreach (var legendary in legendaries)
+			using (var transaction = await connection.BeginTransactionAsync())
 			{
 				var query = @"
-                INSERT INTO PlayerLegendaryWeapons (SteamID, WeaponName, Infusion, Mods, Slot) 
-                VALUES (@SteamID, @WeaponName, @Infusion, @Mods, @Slot);";
+            INSERT INTO PlayerLegendaryWeapons (SteamID, WeaponName, Infusion, Mods, Slot) 
+            VALUES (@SteamID, @WeaponName, @Infusion, @Mods, @Slot);";
 
-				using (var command = new MySqlCommand(query, connection))
+				foreach (var legendary in legendaries)
 				{
-					command.Parameters.AddWithValue("@SteamID", steamId);
-					command.Parameters.AddWithValue("@WeaponName", legendary.WeaponName);
-					command.Parameters.AddWithValue("@Infusion", legendary.Infusion);
-					command.Parameters.AddWithValue("@Mods", legendary.Mods);
-					command.Parameters.AddWithValue("@Slot", legendary.Slot);
+					using (var command = new MySqlCommand(query, connection, transaction))
+					{
+						command.Parameters.AddWithValue("@SteamID", steamId);
+						command.Parameters.AddWithValue("@WeaponName", legendary.WeaponName);
+						command.Parameters.AddWithValue("@Infusion", legendary.Infusion);
+						command.Parameters.AddWithValue("@Mods", legendary.Mods);
+						command.Parameters.AddWithValue("@Slot", legendary.Slot);
 
-					await command.ExecuteNonQueryAsync();
+						await command.ExecuteNonQueryAsync();
+					}
 				}
+
+				await transaction.CommitAsync();
 			}
 		}
 	}
+
 }

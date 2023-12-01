@@ -247,20 +247,25 @@ public class DefaultJewelDataStorage
 		using (var connection = new MySqlConnection(_playerJewelsConnectionString))
 		{
 			await connection.OpenAsync();
-			foreach (var jewel in jewels)
+			using (var transaction = connection.BeginTransaction())
 			{
 				var query = @"
-                INSERT INTO PlayerDefaultJewels (SteamID, SpellName, Mods) 
-                VALUES (@SteamID, @SpellName, @Mods) 
-                ON DUPLICATE KEY UPDATE Mods = @Mods;";
+            INSERT INTO PlayerDefaultJewels (SteamID, SpellName, Mods) 
+            VALUES (@SteamID, @SpellName, @Mods) 
+            ON DUPLICATE KEY UPDATE Mods = @Mods;";
 
-				using (var command = new MySqlCommand(query, connection))
+				foreach (var jewel in jewels)
 				{
-					command.Parameters.AddWithValue("@SteamID", steamId);
-					command.Parameters.AddWithValue("@SpellName", jewel.Key);
-					command.Parameters.AddWithValue("@Mods", jewel.Value);
-					await command.ExecuteNonQueryAsync();
+					using (var command = new MySqlCommand(query, connection, transaction))
+					{
+						command.Parameters.AddWithValue("@SteamID", steamId);
+						command.Parameters.AddWithValue("@SpellName", jewel.Key);
+						command.Parameters.AddWithValue("@Mods", jewel.Value);
+						await command.ExecuteNonQueryAsync();
+					}
 				}
+
+				await transaction.CommitAsync();
 			}
 		}
 	}

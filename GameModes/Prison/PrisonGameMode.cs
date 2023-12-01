@@ -39,7 +39,6 @@ public class PrisonGameMode : BaseGameMode
 		{ "points", true },
 		{ "lb ranked", true },
 		{ "bp", true },
-		{ "r", true },
 		{ "recount", true }
 	};
 
