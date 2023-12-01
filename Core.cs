@@ -103,18 +103,6 @@ public static class Core
 		var query = VWorld.Server.EntityManager.CreateEntityQuery(queryDesc);
 		Listener.AddListener(query, new ManuallySpawnedStructureListener());
 
-		/*queryDesc = new EntityQueryDesc
-		{
-			All = new ComponentType[]
-			{
-				new ComponentType(Il2CppType.Of<ScrollingCombatTextMessage>(), ComponentType.AccessMode.ReadWrite)
-			},
-			Options = options
-		};
-		query = VWorld.Server.EntityManager.CreateEntityQuery(queryDesc);
-		Listener.AddListener(query, new ScrollingCombatTextListener());*/
-		//---------------------------------------------
-
 		/*discordBot = new DiscordBot();
 		discordBot.InitializeAsync();*/
 

@@ -454,9 +454,18 @@ public static class CaptureThePancakeHelper
 				};
 				ActionScheduler.RunActionOnceAfterDelay(action, .1);
 			}
+			else
+			{
+				Core.captureThePancakeGameMode.Dispose();
+				UnitFactory.DisposeTimers("pancake");
+				DisposeTimers();
+			}
 		}
 		catch (Exception e)
 		{
+			Core.captureThePancakeGameMode.Dispose();
+			UnitFactory.DisposeTimers("pancake");
+			DisposeTimers();
 			Plugin.PluginLog.LogError(e.ToString());
 		}
 	}

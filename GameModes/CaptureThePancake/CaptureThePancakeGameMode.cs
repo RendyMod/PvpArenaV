@@ -39,7 +39,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 	public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
 	{
 		RemoveConsumables = true,
-		RemoveShapeshifts = true,
+		RemoveShapeshifts = false,
 		ResetCooldowns = false
 	};
 	private static bool MatchActive = false;
@@ -106,8 +106,9 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		{ Prefabs.AB_Interact_HealingOrb_Buff, HandleHealingOrbBuff },
 		{ Prefabs.Buff_General_RelicCarryDebuff, HandleRelicDebuff },
 		{ Prefabs.Buff_InCombat, HandleInCombatBuff },
-		{ Prefabs.AB_Shapeshift_BloodMend_Buff, HandleBloodMendBuff }
-    };
+		{ Prefabs.AB_Shapeshift_BloodMend_Buff, HandleBloodMendBuff },
+		{ Prefabs.AB_Storm_PolarityShift_Travel_Ally, HandleFriendlyPolarityShiftBuff }
+	};
 
 	public static Dictionary<string, bool> AllowedCommands = new Dictionary<string, bool>
 	{
@@ -333,16 +334,24 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		if (!player.IsInCaptureThePancake()) return;
 
 		//clear out any queued up respawn actions since we will recreate them now that the player has died (in case they killed themselves twice in a row before the initial respawn actions finished)
-        foreach (var respawnAction in PlayerRespawnTimers[player])
-        {
-            if (respawnAction != null)
-            {
-                respawnAction.Dispose();
-            }
-        }
-        PlayerRespawnTimers[player].Clear();
+		if (PlayerRespawnTimers.TryGetValue(player, out var respawnActions))
+		{
+			foreach (var respawnAction in respawnActions)
+			{
+				try
+				{
+					respawnAction?.Dispose();
+				}
+				catch (Exception ex)
+				{
+					Plugin.PluginLog.LogInfo($"Error disposing respawn actions in pancake: {ex.ToString()}");
+				}
+			}
 
-        if (!BuffUtility.HasBuff(VWorld.Server.EntityManager, player.Character, Prefabs.Buff_General_Vampire_Wounded_Buff))
+			respawnActions.Clear();
+		}
+
+		if (!BuffUtility.HasBuff(VWorld.Server.EntityManager, player.Character, Prefabs.Buff_General_Vampire_Wounded_Buff))
 		{
 			if (playerDeaths.ContainsKey(player))
 			{
@@ -373,68 +382,46 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		{
 			pos = CaptureThePancakeConfig.Config.Team2PlayerRespawn.ToFloat3();
 		}
-		if (player.HasBuff(Prefabs.Buff_General_RelicCarryDebuff))
+		DropShardsOnDeathIfApplicable(player);
+		//------------------------------------
+		Action respawnPlayerActionPart2 = () =>
 		{
-			var hasManticoreShard = Helper.PlayerHasItemInInventories(player, Prefabs.Item_Building_Relic_Manticore);
-			var hasMonsterShard = Helper.PlayerHasItemInInventories(player, Prefabs.Item_Building_Relic_Monster);
-			if (hasManticoreShard && hasMonsterShard)
-			{
-				CaptureThePancakeHelper.DropItemsIntoBag(player, new List<PrefabGUID> { Prefabs.Item_Building_Relic_Monster, Prefabs.Item_Building_Relic_Manticore });
-                Helper.RemoveItemFromInventory(player, Prefabs.Item_Building_Relic_Monster);
-                Helper.RemoveItemFromInventory(player, Prefabs.Item_Building_Relic_Manticore);
-            }
-			else if (hasManticoreShard)
-			{
-				CaptureThePancakeHelper.DropItemsIntoBag(player, new List<PrefabGUID> { Prefabs.Item_Building_Relic_Manticore });
-                Helper.RemoveItemFromInventory(player, Prefabs.Item_Building_Relic_Manticore);
-            }
-			else if (hasMonsterShard)
-			{
-				CaptureThePancakeHelper.DropItemsIntoBag(player, new List<PrefabGUID> { Prefabs.Item_Building_Relic_Monster });
-                Helper.RemoveItemFromInventory(player, Prefabs.Item_Building_Relic_Monster);
-            }
-		}
+			player.Reset(ResetOptions);
+			Helper.RemoveBuff(player, Prefabs.AB_Shapeshift_Mist_Buff);
+			Helper.BuffPlayer(player, Prefabs.Buff_General_Phasing, out var buffEntity, 3);
+			Helper.ApplyStatModifier(buffEntity, BuffModifiers.FastRespawnMoveSpeed);
+			Helper.RemoveBuffModifications(buffEntity, BuffModificationTypes.Immaterial);
+			buffEntity.Add<DestroyBuffOnDamageTaken>();
+		};
 
-        Action respawnPlayerActionPart2 = () =>
-        {
-            player.Reset(ResetOptions);
-            Helper.RemoveBuff(player, Prefabs.AB_Shapeshift_Mist_Buff);
-            Helper.BuffPlayer(player, Prefabs.Buff_General_Phasing, out var buffEntity, 3);
-            Helper.ApplyStatModifier(buffEntity, BuffModifiers.FastRespawnMoveSpeed);
-            Helper.RemoveBuffModifications(buffEntity, BuffModificationTypes.Immaterial);
-            buffEntity.Add<DestroyBuffOnDamageTaken>();
-        };
+		Action respawnPlayerActionPart1 = () =>
+		{
+			player.Teleport(pos);
+			Helper.BuffPlayer(player, Helper.CustomBuff2, out var buffEntity, 3);
+			Helper.ModifyBuff(buffEntity, BuffModificationTypes.MovementImpair | BuffModificationTypes.Immaterial);
+			var timer = ActionScheduler.RunActionOnceAfterDelay(respawnPlayerActionPart2, 3);
+			PlayerRespawnTimers[player].Add(timer);
+		};
 
-        Action respawnPlayerActionPart1 = () =>
-        {
-            player.Teleport(pos);
-            Helper.BuffPlayer(player, Helper.CustomBuff2, out var buffEntity, 3);
-            Helper.ModifyBuff(buffEntity, BuffModificationTypes.MovementImpair | BuffModificationTypes.Immaterial);
-            var timer = ActionScheduler.RunActionOnceAfterDelay(respawnPlayerActionPart2, 3);
-            PlayerRespawnTimers[player].Add(timer);
-        };
-
-        
-
-        Action makeSpectatorAction = () =>
+		Action makeSpectatorAction = () =>
 		{
 			var respawnDelay = CalculateRespawnDelay();
 			player.Reset(ResetOptions);
 			Helper.BuffPlayer(player, Prefabs.AB_Shapeshift_Mist_Buff, out var buffEntity, respawnDelay);
-            Helper.CompletelyRemoveAbilityBarFromBuff(buffEntity);
-            Helper.FixIconForShapeshiftBuff(player, buffEntity, Prefabs.AB_Shapeshift_Mist_Group);
-            Helper.ModifyBuff(buffEntity, BuffModificationTypes.Invulnerable | BuffModificationTypes.Immaterial | BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.AbilityCastImpair | BuffModificationTypes.PickupItemImpaired | BuffModificationTypes.TargetSpellImpaired, true);
+			Helper.CompletelyRemoveAbilityBarFromBuff(buffEntity);
+			Helper.FixIconForShapeshiftBuff(player, buffEntity, Prefabs.AB_Shapeshift_Mist_Group);
+			Helper.ModifyBuff(buffEntity, BuffModificationTypes.Invulnerable | BuffModificationTypes.Immaterial | BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.AbilityCastImpair | BuffModificationTypes.PickupItemImpaired | BuffModificationTypes.TargetSpellImpaired, true);
 
-            Helper.BuffPlayer(player, Prefabs.Admin_Observe_Invisible_Buff, out var invisibleBuff, respawnDelay);
-            Helper.ModifyBuff(invisibleBuff, BuffModificationTypes.None, true);
+			Helper.BuffPlayer(player, Prefabs.Admin_Observe_Invisible_Buff, out var invisibleBuff, respawnDelay);
+			Helper.ModifyBuff(invisibleBuff, BuffModificationTypes.None, true);
 			Helper.RespawnPlayer(player, player.Position);
-            var timer = ActionScheduler.RunActionOnceAfterDelay(respawnPlayerActionPart1, respawnDelay - 3);
-            PlayerRespawnTimers[player].Add(timer);
-        };
-
+			var timer = ActionScheduler.RunActionOnceAfterDelay(respawnPlayerActionPart1, respawnDelay - 3);
+			PlayerRespawnTimers[player].Add(timer);
+		};
 
 		var timer = ActionScheduler.RunActionOnceAfterDelay(makeSpectatorAction, 2.9);
-        PlayerRespawnTimers[player].Add(timer);
+		PlayerRespawnTimers[player].Add(timer);
+		
 		Helper.RemoveBuff(player, Prefabs.Buff_General_VampirePvPDeathDebuff);
 		var blood = player.Character.Read<Blood>();
 		Helper.SetPlayerBlood(player, blood.BloodType, blood.Quality);
@@ -444,6 +431,31 @@ public class CaptureThePancakeGameMode : BaseGameMode
 			{
 				var action = new ScheduledAction(Helper.BuffPlayer, new object[] { player, buff, buffEntity, Helper.NO_DURATION, true, true });
 				ActionScheduler.ScheduleAction(action, 2);
+			}
+		}
+	}
+
+	private static void DropShardsOnDeathIfApplicable(Player player)
+	{
+		if (player.HasBuff(Prefabs.Buff_General_RelicCarryDebuff))
+		{
+			var hasManticoreShard = Helper.PlayerHasItemInInventories(player, Prefabs.Item_Building_Relic_Manticore);
+			var hasMonsterShard = Helper.PlayerHasItemInInventories(player, Prefabs.Item_Building_Relic_Monster);
+			if (hasManticoreShard && hasMonsterShard)
+			{
+				CaptureThePancakeHelper.DropItemsIntoBag(player, new List<PrefabGUID> { Prefabs.Item_Building_Relic_Monster, Prefabs.Item_Building_Relic_Manticore });
+				Helper.RemoveItemFromInventory(player, Prefabs.Item_Building_Relic_Monster);
+				Helper.RemoveItemFromInventory(player, Prefabs.Item_Building_Relic_Manticore);
+			}
+			else if (hasManticoreShard)
+			{
+				CaptureThePancakeHelper.DropItemsIntoBag(player, new List<PrefabGUID> { Prefabs.Item_Building_Relic_Manticore });
+				Helper.RemoveItemFromInventory(player, Prefabs.Item_Building_Relic_Manticore);
+			}
+			else if (hasMonsterShard)
+			{
+				CaptureThePancakeHelper.DropItemsIntoBag(player, new List<PrefabGUID> { Prefabs.Item_Building_Relic_Monster });
+				Helper.RemoveItemFromInventory(player, Prefabs.Item_Building_Relic_Monster);
 			}
 		}
 	}
@@ -558,7 +570,11 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 	public static void HandleBiteAbortBuff(Player player, Entity buffEntity)
 	{
-		Helper.RemoveBuff(player.Character, Prefabs.AB_FeedEnemyVampire_01_Initiate_DashChannel);
+		Action action = () =>
+		{
+			Helper.RemoveBuff(player.Character, Prefabs.AB_FeedEnemyVampire_01_Initiate_DashChannel);
+		};
+		ActionScheduler.RunActionOnceAfterDelay(action, .1);
 	}
 
 	public static void HandleMountBuff(Player player, Entity buffEntity)
@@ -591,7 +607,6 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		grandmaBuffEntity.Write(scriptBuffShapeshiftDataShared);
 		grandmaBuffEntity.Remove<ModifyMovementSpeedBuff>();
 		Helper.ModifyBuff(grandmaBuffEntity, BuffModificationTypes.TargetSpellImpaired);
-		Helper.MakePlayerCcImmune(player);
 		Helper.FixIconForShapeshiftBuff(player, grandmaBuffEntity, Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Group);
 
 		Helper.RemoveNewAbilitiesFromBuff(grandmaBuffEntity);
@@ -630,6 +645,17 @@ public class CaptureThePancakeGameMode : BaseGameMode
 			var changeBloodOnGameplayEvent = buffer[i];
 			changeBloodOnGameplayEvent.BloodValue = 10;
 			buffer[i] = changeBloodOnGameplayEvent;
+		}
+	}
+
+	public static void HandleFriendlyPolarityShiftBuff(Player player, Entity buffEntity)
+	{	
+		if (Helper.HasBuff(player, Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Buff))
+		{
+			var travelBuff = buffEntity.Read<TravelBuff>();
+			travelBuff.EndPosition = travelBuff.StartPosition;
+			buffEntity.Write(travelBuff);
+			Helper.DestroyBuff(buffEntity);
 		}
 	}
 
@@ -757,7 +783,6 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		if (!player.IsInCaptureThePancake()) return;
 
 
-		Helper.DestroyEntity(player.Character);
 		if (player.MatchmakingTeam == 1)
 		{
 			Helper.RespawnPlayer(player, CaptureThePancakeConfig.Config.Team1PlayerRespawn.ToFloat3());
@@ -772,6 +797,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 	{
 		if (!player.IsInCaptureThePancake()) return;
 
+		Helper.DestroyEntity(player.Character);
 	}
 
 	public void HandleOnPlayerWillLoseGallopBuff(Player player, Entity eventEntity)

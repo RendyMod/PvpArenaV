@@ -80,37 +80,13 @@ public static class DealDamageSystemPatch
 					}
 				}
 			}
-			catch
+			catch (System.Exception e)
 			{
-				Plugin.PluginLog.LogInfo("An error occurred in the deal damage system");
+				Plugin.PluginLog.LogInfo($"An error occurred in the deal damage system: {e.ToString()}");
 			}
 		}
 	}
 }
-
-/*public class ScrollingCombatTextListener : EntityQueryListener
-{
-	
-	public void OnNewMatchFound(Entity entity)
-	{
-		var sct = entity.Read<ScrollingCombatTextMessage>();
-		if (sct.Value == 0) { return; }
-		
-		if (sct.Source._Entity.Has<PlayerCharacter>() && sct.Type == Prefabs.SCT_Type_Absorb && (sct.Target._Entity.Has<PlayerCharacter>() || (sct.Target._Entity.Read<PrefabGUID>() == Dummy.PrefabGUID)))
-		{
-			var sourceEntity = sct.Source._Entity;
-			var sourcePlayer = PlayerService.GetPlayerFromCharacter(sourceEntity);
-
-			var targetEntity = sct.Target._Entity;
-			GameEvents.RaisePlayerDamageReported(sourcePlayer, targetEntity, sct.Type, sct.Value);
-		}
-	}
-
-	public void OnNewMatchRemoved(Entity entity)
-	{
-
-	}
-}*/
 
 
 [HarmonyPatch(typeof(AiDamageTakenEventSystem), nameof(AiDamageTakenEventSystem.OnUpdate))]

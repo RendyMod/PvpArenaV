@@ -393,8 +393,8 @@ public static partial class Helper
         player.Character.Add<BuffResistances>();
         player.Character.Write(new BuffResistances
         {
-            SettingsEntity = ModifiableEntity.Create(player.Character, VWorld.Server.EntityManager, Helper.GetPrefabEntityByPrefabGUID(Prefabs.BuffResistance_Golem)),
-            InitialSettingGuid = Prefabs.BuffResistance_Golem
+            SettingsEntity = ModifiableEntity.Create(player.Character, VWorld.Server.EntityManager, Helper.GetPrefabEntityByPrefabGUID(Prefabs.BuffResistance_UberMob)),
+            InitialSettingGuid = Prefabs.BuffResistance_UberMob
         });
     }
 
