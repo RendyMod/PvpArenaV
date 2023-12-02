@@ -163,8 +163,8 @@ public static class ExtendedColor
         public static readonly Color LightStorm = new Color32(253, 226, 126, 255);
         public static readonly Color Storm = new Color32(246, 247, 90, 255);
         
-        public static readonly Color LightServerColor = new Color32(254, 87, 131, 255);
-        public static readonly Color ServerColor = new Color32(217, 46, 120, 255);
+        public static readonly Color LightServerColor = new Color32(254, 66, 95, 255);
+        public static readonly Color ServerColor = new Color32(217, 38, 85, 255);
         
         public static readonly Color ClanNameColor = new Color32(86, 150, 225, 255);
         

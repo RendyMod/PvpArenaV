@@ -1250,6 +1250,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 			Kills = playerKills[player],
 			Deaths = playerDeaths.ContainsKey(player) ? playerDeaths[player] : 0,
 			Damage = PlayerDamageDealt.ContainsKey(player) ? PlayerDamageDealt[player] : 0,
+			DamageTaken = PlayerDamageReceived.ContainsKey(player) ? PlayerDamageReceived[player] : 0,
 		})
 		.OrderByDescending(player => player.Kills)
 		.ToList();
@@ -1260,7 +1261,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 			// Calculate and send team totals
 			SendTeamTotals(receiver, team1, team2);
 
-			receiver.ReceiveMessage("Player Detail".Warning());
+			receiver.ReceiveMessage("Player Detail:".Colorify(ExtendedColor.LightServerColor));
 			// Send individual stats
 			foreach (var stat in playerStats)
 			{
@@ -1269,7 +1270,8 @@ public class CaptureThePancakeGameMode : BaseGameMode
 				string colorizedKills = isStatPlayerAlly ? stat.Kills.ToString().FriendlyTeam() : stat.Kills.ToString().EnemyTeam();
 				string colorizedDeaths = isStatPlayerAlly ? stat.Deaths.ToString().EnemyTeam() : stat.Deaths.ToString().FriendlyTeam();
 				string colorizedDamages = isStatPlayerAlly ? stat.Damage.ConvertToEngineeringNotation().FriendlyTeam() : stat.Damage.ConvertToEngineeringNotation().EnemyTeam();
-				receiver.ReceiveMessage($"{colorizedPlayerName} - K/D: {colorizedKills} / {colorizedDeaths} - DMG: {colorizedDamages}".White());
+				string colorizedDamagesTaken = isStatPlayerAlly ? stat.DamageTaken.ConvertToEngineeringNotation().EnemyTeam() : stat.DamageTaken.ConvertToEngineeringNotation().FriendlyTeam();
+				receiver.ReceiveMessage($"{colorizedPlayerName} - K/D: {colorizedKills} / {colorizedDeaths} - DMG: {colorizedDamages} / {colorizedDamagesTaken}".White());
 			}
 		}
 	}
@@ -1321,7 +1323,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 			team2DamagesColorized = team2Damages.ConvertToEngineeringNotation().FriendlyTeam();
 		}
 
-		receiver.ReceiveMessage("Team Recap".Warning());
+		receiver.ReceiveMessage("Team Recap:".Colorify(ExtendedColor.LightServerColor));
 		receiver.ReceiveMessage($"{team1NameColorized} - K/D: {team1KillsColorized} / {team1DeathsColorized} - DMG: {team1DamagesColorized}".White());
 		receiver.ReceiveMessage($"{team2NameColorized} - K/D: {team2KillsColorized} / {team2DeathsColorized} - DMG: {team2DamagesColorized}".White());
 	}
