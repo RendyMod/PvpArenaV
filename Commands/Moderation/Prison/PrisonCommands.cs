@@ -49,9 +49,4 @@ internal class PrisonCommands
 			sender.ReceiveMessage($"{imprisonedPlayer.Name.Colorify(ExtendedColor.ClanNameColor)} can't be freed because they are not in prison.".Error());
 		}
 	}
-		ImprisonService.UnimprisonPlayer(imprisonedPlayer.SteamID);
-		Helper.SendSystemMessageToAllClients($"{imprisonedPlayer.Name.Colorify(ExtendedColor.ClanNameColor)} has been unimprisoned.".Success());
-		imprisonedPlayer.ReceiveMessage($"You have been set free!".Success());
-		//sender.ReceiveMessage($"{imprisonedPlayer.Name.Colorify(ExtendedColor.ClanNameColor)} has been unimprisoned.".White());
-	}
 }
