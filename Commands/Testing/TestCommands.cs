@@ -10,6 +10,8 @@ using ProjectM.CastleBuilding;
 using PvpArena.Helpers;
 using PvpArena.Models;
 using static PvpArena.Frameworks.CommandFramework.CommandFramework;
+using System.Numerics;
+using System;
 
 namespace PvpArena.Commands.Debug;
 internal class TestCommands
@@ -19,13 +21,11 @@ internal class TestCommands
 	public void TestCommand(Player sender)
 	{
 		var entity = Helper.GetHoveredEntity(sender.Character);
-		var buffs = Helper.GetEntityBuffs(entity);
-		foreach (var buff in buffs)
+		if (entity.Has<EntityInput>())
 		{
-			if (buff.Has<ChangeKnockbackResistanceBuff>())
-			{
-				buff.LogPrefabName();
-			}
+			var entityInput = entity.Read<EntityInput>();
+			entityInput.SetAllAimPositions(sender.Position);
+			entity.Write(entityInput);
 		}
 	}
 
@@ -79,6 +79,46 @@ internal class TestCommands
 	{
 		Helper.BuffPlayer(player, Prefabs.Buff_Gloomrot_SentryOfficer_TurretCooldown, out var buffEntity, Helper.NO_DURATION, true);
 		Helper.ModifyBuff(buffEntity, BuffModificationTypes.BuildMenuImpair);
+	}
+
+	[Command("rotate-unit", description: "Used for debugging", adminOnly: true)]
+	public void RotateUnitCommand(Player sender)
+	{
+		var entity = Helper.GetHoveredEntity<EntityInput>(sender.Character);
+		var entityInput = entity.Read<EntityInput>();
+		var entityPosition = entity.Read<LocalToWorld>().Position;
+
+		var currentAimPosition = entityInput.AimPosition;
+		var aimDirection = currentAimPosition - entityPosition;
+
+		var currentAngle = Math.Atan2(aimDirection.z, aimDirection.x) * (180 / Math.PI);
+		currentAngle = (currentAngle + 360) % 360;
+
+		// Tolerance for floating-point precision
+		float tolerance = 0.01f;
+
+		// Function to check if the angle is near a multiple of 45
+		bool IsNearMultipleOf45(float angle)
+		{
+			float mod = angle % 45;
+			return mod < tolerance || (45 - mod) < tolerance;
+		}
+
+		if (!IsNearMultipleOf45((float)currentAngle))
+		{
+			currentAngle = Math.Round(currentAngle / 45) * 45;
+		}
+		else
+		{
+			currentAngle += 45;
+		}
+
+		var newAngleRadians = currentAngle * (Math.PI / 180);
+		var newAimDirection = new float3((float)Math.Cos(newAngleRadians), aimDirection.y, (float)Math.Sin(newAngleRadians));
+
+		var newAimPosition = entityPosition + newAimDirection;
+		entityInput.SetAllAimPositions(newAimPosition);
+		entity.Write(entityInput);
 	}
 
 	[Command("move-structures", description: "Used for debugging", adminOnly: true)]

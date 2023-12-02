@@ -8,7 +8,7 @@ using System.Linq;
 namespace PvpArena.Commands;
 public class WaypointsCommands 
 {	
-	[Command("tp-create", adminOnly: true)]
+	[Command("tp-create", aliases: new string[] { "tp-add", "tp create", "tp add" }, adminOnly: true)]
 	public void CreateWaypointCommand (Player sender, string name, bool adminOnly = true, string id = "")
 	{
 		Waypoint waypoint = new Waypoint(id, name, sender.Position, adminOnly);

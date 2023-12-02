@@ -149,7 +149,7 @@ public static class UnitFactory
 					if (unit.SoftSpawn && unit.SpawnDelay > 0)
 					{
 						Helper.BuffEntity(e, Prefabs.Buff_General_VampireMount_Dead, out var softSpawnBuff, unit.SpawnDelay);
-						Helper.ModifyBuff(softSpawnBuff, BuffModificationTypes.Immaterial | BuffModificationTypes.Invulnerable | BuffModificationTypes.TargetSpellImpaired | BuffModificationTypes.MovementImpair | BuffModificationTypes.RelocateImpair | BuffModificationTypes.DisableMapCollision | BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.AbilityCastImpair | BuffModificationTypes.BehaviourImpair);
+						Helper.ModifyBuff(softSpawnBuff, BuffModificationTypes.Immaterial | BuffModificationTypes.Invulnerable | BuffModificationTypes.TargetSpellImpaired | BuffModificationTypes.MovementImpair | BuffModificationTypes.RelocateImpair | BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.AbilityCastImpair | BuffModificationTypes.BehaviourImpair);
 					}
 				}
 				else
@@ -305,7 +305,7 @@ public static class UnitFactory
 		BuffModificationTypes modificationTypes = BuffModificationTypes.None;
 		if (unit.IsRooted)
 		{
-			modificationTypes |= BuffModificationTypes.MovementImpair | BuffModificationTypes.DisableMapCollision | BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.RelocateImpair;
+			modificationTypes |= BuffModificationTypes.MovementImpair | BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.RelocateImpair;
 		}
 		if (unit.IsImmaterial)
 		{
@@ -313,7 +313,7 @@ public static class UnitFactory
 		}
 		if (unit.IsInvulnerable)
 		{
-			modificationTypes |= BuffModificationTypes.Invulnerable | BuffModificationTypes.DisableMapCollision | BuffModificationTypes.DisableDynamicCollision;	
+			modificationTypes |= BuffModificationTypes.Invulnerable | BuffModificationTypes.DisableDynamicCollision;	
 		}
 		if (!unit.IsTargetable)
 		{
