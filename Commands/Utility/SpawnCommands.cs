@@ -45,11 +45,11 @@ internal class SpawnCommands
 	}
 
 	[Command("spawn-boss", description: "Spawns a boss at your location", adminOnly: true)]
-	public static void SpawnBossCommand(Player sender, PrefabGUID _prefab, int level = 100, int spawnSnapMode = 5, int hp = -1)
+	public static void SpawnBossCommand(Player sender, PrefabGUID _prefab, int level = 100, int spawnSnapMode = 5, int hp = -1, bool rooted = false)
 	{
 		var spawnPosition = Helper.GetSnappedHoverPosition(sender, (SnapMode)spawnSnapMode);
 		var boss = new Boss(_prefab);
-		boss.IsRooted = false;
+		boss.IsRooted = rooted;
 		if (hp > 0)
 		{
 			boss.MaxHealth = hp;

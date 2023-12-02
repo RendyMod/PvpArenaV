@@ -131,17 +131,17 @@ public class CaptureThePancakeGameMode : BaseGameMode
 	public static Entity MonsterGate;
     public static List<Entity> SpawnGates = new List<Entity>();
 
-    public static Dictionary<PrefabGUID, PrefabGUID> AbilitiesToNotCauseBuffDestruction = new Dictionary<PrefabGUID, PrefabGUID>
-    {
-        { Prefabs.AB_Interact_Pickup_AbilityGroup, Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Buff},
-        { Prefabs.AB_Interact_OpenContainer_AbilityGroup, Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Buff},
-        { Prefabs.AB_Interact_HealingOrb_AbilityGroup, Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Buff},
-        { Prefabs.AB_Interact_Mount_Owner_Buff_Horse, Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Buff},
-        { Prefabs.AB_Interact_OpenDoor_AbilityGroup, Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Buff},
-        { Prefabs.AB_Interact_OpenGate_AbilityGroup, Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Buff},
-    };
+	public static Dictionary<PrefabGUID, List<PrefabGUID>> AbilitiesToNotCauseBuffDestruction = new Dictionary<PrefabGUID, List<PrefabGUID>>
+	{
+		{ Prefabs.AB_Interact_Pickup_AbilityGroup, new List<PrefabGUID>{Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Buff} },
+		{ Prefabs.AB_Interact_OpenContainer_AbilityGroup, new List<PrefabGUID>{Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Buff}},
+		{ Prefabs.AB_Interact_Mount_Owner_Buff_Horse, new List<PrefabGUID>{Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Buff}},
+		{ Prefabs.AB_Interact_OpenDoor_AbilityGroup, new List<PrefabGUID>{Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Buff}},
+		{ Prefabs.AB_Interact_OpenGate_AbilityGroup, new List<PrefabGUID>{Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Buff}},
+		{ Prefabs.AB_Interact_HealingOrb_AbilityGroup, new List<PrefabGUID>{Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Buff, Prefabs.AB_Shapeshift_Bear_Buff, Prefabs.AB_Shapeshift_Bear_Skin01_Buff}},
+	};
 
-    public override void Initialize()
+	public override void Initialize()
 	{
 		MatchActive = true;
 		GameEvents.OnPlayerRespawn += HandleOnPlayerRespawn;
@@ -1011,21 +1011,30 @@ public class CaptureThePancakeGameMode : BaseGameMode
         var abilityGuid = abilityCastStartedEvent.AbilityGroup.Read<PrefabGUID>();
 
         //prevent shapeshift spells from breaking players out of their shapeshift (due to the abnormal way we gave them shapeshift)
-        if (AbilitiesToNotCauseBuffDestruction.TryGetValue(abilityGuid, out var buff))
+        if (AbilitiesToNotCauseBuffDestruction.TryGetValue(abilityGuid, out var buffs))
         {
-            if (BuffUtility.TryGetBuff(VWorld.Server.EntityManager, abilityCastStartedEvent.Character, buff, out Entity buffEntity))
-            {
-                if (buffEntity.Has<DestroyOnAbilityCast>())
-                {
-                    var destroyOnAbilityCast = buffEntity.Read<DestroyOnAbilityCast>();
-                    destroyOnAbilityCast.CastCount = 0;
-                    buffEntity.Write(destroyOnAbilityCast);
-                }
-            }
-        }
-    }
+			PreventBuffDestructionIfBuffPresent(abilityCastStartedEvent, buffs);
 
-    public void HandleOnDelayedSpawnEvent(Unit unit, int timeToSpawn)
+		}
+	}
+
+	private static void PreventBuffDestructionIfBuffPresent(AbilityCastStartedEvent abilityCastStartedEvent, List<PrefabGUID> buffs)
+	{
+		foreach (var buff in buffs)
+		{
+			if (BuffUtility.TryGetBuff(VWorld.Server.EntityManager, abilityCastStartedEvent.Character, buff, out Entity buffEntity))
+			{
+				if (buffEntity.Has<DestroyOnAbilityCast>())
+				{
+					var destroyOnAbilityCast = buffEntity.Read<DestroyOnAbilityCast>();
+					destroyOnAbilityCast.CastCount = 0;
+					buffEntity.Write(destroyOnAbilityCast);
+				}
+			}
+		}
+	}
+
+	public void HandleOnDelayedSpawnEvent(Unit unit, int timeToSpawn)
     {
         if (unit.Category != "pancake") return;
 

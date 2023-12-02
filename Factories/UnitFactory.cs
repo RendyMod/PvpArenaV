@@ -131,20 +131,11 @@ public static class UnitFactory
 					AddBuffModifications(unit, buffEntity);
 					if (unit.KnockbackResistance)
 					{
-						GiveKnockbackResistance(e, buffEntity);
+						GiveKnockbackResistance(unit, e, buffEntity);
 					}
 					if (!unit.DrawsAggro)
 					{
 						DisableAggro(buffEntity);
-					}
-					if (unit.IsRooted)
-					{
-/*						e.Add<BuffResistances>();
-						e.Write(new BuffResistances
-						{
-							SettingsEntity = ModifiableEntity.CreateFixed(Helper.GetPrefabEntityByPrefabGUID(Prefabs.BuffResistance_Golem)),
-							InitialSettingGuid = Prefabs.BuffResistance_Golem
-						});*/
 					}
 					unit.Modify(e, buffEntity);
 
@@ -287,14 +278,25 @@ public static class UnitFactory
 		});
 	}
 
-	private static void GiveKnockbackResistance(Entity e, Entity buffEntity)
+	private static void GiveKnockbackResistance(Unit unit, Entity e, Entity buffEntity)
 	{
 		e.Add<BuffResistances>();
-		e.Write(new BuffResistances
+		if (unit.IsRooted)
 		{
-			SettingsEntity = ModifiableEntity.CreateFixed(Helper.GetPrefabEntityByPrefabGUID(Prefabs.BuffResistance_Golem)),
-			InitialSettingGuid = Prefabs.BuffResistance_Golem
-		});
+			e.Write(new BuffResistances
+			{
+				SettingsEntity = ModifiableEntity.CreateFixed(Helper.GetPrefabEntityByPrefabGUID(Prefabs.BuffResistance_Golem)),
+				InitialSettingGuid = Prefabs.BuffResistance_Golem
+			});
+		}
+		else
+		{
+			e.Write(new BuffResistances
+			{
+				SettingsEntity = ModifiableEntity.CreateFixed(Helper.GetPrefabEntityByPrefabGUID(Prefabs.BuffResistance_UberMobNoKnockbackOrGrab)),
+				InitialSettingGuid = Prefabs.BuffResistance_UberMobNoKnockbackOrGrab
+			});
+		}
 	}
 
 	private static void AddBuffModifications(Unit unit, Entity buffEntity)
@@ -317,14 +319,7 @@ public static class UnitFactory
 		{
 			modificationTypes |= BuffModificationTypes.TargetSpellImpaired;
 		}
-		if (unit.KnockbackResistance)
-		{
-			modificationTypes |= BuffModificationTypes.RelocateImpair;
-		}
-		buffEntity.Write(new BuffModificationFlagData
-		{
-			ModificationTypes = (long)modificationTypes
-		});
+		Helper.ModifyBuff(buffEntity, modificationTypes, true);
 	}
 
 	private static void SetHealth(Unit unit, Entity e)
@@ -433,7 +428,7 @@ public class Boss : Unit
 		isImmaterial = false;
 		aggroRadius = 15;
 		knockbackResistance = true;
-		isRooted = true;
+		isRooted = false;
 		drawsAggro = false;
 		isTargetable = false;
 		softSpawn = true;
@@ -450,7 +445,7 @@ public class LightningBoss : Boss
 {
 	public LightningBoss(int team = 10, int level = -1) : base(Prefabs.CHAR_Gloomrot_SpiderTank_LightningRod, team, level)
 	{
-
+		isRooted = true;
 	}
 
 	public override void Modify(Entity e, Entity buffEntity)
@@ -468,6 +463,7 @@ public class AngramBoss : Boss
 	{
 		name = "Angram";
 		softSpawn = true;
+		isRooted = true;
 	}
 }
 
