@@ -39,7 +39,7 @@ internal static class MatchmakingCommands
 		sender.ReceiveMessage("Left the queue!".Success());
 	}
 
-	[Command("lb ranked", description: "Displays the ranked leaderboard", adminOnly: false, includeInHelp: false, category: "Ranked")]
+	/*[Command("lb ranked", description: "Displays the ranked leaderboard", adminOnly: false, includeInHelp: false, category: "Ranked")]*/
 	public static void ShowLeaderboardCommand(Player sender, int pageNumber = 1)
 	{
 		const int playersPerPage = 10; // Number of players to display per page

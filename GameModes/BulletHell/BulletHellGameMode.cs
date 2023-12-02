@@ -160,8 +160,7 @@ public class BulletHellGameMode : BaseGameMode
 	{
 		if (!player.IsInBulletHell() || player != this.player) return;
 
-		player.CurrentState = Player.PlayerState.Normal;
-		//end the match
+        BulletHellManager.EndMatch(this);
 	}
 
 	public override void HandleOnItemWasThrown(Player player, Entity eventEntity)

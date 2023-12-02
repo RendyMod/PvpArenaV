@@ -7,6 +7,7 @@ using static PvpArena.Frameworks.CommandFramework.CommandFramework;
 using PvpArena.Models;
 using PvpArena.Helpers;
 using PvpArena.Services.Moderation;
+using PvpArena.GameModes.Matchmaking1v1;
 
 namespace PvpArena.Commands.Moderation.Imprison;
 internal class PrisonCommands
@@ -20,16 +21,22 @@ internal class PrisonCommands
 		}
 		else
 		{
+			if (imprisonedPlayer.IsIn1v1()) //do we need to do anything for other game modes here?
+			{
+				MatchmakingQueue.MatchManager.EndMatch(MatchmakingHelper.GetOpponentForPlayer(imprisonedPlayer), imprisonedPlayer, false);
+			}
+
 			ImprisonService.ImprisonPlayer(imprisonedPlayer.SteamID, numberOfDays);
 			string durationMessage;
 			if (numberOfDays == -1)
 			{
-				durationMessage = "indefinitely".Emphasize();
+				durationMessage = "indefinitely";
 			}
 			else
 			{
-				durationMessage = $"for {numberOfDays.ToString().Emphasize()} days";
+				durationMessage = $"for {numberOfDays} days";
 			}
+			Helper.SendSystemMessageToAllClients($"{imprisonedPlayer.Name.Colorify(ExtendedColor.ClanNameColor)} has been imprisoned {durationMessage}.".Error());
 			imprisonedPlayer.ReceiveMessage($"You have been imprisoned {durationMessage}.".Error());
 			sender.ReceiveMessage($"{imprisonedPlayer.Name.Colorify(ExtendedColor.ClanNameColor)} has been imprisoned {durationMessage}.".White());
 		}
@@ -41,6 +48,7 @@ internal class PrisonCommands
 		if (imprisonedPlayer.IsImprisoned())
 		{
 			ImprisonService.UnimprisonPlayer(imprisonedPlayer.SteamID);
+			Helper.SendSystemMessageToAllClients($"{imprisonedPlayer.Name.Colorify(ExtendedColor.ClanNameColor)} has been unimprisoned.".Success());
 			imprisonedPlayer.ReceiveMessage($"You have been set free!".Success());
 			sender.ReceiveMessage($"{imprisonedPlayer.Name.Colorify(ExtendedColor.ClanNameColor)} has been unimprisoned.".White());
 		}
