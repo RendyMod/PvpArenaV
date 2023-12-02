@@ -10,10 +10,6 @@
 		<BepInExPluginGuid>PvpArena</BepInExPluginGuid>
 		<Authors>Willis,Rendy</Authors>
 	</PropertyGroup>
-	<!-- Copy CommunityCommands.dll to /dist -->
-	<Target Name="Thunderstore Copy to Dist" AfterTargets="AfterBuild" Condition=" '$(Configuration)' == 'Release'">
-		<Copy SourceFiles="$(OutDir)\PvpArena.dll" DestinationFolder="$(ProjectDir)/dist" />
-	</Target>
 	<ItemGroup>
 	    <PackageReference Include="BepInEx.PluginInfoProps" Version="2.1.0" />
 	    <PackageReference Include="Discord.Net" Version="3.12.0" />

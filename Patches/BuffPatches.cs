@@ -82,7 +82,8 @@ public static class BuffDebugSystemPatch
 					else if (entity.Read<PrefabGUID>() == Helper.CustomBuff4 && UnitFactory.HasCategory(owner, "dummy"))
 					{
 						var health = owner.Read<Health>();
-						if (health.Value > 0 && !health.IsDead)
+						var destroyReason = entity.Read<DestroyData>().DestroyReason;
+						if (health.Value > 0 && !health.IsDead && destroyReason == DestroyReason.Duration)
 						{
 							var spawnPosition = UnitFactory.GetSpawnPositionOfEntity(owner);
 							owner.Teleport(spawnPosition);

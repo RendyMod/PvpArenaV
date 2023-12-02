@@ -31,4 +31,30 @@ internal static class ShopCommands
 		Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { player.PlayerPointsData });
 		sender.ReceiveMessage($"Added {points.ToString().Emphasize()} {"VPoint(s)".Warning()} to {player.Name.Colorify(ExtendedColor.ClanNameColor)}".Success());
 	}
+
+	[Command("remove-points", adminOnly: true, aliases: new string[] { "removepoints", "remove points" })]
+	public static void RemovePointsCommand(Player sender, int points, Player foundPlayer = null)
+	{
+		Player player = foundPlayer ?? sender;
+
+		player.PlayerPointsData.TotalPoints -= points;
+		Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { player.PlayerPointsData });
+		sender.ReceiveMessage($"Set {player.Name.Colorify(ExtendedColor.ClanNameColor)}'s points to {points.ToString().Emphasize()}".Success());
+	}
+
+	[Command("set-points", adminOnly: true, aliases: new string[] { "setpoints", "set points"})]
+	public static void SetPointsCommand(Player sender, int points, Player foundPlayer = null)
+	{
+		Player player = foundPlayer ?? sender;
+
+		player.PlayerPointsData.TotalPoints = points;
+		Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { player.PlayerPointsData });
+		sender.ReceiveMessage($"Set {player.Name.Colorify(ExtendedColor.ClanNameColor)}'s points to {points.ToString().Emphasize()}".Success());
+	}
+
+	[Command("get-points", adminOnly: true, aliases: new string[] { "getpoints", "get points" })]
+	public static void GetPointsCommand(Player sender, Player player)
+	{
+		sender.ReceiveMessage($"{player.Name.Colorify(ExtendedColor.ClanNameColor)} has {player.PlayerPointsData.TotalPoints.ToString().Emphasize()} {"VPoint(s)".Warning()}".White());
+	}
 }

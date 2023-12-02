@@ -142,12 +142,13 @@ internal static class MatchmakingCommands
 		var orderedPlayers = PlayerService.UserCache.Values
 						.Select(player => new {
 							player.SteamID,
-							player.PlayerBulletHellData.BestTime,
+							BestTime = double.Parse(player.PlayerBulletHellData.BestTime),
 							player.Name // Assuming Name gets the player's display name
 						})
-						.Where(player => player.BestTime != "0")
+						.Where(player => player.BestTime != 0)
 						.OrderByDescending(player => player.BestTime)
 						.ToList();
+
 
 		// Calculate start and end indices for the current page
 		int startIndex = (pageNumber - 1) * playersPerPage;

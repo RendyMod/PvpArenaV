@@ -106,6 +106,7 @@ public class PlayerBanInfo : PlayerData
 	}
 }
 
+//TODO: Update to hours instead of days
 public class PlayerImprisonInfo : PlayerData
 {
 	public override ulong SteamID { get; set; }
