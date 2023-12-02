@@ -309,7 +309,7 @@ public static class UnitFactory
 		}
 		if (unit.IsImmaterial)
 		{
-			modificationTypes |= BuffModificationTypes.Immaterial | BuffModificationTypes.DisableMapCollision | BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.Invulnerable;
+			modificationTypes |= BuffModificationTypes.Immaterial | BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.Invulnerable;
 		}
 		if (unit.IsInvulnerable)
 		{
