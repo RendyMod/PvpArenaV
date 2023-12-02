@@ -114,7 +114,7 @@ public static class OnUserConnectedPatch
 	[CommandFramework.Command("welcome-message", adminOnly: true)]
 	public static void SendWelcomeMessageToPlayer (Player player)
 	{
-		player.ReceiveMessage(($"Welcome to " + "V Arena".Colorify(ExtendedColor.LightServerColor)).Colorify(ExtendedColor.ServerColor));
+		player.ReceiveMessage(($"Welcome to " + "V Arena".Emphasize() + " powered by " + "Altab".Emphasize()+ ".be".Colorify(ExtendedColor.ClanNameColor)).White());
 		player.ReceiveMessage(("Join us on Discord" + ": " +
 		                      $"{PvpArenaConfig.Config.DiscordLink}".Colorify(ExtendedColor.LightServerColor)).Emphasize());
 		player.ReceiveMessage(("Jewels:".Emphasize()+" Use " +
