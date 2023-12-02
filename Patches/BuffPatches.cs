@@ -80,11 +80,11 @@ public static class BuffDebugSystemPatch
 					}
 					else if (entity.Read<PrefabGUID>() == Helper.CustomBuff4 && UnitFactory.HasCategory(owner, "dummy"))
 					{
-						if (!owner.Read<Health>().IsDead)
+						var health = owner.Read<Health>();
+						if (health.Value > 0 && !health.IsDead)
 						{
 							var spawnPosition = UnitFactory.GetSpawnPositionOfEntity(owner);
 							owner.Teleport(spawnPosition);
-							var health = owner.Read<Health>();
 							health.Value = health.MaxHealth;
 							health.MaxRecoveryHealth = health.MaxHealth;
 							owner.Write(health);

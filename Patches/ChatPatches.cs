@@ -16,7 +16,7 @@ namespace PvpArena.Patches;
 
 
 [HarmonyPatch(typeof(ChatMessageSystem), nameof(ChatMessageSystem.OnUpdate))]
-[HarmonyBefore(new string[] { "gg.deca.VampireCommandFramework" })]
+[HarmonyBefore(new string[] { "gg.deca.Bloodstone" })]
 public static class ChatMessageSystemPatch
 {
 	public static void Prefix(ChatMessageSystem __instance)

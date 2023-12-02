@@ -141,13 +141,13 @@ internal class TeleportCommands
 	{
 		if (sender.CurrentState == Player.PlayerState.Spectating && player == null)
 		{
+			sender.Reset(BaseGameMode.ResetOptions);
 			sender.Teleport( PvpArenaConfig.Config.CustomSpawnLocation.ToFloat3());
-			Helper.RemoveBuff(sender.Character, Prefabs.Admin_Observe_Invisible_Buff);
 			sender.CurrentState = Player.PlayerState.Normal;
+			sender.ReceiveMessage("Stopped spectating".White());
 		}
 		else
 		{
-			sender.Reset(BaseGameMode.ResetOptions);
 			sender.CurrentState = Player.PlayerState.Spectating;
 			Helper.BuffPlayer(sender, Prefabs.Admin_Observe_Invisible_Buff, out var buffEntity, Helper.NO_DURATION);
 			Helper.RemoveBuffModifications(buffEntity, BuffModificationTypes.DisableMapCollision);
@@ -155,6 +155,11 @@ internal class TeleportCommands
 			if (player != null)
 			{
 				sender.Teleport( player.Position);
+				sender.ReceiveMessage($"Now spectating {player.Name.Colorify(ExtendedColor.ClanNameColor)}. Do .spectate again to undo.".White());
+			}
+			else
+			{
+				sender.ReceiveMessage($"Entered spectate mode. Do .spectate again to undo.".White());
 			}
 		}
 	}
