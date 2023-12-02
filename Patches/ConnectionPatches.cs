@@ -139,11 +139,9 @@ public static class OnUserConnectedPatch
 
 	public static void AddBuffToPlayerToImpairBuilding (Player player)
 	{
-		if (!Helper.BuffPlayer(player, Prefabs.Buff_Gloomrot_SentryOfficer_TurretCooldown, out Entity buffEntity,
-			    Helper.NO_DURATION, true))
+		if (!Helper.TryGetBuff(player, Prefabs.Buff_Gloomrot_SentryOfficer_TurretCooldown, out var buffEntity))
 		{
-			var action = new ScheduledAction(AddBuffToPlayerToImpairBuilding, new object[] { player });
-			ActionScheduler.ScheduleAction(action, 50);
+			AddBuffToPlayerToImpairBuilding(player);
 		}
 		else
 		{

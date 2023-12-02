@@ -31,7 +31,8 @@ public class LogPatch
 	{
 		"CommandBuffer error",
 		"InvalidOperationException",
-		"Tried to spawn Unity.Entities.Entity in Neutral team"
+		"Tried to spawn Unity.Entities.Entity in Neutral team",
+		"Got TeleportDebugEvent"
 	};
 	public static bool Prefix(Il2CppSystem.Object message)
 	{

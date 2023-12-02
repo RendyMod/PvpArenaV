@@ -205,7 +205,7 @@ public static partial class Helper
 	public static void Teleport(this Entity unit, float3 targetPosition)
 	{
 		Player anyPlayer = default;
-		foreach (var player in PlayerService.UserCache.Values)
+		foreach (var player in PlayerService.OnlinePlayers.Keys)
 		{
 			anyPlayer = player;
 			break;
