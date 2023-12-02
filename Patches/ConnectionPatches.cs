@@ -43,7 +43,10 @@ public static class OnUserDisconnectedPatch
 
 					MatchmakingQueue.Leave(Player);
 
-					Player.Teleport(new float3(0, 0, 0));
+					if (!Player.IsImprisoned())
+					{
+						Player.Teleport(new float3(0, 0, 0));
+					}
 				}
 			}
 		}

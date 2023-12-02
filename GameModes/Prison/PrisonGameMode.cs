@@ -168,6 +168,8 @@ public class PrisonGameMode : BaseGameMode
 	public override void HandleOnPlayerDisconnected(Player player)
 	{
 		if (!player.IsImprisoned()) return;
+
+		player.Teleport(PrisonConfig.Config.CellCoordinateList[player.ImprisonInfo.PrisonCellNumber].ToFloat3());
 	}
 
 	public override void HandleOnItemWasThrown(Player player, Entity eventEntity)

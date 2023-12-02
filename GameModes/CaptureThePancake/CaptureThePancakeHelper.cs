@@ -366,6 +366,7 @@ public static class CaptureThePancakeHelper
 			else if (unitType == "boss")
 			{
 				unitToSpawn = new Boss(unitSettings.PrefabGUID, unitSettings.Team, unitSettings.Level);
+				unitToSpawn.IsRooted = true;
 			}
 			else if (unitType == "angram")
 			{
@@ -382,11 +383,11 @@ public static class CaptureThePancakeHelper
 			else if (unitType == "healingorb")
 			{
 				unitToSpawn = new HealingOrb();
-
 			}
 			else
 			{
 				unitToSpawn = new Unit(unitSettings.PrefabGUID, unitSettings.Team, unitSettings.Level);
+				unitToSpawn.IsRooted = true;
 			}
 			unitToSpawn.MaxHealth = unitSettings.Health;
 			unitToSpawn.Category = "pancake";

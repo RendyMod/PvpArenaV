@@ -331,7 +331,7 @@ public class DefaultGameMode : BaseGameMode
 
 	public void HandleOnPlayerDamageReported(Player source, Entity target, PrefabGUID ability, DamageInfo damageInfo)
 	{
-		if (target.Has<PlayerCharacter>() || target.Read<PrefabGUID>() == Dummy.PrefabGUID)
+		if (target.Has<PlayerCharacter>() || UnitFactory.HasCategory(target, "dummy"))
 		{
 			DamageRecorderService.RecordDamageDone(source, ability, damageInfo);
 		}

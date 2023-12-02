@@ -218,3 +218,20 @@ public static class RemovePvPSafeBuffOnCastleEntrySystemPatch
 		}
 	}
 }*/
+
+
+/*[HarmonyPatch(typeof(DestroyOnSpawnSystem), nameof(DestroyOnSpawnSystem.OnUpdate))]
+public static class DestroyOnSpawnSystemPatch
+{
+	public static void Prefix(DestroyOnSpawnSystem __instance)
+	{
+		var entities = __instance._EntityQuery.ToEntityArray(Allocator.Temp);
+		foreach (var entity in entities)
+		{
+			//entity.LogPrefabName();
+		}
+	}
+}*/
+
+
+//AbilitySpawnSystem

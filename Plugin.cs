@@ -63,7 +63,6 @@ public class Plugin : BasePlugin, IRunOnInitialized
 	public static void OnServerStart()
 	{
 		PluginLog.LogInfo("Running OnServerStart code");
-		ModifyPrefabs();
 		
 		if (PvpArenaConfig.Config.UseCustomSpawnLocation)
 		{
@@ -120,7 +119,7 @@ public class Plugin : BasePlugin, IRunOnInitialized
 		var itemData = prefabEntity.Read<ItemData>();
 		itemData.RemoveOnConsume = false;
 		prefabEntity.Write(itemData);
-		
+
 		prefabEntity = Helper.GetPrefabEntityByPrefabGUID(Prefabs.Item_Consumable_TrippyShroom);
 		itemData = prefabEntity.Read<ItemData>();
 		itemData.RemoveOnConsume = false;
@@ -181,25 +180,14 @@ public class Plugin : BasePlugin, IRunOnInitialized
 			Prefabs.AB_Storm_BallLightning_Projectile,
 			Prefabs.CHAR_Trader_Farbane_RareGoods_T01,
 			Prefabs.CHAR_Trader_Dunley_RareGoods_T02,
-		};
+			Prefabs.CHAR_Cursed_Witch_Exploding_Mosquito,
+			Prefabs.CHAR_Militia_Longbowman
+	};
+		entities = Helper.GetEntitiesByComponentTypes<AggroConsumer>(true);
+		PreventUnitSpawns(entities, PrefabsToIgnore);
+		entities.Dispose();
 		entities = Helper.GetPrefabEntitiesByComponentTypes<AggroConsumer>();
-
-		foreach (var entity in entities)
-		{
-			var prefabGuid = entity.Read<PrefabGUID>();
-			if (entity.Has<AggroConsumer>() && !PrefabsToIgnore.Contains(prefabGuid))
-			{
-				entity.Add<DestroyOnSpawn>();
-			}
-			/*if (!entity.Has<Unity.Entities.Prefab>())
-			{
-				if (entity.Has<DurabilityTarget>() || entity.Has<DropTableOnDestroy>())
-				{
-					entity.Remove<PlaySequenceOnDeath>();
-					Helper.DestroyEntity(entity);
-				}
-			}*/
-		}
+		PreventUnitSpawns(entities, PrefabsToIgnore);
 		entities.Dispose();
 
 		entities = Helper.GetPrefabEntitiesByComponentTypes<ArmorLevelSource>();
@@ -213,6 +201,34 @@ public class Plugin : BasePlugin, IRunOnInitialized
 			equippableData.EquipmentSet = Prefabs.SetBonus_T08_Shadowmoon;
 			itemEntity.Write(equippableData);
 		}
+		entities.Dispose();
+	}
+
+	private static void PreventUnitSpawns(NativeArray<Entity> entities, List<PrefabGUID> PrefabsToIgnore)
+	{
+		foreach (var entity in entities)
+		{
+			var prefabGuid = entity.Read<PrefabGUID>();
+			if (entity.Has<AggroConsumer>() && !entity.Has<CanFly>())
+			{
+				if (!PrefabsToIgnore.Contains(prefabGuid))
+				{
+					if (!prefabGuid.LookupNameString().ToLower().Contains("summon"))
+					{
+						entity.Add<DestroyOnSpawn>();
+					}
+					else
+					{
+						entity.Remove<DestroyOnSpawn>();
+					}
+				}
+				else
+				{
+					entity.Remove<DestroyOnSpawn>();
+				}
+			}
+		}
+		entities.Dispose();
 	}
 
 	public static void Initialize()
@@ -238,7 +254,7 @@ public class Plugin : BasePlugin, IRunOnInitialized
 		var dropInInventoryOnSpawn = VWorld.Server.GetExistingSystem<DropInInventoryOnSpawnSystem>();
 		var unitSpawnerReactSystem = VWorld.Server.GetExistingSystem<UnitSpawnerReactSystem>();
 		var pavementBonusSystem = VWorld.Server.GetExistingSystem<PavementBonusSystem>();
-
+		
 
 		radialZoneSystem_Holy_Server.Enabled = false;
 		radialZoneSystem_Garlic_Server.Enabled = false;
@@ -258,7 +274,9 @@ public class Plugin : BasePlugin, IRunOnInitialized
 			MatchmakingService.Start();
 		}
 
-		
+		ModifyPrefabs();
+
+
 		Unity.Debug.Log("Loading player data");
 	}
 
