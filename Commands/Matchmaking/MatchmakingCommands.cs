@@ -39,7 +39,7 @@ internal static class MatchmakingCommands
 		sender.ReceiveMessage("Left the queue!".Success());
 	}
 
-	[Command("lb ranked", description: "Displays the ranked leaderboard", aliases: new string[] { "lb" }, adminOnly: false, includeInHelp: false, category: "Ranked")]
+	[Command("lb ranked", description: "Displays the ranked leaderboard", adminOnly: false, includeInHelp: false, category: "Ranked")]
 	public static void ShowLeaderboardCommand(Player sender, int pageNumber = 1)
 	{
 		const int playersPerPage = 10; // Number of players to display per page
@@ -59,6 +59,7 @@ internal static class MatchmakingCommands
 									player.MatchmakingData1v1.Losses,
 									player.Name // Assuming Name gets the player's display name
 								})
+								.Where(player => player.Wins != 0 || player.Losses != 0)
 								.OrderByDescending(player => player.MMR)
 								.ToList();
 
@@ -78,7 +79,7 @@ internal static class MatchmakingCommands
 			return;
 		}
 
-		sender.ReceiveMessage($"--- Ranked Leaderboard (Page {pageNumber.ToString().Colorify(ExtendedColor.LightServerColor)}) ---".White());
+		sender.ReceiveMessage("Ranked Leaderboard:".Colorify(ExtendedColor.LightServerColor) + $" Page {pageNumber.ToString().Emphasize()}".White());
 
 		var currentPlayerSteam = sender.SteamID;
 		for (int i = startIndex; i < endIndex; i++)
@@ -95,7 +96,7 @@ internal static class MatchmakingCommands
 		{
 			if (currentPlayerIndex != -1) // If the player is in the list
 			{
-				sender.ReceiveMessage($"...........................................................".White());
+				sender.ReceiveMessage($"...........................................................".Colorify(ExtendedColor.LightServerColor));
 				var currentPlayer = orderedPlayers[currentPlayerIndex];
 				string playerRankInfo = FormatPlayerRankInfo(currentPlayer, currentPlayerIndex + 1, currentPlayerSteam, bold: true);
 				sender.ReceiveMessage(playerRankInfo);
@@ -111,7 +112,7 @@ internal static class MatchmakingCommands
 		string highlightStart = player.SteamID == currentPlayerSteam ? "<color=#FFD700>" : ""; // Highlight color if it's the current player
 		string highlightEnd = player.SteamID == currentPlayerSteam ? "</color>" : "";
 
-		return $"{boldStart}{rank}. {highlightStart}<color={rankColor}>{player.Name}</color>{highlightEnd}{boldEnd} - <color=#808080>{player.MMR}</color> points, W: <color=#00FF00>{player.Wins}</color>, L: <color=#FF0000>{player.Losses}</color>".White();
+		return $"{boldStart}"+$"{rank}".Colorify(ExtendedColor.LightServerColor) + $" - {highlightStart}<color={rankColor}>{player.Name}</color>{highlightEnd}{boldEnd}: ".White() + $"{player.MMR.ToString()}".Warning() + $" points - W: <color=#00FF00>{player.Wins}</color> / L: <color=#FF0000>{player.Losses}</color>".White();
 	}
 
 	private static string FormatPlayerBulletHellInfo(dynamic player, int rank, ulong currentPlayerSteam, bool bold = false)
@@ -122,7 +123,8 @@ internal static class MatchmakingCommands
 		string highlightStart = player.SteamID == currentPlayerSteam ? "<color=#FFD700>" : ""; // Highlight color if it's the current player
 		string highlightEnd = player.SteamID == currentPlayerSteam ? "</color>" : "";
 
-		return $"{boldStart}{rank}. {highlightStart}<color={rankColor}>{player.Name}</color>{highlightEnd}{boldEnd} - {player.BestTime}".White();
+		//string message = $"{boldStart}{rank}. {highlightStart}<color={rankColor}>{player.Name}</color>{highlightEnd}{boldEnd} - {player.BestTime}".White();
+		return $"{boldStart}"+$"{rank}".Colorify(ExtendedColor.LightServerColor) + $" - {highlightStart}<color={rankColor}>{player.Name}</color>{highlightEnd}{boldEnd}: ".White() + $"{player.BestTime}".Warning();
 	}
 
 	[Command("lb bullet", description: "Displays the ranked leaderboard", adminOnly: false, includeInHelp: false, category: "Ranked")]
@@ -143,6 +145,7 @@ internal static class MatchmakingCommands
 							player.PlayerBulletHellData.BestTime,
 							player.Name // Assuming Name gets the player's display name
 						})
+						.Where(player => player.BestTime != "0")
 						.OrderByDescending(player => player.BestTime)
 						.ToList();
 
@@ -162,7 +165,7 @@ internal static class MatchmakingCommands
 			return;
 		}
 
-		sender.ReceiveMessage($"--- Bullet Hell Leaderboard (Page {pageNumber.ToString().Colorify(ExtendedColor.LightServerColor)}) ---".White());
+		sender.ReceiveMessage("Bullet Hell Leaderboard:".Colorify(ExtendedColor.LightServerColor) + $" Page {pageNumber.ToString().Emphasize()}".White());
 
 		var currentPlayerSteam = sender.SteamID;
 		for (int i = startIndex; i < endIndex; i++)
@@ -179,7 +182,7 @@ internal static class MatchmakingCommands
 		{
 			if (currentPlayerIndex != -1) // If the player is in the list
 			{
-				sender.ReceiveMessage($"...........................................................".White());
+				sender.ReceiveMessage($"...........................................................".Colorify(ExtendedColor.LightServerColor));
 				var currentPlayer = orderedPlayers[currentPlayerIndex];
 				string playerRankInfo = FormatPlayerBulletHellInfo(currentPlayer, currentPlayerIndex + 1, currentPlayerSteam, bold: true);
 				sender.ReceiveMessage(playerRankInfo);

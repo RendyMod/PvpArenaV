@@ -1261,7 +1261,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 			// Calculate and send team totals
 			SendTeamTotals(receiver, team1, team2);
 
-			receiver.ReceiveMessage("Player Detail".Warning());
+			receiver.ReceiveMessage("Player Detail:".Colorify(ExtendedColor.LightServerColor));
 			// Send individual stats
 			foreach (var stat in playerStats)
 			{
@@ -1323,7 +1323,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 			team2DamagesColorized = team2Damages.ConvertToEngineeringNotation().FriendlyTeam();
 		}
 
-		receiver.ReceiveMessage("Team Recap".Warning());
+		receiver.ReceiveMessage("Team Recap:".Colorify(ExtendedColor.LightServerColor));
 		receiver.ReceiveMessage($"{team1NameColorized} - K/D: {team1KillsColorized} / {team1DeathsColorized} - DMG: {team1DamagesColorized}".White());
 		receiver.ReceiveMessage($"{team2NameColorized} - K/D: {team2KillsColorized} / {team2DeathsColorized} - DMG: {team2DamagesColorized}".White());
 	}
