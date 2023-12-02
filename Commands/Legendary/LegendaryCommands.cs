@@ -76,4 +76,14 @@ internal static class LegendaryCommands
 			sender.ReceiveMessage("Legendary created!".Success());
 		}
 	}
+
+	[Command("restore-legendaries", description: "Restores any legendaries saved from a previous wipe", usage: ".restore-legendaries", adminOnly: false, includeInHelp: false)]
+	public static void RestoreLegendariesCommand(Player sender)
+	{
+		var legendaryWeapons = Core.defaultLegendaryWeaponStorage.GetLegendaryWeaponsForPlayer(sender.SteamID);
+		foreach (var legendaryWeapon in legendaryWeapons)
+		{
+			Helper.GenerateLegendaryViaEvent(sender, legendaryWeapon.WeaponName, legendaryWeapon.Infusion, legendaryWeapon.Mods);
+		}
+	}
 }

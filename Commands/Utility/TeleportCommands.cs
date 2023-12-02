@@ -144,7 +144,7 @@ internal class TeleportCommands
 			sender.Reset(BaseGameMode.ResetOptions);
 			sender.Teleport( PvpArenaConfig.Config.CustomSpawnLocation.ToFloat3());
 			sender.CurrentState = Player.PlayerState.Normal;
-			sender.ReceiveMessage("Stopped spectating".White());
+			sender.ReceiveMessage("Stopped spectating.".White());
 		}
 		else
 		{
@@ -155,11 +155,11 @@ internal class TeleportCommands
 			if (player != null)
 			{
 				sender.Teleport( player.Position);
-				sender.ReceiveMessage($"Now spectating {player.Name.Colorify(ExtendedColor.ClanNameColor)}. Do .spectate again to undo.".White());
+				sender.ReceiveMessage($"Now spectating {player.Name.Colorify(ExtendedColor.ClanNameColor)}. Do {".spectate".Emphasize()} again to undo.".White());
 			}
 			else
 			{
-				sender.ReceiveMessage($"Entered spectate mode. Do .spectate again to undo.".White());
+				sender.ReceiveMessage($"Entered spectate mode. Do {".spectate".Emphasize()} again to undo.".White());
 			}
 		}
 	}
