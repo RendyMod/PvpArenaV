@@ -103,7 +103,6 @@ public static class CaptureThePancakeHelper
 						}
 						else
 						{
-							Unity.Debug.Log($"{structureSpawn.Description}");
 							if (structureSpawn.Description == "Winged Horror Gate")
 							{
 								CaptureThePancakeGameMode.WingedHorrorGate = e;
