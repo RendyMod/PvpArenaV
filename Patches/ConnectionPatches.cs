@@ -97,10 +97,10 @@ public static class OnUserConnectedPatch
 								Helper.UnlockAllContent(player.ToFromCharacter());
 								Helper.RemoveBuff(player, Prefabs.Buff_Gloomrot_SentryOfficer_TurretCooldown);
 							}
-							else
+							/*else
 							{
 								AddBuffToPlayerToImpairBuilding(player);
-							}
+							}*/
 						}
 
 						SendWelcomeMessageToPlayer(player);
@@ -137,7 +137,7 @@ public static class OnUserConnectedPatch
 		                      " in chat to see "+"all available commands".Emphasize()).White());
 	}
 
-	public static void AddBuffToPlayerToImpairBuilding (Player player)
+	/*public static void AddBuffToPlayerToImpairBuilding (Player player)
 	{
 		if (!Helper.TryGetBuff(player, Prefabs.Buff_Gloomrot_SentryOfficer_TurretCooldown, out var buffEntity))
 		{
@@ -147,5 +147,5 @@ public static class OnUserConnectedPatch
 		{
 			Helper.ModifyBuff(buffEntity, BuffModificationTypes.BuildMenuImpair);
 		}
-	}
+	}*/
 }

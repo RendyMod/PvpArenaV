@@ -136,7 +136,7 @@ internal class TeleportCommands
 		}
 	}
 
-	[Command("spectate", description: "Go invisible and teleport to a player", usage: ".spectate Ash", aliases: new string[] { "spec" }, adminOnly: false, includeInHelp: true, category: "Teleport")]
+	[Command("spectate", description: "Go invisible and teleport to a player", usage: ".spectate Ash", aliases: new string[] { "spec", "specate" }, adminOnly: false, includeInHelp: true, category: "Teleport")]
 	public void SpectateCommand(Player sender, Player player = null)
 	{
 		if (sender.CurrentState == Player.PlayerState.Spectating && player == null)

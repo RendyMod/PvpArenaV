@@ -65,6 +65,7 @@ public static class Core
 	
 	public static void Initialize()
 	{
+		if (HasInitialized) return;
 		Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
 		
 		PlayerService.LoadAllPlayers();
@@ -142,6 +143,7 @@ public static class Core
 
 	public static void Dispose()
 	{
+		HasInitialized = false;
 		BulletHellManager.Dispose();
         defaultGameMode.Dispose();
         matchmaking1v1GameMode.Dispose();

@@ -70,7 +70,7 @@ internal class GameModeCommands
 		sender.ReceiveMessage("Match ended".Success());
 	}
 
-	[Command("start-bullet", description: "Starts capture the pancake", usage: ".start-pancake Ash Rendy", adminOnly: false)]
+	[Command("start-bullet", description: "Starts capture the pancake", usage: ".start-pancake Ash Rendy", aliases: new string[] { "start bullet", "bullethell", "bullet", "strat-bullet" }, adminOnly: false)]
 	public void StartBulletHellCommand(Player sender, Player receiver = null)
 	{
 		Player player = sender;

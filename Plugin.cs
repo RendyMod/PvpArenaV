@@ -44,7 +44,6 @@ public class Plugin : BasePlugin, IRunOnInitialized
 	{
 		try
 		{
-			LoginPointsService.DisposeTimersForOnlinePlayers();
 			Core.Dispose();
 			Harmony?.UnpatchSelf();
 		}
