@@ -16,19 +16,19 @@ namespace PvpArena.Commands;
 
 internal static class ShopCommands
 {
-	[Command("points", description: "Displays your points", usage: ".points", adminOnly: false, includeInHelp: false, category: "Shop")]
+	[Command("points", description: "Displays your points", usage: ".points", adminOnly: false, includeInHelp: false, aliases: new string[] { "vpoints" }, category: "Shop")]
 	public static void PointsCommand(Player sender)
 	{
-		sender.ReceiveMessage($"Total points: {sender.PlayerPointsData.TotalPoints.ToString().Emphasize()}".White());
+		sender.ReceiveMessage($"You have {sender.PlayerPointsData.TotalPoints.ToString().Emphasize()} {"VPoint(s)".Warning()}".White());
 	}
 
-	[Command("add-points", adminOnly: true)]
+	[Command("add-points", adminOnly: true, aliases: new string[] { "give-points", "addpoints", "add points", "givepoints", "give points" })]
 	public static void AddPointsCommand(Player sender, int points, Player foundPlayer = null)
 	{
 		Player player = foundPlayer ?? sender;
 		
 		player.PlayerPointsData.TotalPoints += points;
 		Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { player.PlayerPointsData });
-		sender.ReceiveMessage($"Added {points} VPoints to {player.Name}".White());
+		sender.ReceiveMessage($"Added {points.ToString().Emphasize()} {"VPoint(s)".Warning()} to {player.Name.Colorify(ExtendedColor.ClanNameColor)}".Success());
 	}
 }

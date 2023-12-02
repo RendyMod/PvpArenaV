@@ -190,8 +190,8 @@ public static class MatchmakingQueue
 			{
 				pointsName += "s";
 			}
-			string winnerVPointsMessage = $"Received {pointsToAward.ToString().Success()} {pointsName.Emphasize()} for participating in matchmaking. New total: {winner.PlayerPointsData.TotalPoints}".White();
-			string loserVPointsMessage = $"Received {pointsToAward.ToString().Success()} {pointsName.Emphasize()} for participating in matchmaking. New total: {loser.PlayerPointsData.TotalPoints}".White();
+			string winnerVPointsMessage = $"Received {pointsToAward.ToString().Emphasize()} {pointsName.Warning()} for participating in matchmaking. New total: {winner.PlayerPointsData.TotalPoints.ToString().Warning}".White();
+			string loserVPointsMessage = $"Received {pointsToAward.ToString().Emphasize()} {pointsName.Warning()} for participating in matchmaking. New total: {loser.PlayerPointsData.TotalPoints.ToString().Warning}".White();
 			winner.ReceiveMessage(winnerVPointsMessage);
 			loser.ReceiveMessage(loserVPointsMessage);
 

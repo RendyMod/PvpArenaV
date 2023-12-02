@@ -32,14 +32,14 @@ public static class TraderPurchaseSystemPatch
 			{
 				Player.PlayerPointsData.TotalPoints -= cost;
 				Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { Player.PlayerPointsData });
-				Player.ReceiveMessage($"Purchased for {cost} VPoints. New total points: {Player.PlayerPointsData.TotalPoints}".Success());
+				Player.ReceiveMessage($"Purchased for {cost.ToString().Emphasize()} {"VPoints".Warning()}. New total points: {Player.PlayerPointsData.TotalPoints.ToString().Warning()}".Success());
 
 				RefillStock(purchaseEvent, trader);
 			}
 			else
 			{
 				VWorld.Server.EntityManager.DestroyEntity(entity);
-				Player.ReceiveMessage($"Not enough VPoints to purchase! {Player.PlayerPointsData.TotalPoints} / {cost}".Error());
+				Player.ReceiveMessage($"Not enough {"VPoints".Warning()} to purchase! {Player.PlayerPointsData.TotalPoints.ToString().Warning()} / {cost}".Error());
 			}
 		}
 	}
