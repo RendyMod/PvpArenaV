@@ -37,7 +37,7 @@ internal static class ShopCommands
 	{
 		Player player = foundPlayer ?? sender;
 
-		player.PlayerPointsData.TotalPoints -= points;
+		player.PlayerPointsData.TotalPoints = Math.Max(player.PlayerPointsData.TotalPoints - points, 0);
 		Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { player.PlayerPointsData });
 		sender.ReceiveMessage($"Set {player.Name.Colorify(ExtendedColor.ClanNameColor)}'s points to {points.ToString().Emphasize()}".Success());
 	}
@@ -47,7 +47,7 @@ internal static class ShopCommands
 	{
 		Player player = foundPlayer ?? sender;
 
-		player.PlayerPointsData.TotalPoints = points;
+		player.PlayerPointsData.TotalPoints = Math.Max(points, 0);
 		Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { player.PlayerPointsData });
 		sender.ReceiveMessage($"Set {player.Name.Colorify(ExtendedColor.ClanNameColor)}'s points to {points.ToString().Emphasize()}".Success());
 	}
