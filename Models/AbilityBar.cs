@@ -49,7 +49,7 @@ public class AbilityBar
 
 		for (int i = 0; i < abilities.Count; i++)
 		{
-			var priority = isHard || abilities[i] != PrefabGUID.Empty ? 101 : 0;
+			var priority = (isHard || abilities[i] != PrefabGUID.Empty) ? 101 : -1;
 			buffer.Add(new ReplaceAbilityOnSlotBuff
 			{
 				Slot = i,
