@@ -180,7 +180,9 @@ public class DodgeballGameMode : BaseGameMode
 		prefabGuid.LogPrefabName();
 		if (prefabGuid == Prefabs.AB_Blood_BloodRite_Immaterial)
 		{
-			TeamCountersHit[player.MatchmakingTeam]++;
+            Helper.HealEntity(player.Character);
+            Helper.MakeSCT(player, Prefabs.SCT_Type_MAX);
+            TeamCountersHit[player.MatchmakingTeam]++;
 			if (TeamCountersHit[player.MatchmakingTeam] % DodgeballConfig.Config.BlocksToRevive == 0)
 			{
 				Plugin.PluginLog.LogInfo("Reviving teammate");
@@ -231,7 +233,6 @@ public class DodgeballGameMode : BaseGameMode
 			if (spell == Prefabs.AB_Blood_Shadowbolt_Projectile)
 			{
 				float damagePercent = 1f / DodgeballConfig.Config.HitsToKill;
-				Plugin.PluginLog.LogInfo(damagePercent);
 				var damageDealtEventNew = new DealDamageEvent(damageDealtEvent.Target, damageDealtEvent.MainType, damageDealtEvent.MainFactor, damageDealtEvent.ResourceModifier, damageDealtEvent.MaterialModifiers, damageDealtEvent.SpellSource, 0, damagePercent, damageDealtEvent.Modifier, damageDealtEvent.DealDamageFlags);
 				eventEntity.Write(damageDealtEventNew);
 			}
@@ -287,7 +288,9 @@ public class DodgeballGameMode : BaseGameMode
 	{
 		TeamGhosts[player.MatchmakingTeam].Enqueue(player);
 		player.Reset(ResetOptions);
-		Helper.MakeGhostlySpectator(player);
+		var action = () => Helper.MakeGhostlySpectator(player);
+		var timer = ActionScheduler.RunActionOnceAfterDelay(action, .05);
+		Timers.Add(timer);
 		IsGhost[player] = true;
 
 		foreach (var team in Teams.Values)
@@ -351,9 +354,14 @@ public class DodgeballGameMode : BaseGameMode
 		}
 		player.Reset(ResetOptions);
         DodgeballHelper.SetPlayerAbilities(player);
-        IsGhost[player] = false;
+        var action = () =>
+        {
+            IsGhost[player] = false;
+        };
+        ActionScheduler.RunActionOnceAfterDelay(action, .05f);
 
-		foreach (var team in Teams.Values)
+
+        foreach (var team in Teams.Values)
 		{
 			foreach (var teamPlayer in team)
 			{

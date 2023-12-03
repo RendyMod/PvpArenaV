@@ -72,7 +72,24 @@ internal class TestCommands
 
 	}
 
-	[Command("test4", description: "Used for debugging", adminOnly: true)]
+    [Command("set-abilities", description: "Used for debugging", adminOnly: true)]
+    public void Test4Command(Player sender, PrefabGUID weapon1, PrefabGUID weapon2, Player player = null)
+    {
+
+        if (player == null)
+        {
+            player = sender;
+        }
+        Helper.BuffPlayer(player, Helper.CustomBuff4, out var buffEntity, Helper.NO_DURATION);
+        var abilityBar = new AbilityBar
+        {
+            Weapon1 = weapon1,
+            Weapon2 = weapon2
+        };
+        abilityBar.ApplyChangesSoft(buffEntity);
+    }
+
+    [Command("test4", description: "Used for debugging", adminOnly: true)]
 	public void Test4Command(Player sender, Player player)
 	{
 		Helper.BuffPlayer(player, Prefabs.Buff_Gloomrot_SentryOfficer_TurretCooldown, out var buffEntity, Helper.NO_DURATION, true);
