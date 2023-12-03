@@ -72,14 +72,15 @@ internal class GameModeCommands
 	}
 
 	[Command("start-bullet", description: "Starts bullet hell", usage: ".start-bullet", aliases: new string[] { "start bullet", "bullethell", "bullet", "strat-bullet" }, adminOnly: false)]
-	public void StartBulletHellCommand(Player sender, Player receiver = null)
+	public void StartBulletHellCommand(Player sender)
 	{
-		Player player = sender;
-		if (receiver != null)
-		{
-			player = receiver;
-		}
-		BulletHellManager.QueueForMatch(player);
+		BulletHellManager.QueueForMatch(sender);
+	}
+
+	[Command("leave-bullet", description: "Starts bullet hell", usage: ".start-bullet", aliases: new string[] { "leave bullet", "endbullet", "end-bullet", "end bullet" }, adminOnly: false)]
+	public void LeaveBulletHellCommand(Player sender)
+	{
+		BulletHellManager.LeaveQueue(sender);
 	}
 
 	[Command("start-dodgeball", description: "Starts dodgeball", usage: ".start-dodgeball Ash Rendy", aliases: new string[] { "start dodgeball", "dodgeball", "start dodgeball"}, adminOnly: true)]

@@ -87,20 +87,21 @@ public static class BulletHellManager
 		{
 			if (arena.player == null)
 			{
+				player.ReceiveMessage("Arena is available. Prepare for match!".Success());
 				foundArena = true;
 				arena.player = player; //mark it as occupied before the delay
 				Action action = () =>
 				{
 					StartMatch(arena, player);
-					player.ReceiveMessage("Match started".Success());
 				};
-				ActionScheduler.RunActionOnceAfterDelay(action, 1);
+				ActionScheduler.RunActionOnceAfterDelay(action, 2);
 				break;
 			}
 		}
 		if (!foundArena)
 		{
 			playerQueue.Add(player);
+			player.ReceiveMessage("Arenas are all busy, you are now in queue.".White());
 		}
 	}
 
@@ -109,11 +110,11 @@ public static class BulletHellManager
 		if (playerQueue.Contains(player))
 		{
 			playerQueue.Remove(player);
-			player.ReceiveMessage("You have been removed from the Bullet Hell queue.");
+			player.ReceiveMessage($"You have been removed from the {"Bullet Hell".Emphasize()} queue.".White());
 		}
 		else
 		{
-			player.ReceiveMessage("You are not in the Bullet Hell queue.");
+			player.ReceiveMessage($"You are not in the {"Bullet Hell".Emphasize()} queue.".White());
 		}
 	}
 
@@ -203,12 +204,12 @@ public static class BulletHellManager
 				var nextPlayer = playerQueue.First();
 				playerQueue.RemoveAt(0); // Remove the first player from the list
 				arena.player = nextPlayer;
+				nextPlayer.ReceiveMessage("Arena is available. Prepare for match!".Success());
 				Action action = () =>
 				{
 					StartMatch(arena, nextPlayer);
-					nextPlayer.ReceiveMessage("Match started".Success());
 				};
-				ActionScheduler.RunActionOnceAfterDelay(action, 1);
+				ActionScheduler.RunActionOnceAfterDelay(action, 2);
 			}
 		}
 		catch (Exception e)
