@@ -30,6 +30,7 @@ internal static class ShopCommands
 		player.PlayerPointsData.TotalPoints += points;
 		Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { player.PlayerPointsData });
 		sender.ReceiveMessage($"Added {points.ToString().Emphasize()} {"VPoint(s)".Warning()} to {player.Name.Colorify(ExtendedColor.ClanNameColor)}".Success());
+		sender.ReceiveMessage(($"{player.Name.Colorify(ExtendedColor.ClanNameColor)} {"VPoint(s)".Warning()} are now {player.PlayerPointsData.TotalPoints.ToString().White()}.").White());
 	}
 
 	[Command("remove-points", adminOnly: true, aliases: new string[] { "removepoints", "remove points" })]
@@ -39,7 +40,8 @@ internal static class ShopCommands
 
 		player.PlayerPointsData.TotalPoints = Math.Max(player.PlayerPointsData.TotalPoints - points, 0);
 		Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { player.PlayerPointsData });
-		sender.ReceiveMessage($"Set {player.Name.Colorify(ExtendedColor.ClanNameColor)}'s points to {points.ToString().Emphasize()}".Success());
+		sender.ReceiveMessage($"Removed {points.ToString().Emphasize()} {"VPoint(s)".Warning()} to {player.Name.Colorify(ExtendedColor.ClanNameColor)} ".Success());
+		sender.ReceiveMessage(($"{player.Name.Colorify(ExtendedColor.ClanNameColor)} {"VPoint(s)".Warning()} are now {player.PlayerPointsData.TotalPoints.ToString().White()}.").White());
 	}
 
 	[Command("set-points", adminOnly: true, aliases: new string[] { "setpoints", "set points"})]
@@ -49,7 +51,8 @@ internal static class ShopCommands
 
 		player.PlayerPointsData.TotalPoints = Math.Max(points, 0);
 		Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { player.PlayerPointsData });
-		sender.ReceiveMessage($"Set {player.Name.Colorify(ExtendedColor.ClanNameColor)}'s points to {points.ToString().Emphasize()}".Success());
+		sender.ReceiveMessage($"Set {player.Name.Colorify(ExtendedColor.ClanNameColor)}'s {"VPoint(s)".Warning()} to {points.ToString().Emphasize()}".Success());
+		sender.ReceiveMessage(($"{player.Name.Colorify(ExtendedColor.ClanNameColor)} {"VPoint(s)".Warning()} are now {player.PlayerPointsData.TotalPoints.ToString().White()}.").White());
 	}
 
 	[Command("get-points", adminOnly: true, aliases: new string[] { "getpoints", "get points" })]

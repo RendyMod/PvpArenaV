@@ -18,6 +18,12 @@ internal static class MiscellaneousCommands
 	{
 		sender.ReceiveMessage($"{PvpArenaConfig.Config.DiscordLink}".Emphasize());
 	}
+	
+	[Command("version", description: "Get the plugin version", usage:".version", adminOnly: true, includeInHelp: false, category: "Misc")]
+	public static void VersionCommand(Player sender)
+	{
+		sender.ReceiveMessage("Plugin version is "+ MyPluginInfo.PLUGIN_VERSION.Emphasize());
+	}
 
 	[Command("spawn-horse", description: "Used for debugging", adminOnly: true)]
 	public static void SpawnHorseCommand(Player sender, float speed = 4f, float acceleration = 7.0f, float rotation = 14.0f)

@@ -19,14 +19,37 @@ public static class ScheduleCommands
 		);
 	}
 
-	[CommandFramework.Command("globalrankedhelp", description: "Send a message to everyone for ranked",
-		usage: ".rankedhelp", adminOnly: true, includeInHelp: false, category: "Misc")]
+	[CommandFramework.Command("globalranked", description: "Send a message to everyone for ranked",
+		usage: ".globalranked", adminOnly: true, includeInHelp: false, category: "Misc")]
 	public static void GlobalRankedHelpCommand (Player sender)
 	{
-		string message = ("Rankeds".Emphasize() + " are out!" + " Join queue".Emphasize() + " with: ").White() +
-		                 ".ranked join".Colorify(ExtendedColor.LightServerColor).Emphasize();
+		string message1 = ("Rankeds".Emphasize() + " are now available!").White();
+		
+		string message2 = ("Join it".Emphasize() + " with: " +
+		                   ".ranked join".Colorify(ExtendedColor.LightServerColor).Emphasize() + ". Leaderboard: " +
+		                   ".lb ranked".Colorify(ExtendedColor.LightServerColor).Emphasize()).White();
+		Helper.SendSystemMessageToAllClients(
+			message1
+		);
+		Helper.SendSystemMessageToAllClients(
+			message2
+		);
+	}
+
+	[CommandFramework.Command("globalbullet", description: "Send a message to everyone for bullet",
+		usage: ".globalbullet", adminOnly: true, includeInHelp: false, category: "Misc")]
+	public static void GlobalBulletHelpCommand (Player sender)
+	{
+		string message = ("Bullet Hell".Emphasize() + " mini " + "game" +" is out!" ).White();
+		string message2 = ("Join it".Emphasize() + " with: " +
+		                  ".start-bullet".Colorify(ExtendedColor.LightServerColor).Emphasize() + ". Leaderboard: " +
+		                  ".lb bullet".Colorify(ExtendedColor.LightServerColor).Emphasize()).White();
+
 		Helper.SendSystemMessageToAllClients(
 			message
+		);
+		Helper.SendSystemMessageToAllClients(
+			message2
 		);
 	}
 }
