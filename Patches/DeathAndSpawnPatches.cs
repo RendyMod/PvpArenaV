@@ -130,7 +130,7 @@ public static class SpawnCharacterSystemPatch
 				}
 				catch (Exception e)
 				{
-					Plugin.PluginLog.LogInfo("error on first spawn: " + e.ToString());
+					Plugin.PluginLog.LogInfo("error on respawn: " + e.ToString());
 				}
 			}
 			//this hook will run multiple times during spawn, and the character won't be set at the beginning. Wait until it's set and then record it so we only run once

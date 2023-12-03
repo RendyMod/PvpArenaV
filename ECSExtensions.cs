@@ -74,6 +74,11 @@ public static class ECSExtensions
 		return VWorld.Server.EntityManager.GetBuffer<T>(entity);
 	}
 
+	public static DynamicBuffer<T> AddBuffer<T>(this Entity entity) where T : struct
+	{
+		return VWorld.Server.EntityManager.AddBuffer<T>(entity);
+	}
+
 	public static void Add<T>(this Entity entity)
 	{
 		var ct = new ComponentType(Il2CppType.Of<T>());

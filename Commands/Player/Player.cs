@@ -25,7 +25,8 @@ public class Player
 		CaptureThePancake,
 		Spectating,
 		Domination,
-		BulletHell
+		BulletHell,
+		Dodgeball
 	}
 
 	private Entity _user;
@@ -212,6 +213,12 @@ public class Player
 	{
 		return CurrentState == PlayerState.Imprisoned;
 	}
+
+	public bool IsInDodgeball()
+	{
+		return CurrentState == PlayerState.Imprisoned;
+	}
+
 	public void ReceiveMessage(string message)
 	{
 		ServerChatUtils.SendSystemMessageToClient(

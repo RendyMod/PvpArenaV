@@ -260,7 +260,11 @@ public static class CaptureThePancakeHelper
 				DeadUserEntity = player.User
 			});
 			e.Remove<DestroyWhenInventoryIsEmpty>();
-			e.Remove<DestroyAfterDuration>();
+			e.Write(new DestroyAfterDuration()
+			{
+				EndTime = float.MaxValue,
+				Duration = float.MaxValue
+			});
 			e.Remove<DestroyAfterDurationCounter>();
 			foreach (var item in items)
 			{

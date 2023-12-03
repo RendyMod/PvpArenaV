@@ -107,7 +107,8 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		{ Prefabs.Buff_General_RelicCarryDebuff, HandleRelicDebuff },
 		{ Prefabs.Buff_InCombat, HandleInCombatBuff },
 		{ Prefabs.AB_Shapeshift_BloodMend_Buff, HandleBloodMendBuff },
-		{ Prefabs.AB_Storm_PolarityShift_Travel_Ally, HandleFriendlyPolarityShiftBuff }
+		{ Prefabs.AB_Storm_PolarityShift_Travel_Ally, HandleFriendlyPolarityShiftBuff },
+		{ Prefabs.HideCharacterBuff, HandleHideCharacterBuff }
 	};
 
 	public static Dictionary<string, bool> AllowedCommands = new Dictionary<string, bool>
@@ -373,55 +374,16 @@ public class CaptureThePancakeGameMode : BaseGameMode
 			}
 		}
 
-		float3 pos = default;
-		if (player.MatchmakingTeam == 1)
-		{
-			pos = CaptureThePancakeConfig.Config.Team1PlayerRespawn.ToFloat3();
-		}
-		else if (player.MatchmakingTeam == 2)
-		{
-			pos = CaptureThePancakeConfig.Config.Team2PlayerRespawn.ToFloat3();
-		}
+
 		DropShardsOnDeathIfApplicable(player);
-		//------------------------------------
-		Action respawnPlayerActionPart2 = () =>
-		{
-			player.Reset(ResetOptions);
-			Helper.RemoveBuff(player, Prefabs.AB_Shapeshift_Mist_Buff);
-			Helper.BuffPlayer(player, Prefabs.Buff_General_Phasing, out var buffEntity, 3);
-			Helper.ApplyStatModifier(buffEntity, BuffModifiers.FastRespawnMoveSpeed);
-			Helper.RemoveBuffModifications(buffEntity, BuffModificationTypes.Immaterial);
-			buffEntity.Add<DestroyBuffOnDamageTaken>();
-		};
 
-		Action respawnPlayerActionPart1 = () =>
+		Action respawnPlayerAction = () =>
 		{
-			player.Teleport(pos);
-			Helper.BuffPlayer(player, Helper.CustomBuff2, out var buffEntity, 3);
-			Helper.ModifyBuff(buffEntity, BuffModificationTypes.MovementImpair | BuffModificationTypes.Immaterial);
-			var timer = ActionScheduler.RunActionOnceAfterDelay(respawnPlayerActionPart2, 3);
-			PlayerRespawnTimers[player].Add(timer);
-		};
-
-		Action makeSpectatorAction = () =>
-		{
-			var respawnDelay = CalculateRespawnDelay();
-			player.Reset(ResetOptions);
-			Helper.BuffPlayer(player, Prefabs.AB_Shapeshift_Mist_Buff, out var buffEntity, respawnDelay);
-			Helper.CompletelyRemoveAbilityBarFromBuff(buffEntity);
-			Helper.FixIconForShapeshiftBuff(player, buffEntity, Prefabs.AB_Shapeshift_Mist_Group);
-			Helper.ModifyBuff(buffEntity, BuffModificationTypes.Invulnerable | BuffModificationTypes.Immaterial | BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.AbilityCastImpair | BuffModificationTypes.PickupItemImpaired | BuffModificationTypes.TargetSpellImpaired, true);
-
-			Helper.BuffPlayer(player, Prefabs.Admin_Observe_Invisible_Buff, out var invisibleBuff, respawnDelay);
-			Helper.ModifyBuff(invisibleBuff, BuffModificationTypes.None, true);
 			Helper.RespawnPlayer(player, player.Position);
-			var timer = ActionScheduler.RunActionOnceAfterDelay(respawnPlayerActionPart1, respawnDelay - 3);
-			PlayerRespawnTimers[player].Add(timer);
 		};
-
-		var timer = ActionScheduler.RunActionOnceAfterDelay(makeSpectatorAction, 2.9);
+		var timer = ActionScheduler.RunActionOnceAfterDelay(respawnPlayerAction, 2.9);
 		PlayerRespawnTimers[player].Add(timer);
-		
+		Helper.BuffPlayer(player, Prefabs.AB_Scarecrow_Idle_Buff, out var buffEntity2, Helper.NO_DURATION, true); //used to hide the player's bar over their character
 		Helper.RemoveBuff(player, Prefabs.Buff_General_VampirePvPDeathDebuff);
 		var blood = player.Character.Read<Blood>();
 		Helper.SetPlayerBlood(player, blood.BloodType, blood.Quality);
@@ -659,6 +621,20 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		}
 	}
 
+	public static void HandleHideCharacterBuff(Player player, Entity buffEntity)
+	{
+		Action action = () => {
+			if (buffEntity.Exists())
+			{
+				//Sometimes respawning takes forever to remove your hidden character buff which roots you. This is a failsafe
+				//I am not removing it right away as it will do an awkward stutter when it finally loads if you aren't rooted
+				//That usually happens after the 1st second or so. But if we'll end up rooted for 10 seconds it's worth the stutter to be able to move
+				Helper.ModifyBuff(buffEntity, BuffModificationTypes.None, true);
+			}
+		};
+		ActionScheduler.RunActionOnceAfterDelay(action, 2);
+	}
+
 	public override void HandleOnPlayerBuffed(Player player, Entity buffEntity)
 	{
 		if (!player.IsInCaptureThePancake()) return;
@@ -708,6 +684,53 @@ public class CaptureThePancakeGameMode : BaseGameMode
                 Helper.DropItemFromInventory(player, Prefabs.Item_Building_Relic_Monster);
             }
         }
+		else if (prefabGuid == Prefabs.HideCharacterBuff) //this is a pseudo OnPlayerRespawn that I might make official in the future
+		{
+			float3 pos = default;
+			if (player.MatchmakingTeam == 1)
+			{
+				pos = CaptureThePancakeConfig.Config.Team1PlayerRespawn.ToFloat3();
+			}
+			else if (player.MatchmakingTeam == 2)
+			{
+				pos = CaptureThePancakeConfig.Config.Team2PlayerRespawn.ToFloat3();
+			}
+
+			var respawnDelay = CalculateRespawnDelay();
+
+
+
+			Action respawnPlayerActionPart2 = () =>
+			{
+				player.Reset(ResetOptions);
+				Helper.RemoveBuff(player, Prefabs.AB_Shapeshift_Mist_Buff);
+				Helper.BuffPlayer(player, Prefabs.Buff_General_Phasing, out var buffEntity, 3);
+				Helper.ApplyStatModifier(buffEntity, BuffModifiers.FastRespawnMoveSpeed);
+				Helper.RemoveBuffModifications(buffEntity, BuffModificationTypes.Immaterial);
+				buffEntity.Add<DestroyBuffOnDamageTaken>();
+			};
+
+			Action respawnPlayerActionPart1 = () =>
+			{
+				player.Teleport(pos);
+				Helper.RemoveBuff(player, Prefabs.AB_Scarecrow_Idle_Buff);
+				Helper.BuffPlayer(player, Helper.CustomBuff2, out var buffEntity, 3);
+				Helper.ModifyBuff(buffEntity, BuffModificationTypes.MovementImpair | BuffModificationTypes.Immaterial);
+				var timer = ActionScheduler.RunActionOnceAfterDelay(respawnPlayerActionPart2, 3);
+				PlayerRespawnTimers[player].Add(timer);
+			};
+
+			Helper.BuffPlayer(player, Prefabs.AB_Shapeshift_Mist_Buff, out buffEntity, respawnDelay);
+			Helper.CompletelyRemoveAbilityBarFromBuff(buffEntity);
+			Helper.FixIconForShapeshiftBuff(player, buffEntity, Prefabs.AB_Shapeshift_Mist_Group);
+			Helper.ModifyBuff(buffEntity, BuffModificationTypes.Invulnerable | BuffModificationTypes.Immaterial | BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.AbilityCastImpair | BuffModificationTypes.PickupItemImpaired | BuffModificationTypes.TargetSpellImpaired, true);
+
+			Helper.BuffPlayer(player, Prefabs.Buff_General_HideCorpse, out var invisibleBuff, respawnDelay);
+			Helper.ModifyBuff(invisibleBuff, BuffModificationTypes.None, true);
+
+			var timer = ActionScheduler.RunActionOnceAfterDelay(respawnPlayerActionPart1, respawnDelay-3);
+			PlayerRespawnTimers[player].Add(timer);
+		}
     }
 
 

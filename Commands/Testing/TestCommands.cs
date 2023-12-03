@@ -32,10 +32,14 @@ internal class TestCommands
 	[Command("test2", description: "Used for debugging", adminOnly: true)]
 	public void Test2Command(Player sender)
 	{
-		var entity = Helper.GetHoveredEntity(sender.Character);
-		var buffer = entity.ReadBuffer<BloodQualityUnitBuff>();
-		buffer.Clear();
-		entity.Remove<BloodQualityUnitBuff>();
+		Helper.BuffPlayer(sender, Helper.CustomBuff4, out var buffEntity);
+		var abilityBar = new AbilityBar
+		{
+			Spell1 = Prefabs.AB_Blood_Shadowbolt_AbilityGroup,
+			Spell2 = Prefabs.AB_Blood_BloodRite_AbilityGroup,
+			Weapon2 = Prefabs.AB_Vampire_Spear_Harpoon_Throw_AbilityGroup
+		};
+		abilityBar.ApplyChangesHard(buffEntity);
 	}
 
 	[Command("test3", description: "Used for debugging", adminOnly: true)]
