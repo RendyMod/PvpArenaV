@@ -12,6 +12,7 @@ using PvpArena.Configs;
 using PvpArena.GameModes;
 using PvpArena.GameModes.BulletHell;
 using PvpArena.GameModes.CaptureThePancake;
+using PvpArena.GameModes.Dodgeball;
 using PvpArena.GameModes.Domination;
 using PvpArena.GameModes.Matchmaking1v1;
 using PvpArena.GameModes.Prison;
@@ -49,7 +50,8 @@ public static class Core
 	public static Matchmaking1v1GameMode matchmaking1v1GameMode;
     public static SpectatingGameMode spectatingGameMode;
 	public static PrisonGameMode prisonGameMode;
-    public static bool HasInitialized = false;
+	public static DodgeballGameMode dodgeballGameMode;
+	public static bool HasInitialized = false;
 	/*public static DiscordBot discordBot;*/
 	public static SQLHandler sqlHandler;
 	public static DebugEventsSystem debugEventsSystem = VWorld.Server.GetExistingSystem<DebugEventsSystem>();
@@ -76,6 +78,7 @@ public static class Core
 		DominationConfig.Load();
 		PrisonConfig.Load();
         TradersConfig.Load();
+		DodgeballConfig.Load();
 
 		matchmaking1V1DataRepository = new PlayerMatchmaking1v1DataStorage(PvpArenaConfig.Config.ServerDatabase);
 		pointsDataRepository = new PlayerPointsStorage(PvpArenaConfig.Config.ServerDatabase);
@@ -126,9 +129,12 @@ public static class Core
 		spectatingGameMode.Initialize();
 
 		captureThePancakeGameMode = new CaptureThePancakeGameMode(); //wait until a match has started to initialize
+
 		dominationGameMode = new DominationGameMode();
 
 		BulletHellManager.Initialize();
+
+		dodgeballGameMode = new DodgeballGameMode();
 
 		prisonGameMode = new PrisonGameMode();
 		prisonGameMode.Initialize();
@@ -154,6 +160,10 @@ public static class Core
 		if (dominationGameMode != null)
 		{
 			DominationHelper.EndMatch();
+		}
+		if (dodgeballGameMode != null)
+		{
+			DodgeballHelper.EndMatch();
 		}
 		
         spectatingGameMode.Dispose();

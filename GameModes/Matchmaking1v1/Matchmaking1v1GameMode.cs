@@ -73,7 +73,7 @@ public class Matchmaking1v1GameMode : BaseGameMode
 	{
 		if (!player.IsIn1v1()) return;
 
-		player.Reset(Helper.ResetOptions.EndMatch);
+		player.Reset(Helper.ResetOptions.FreshMatch);
 		if (Helper.BuffPlayer(player, Prefabs.Witch_PigTransformation_Buff, out var buffEntity, 3))
 		{
 			buffEntity.Add<BuffModificationFlagData>();
@@ -103,7 +103,7 @@ public class Matchmaking1v1GameMode : BaseGameMode
 
 		var winner = MatchmakingHelper.GetOpponentForPlayer(player);
 		MatchmakingQueue.MatchManager.EndMatch(winner, player, false);
-		player.Reset(Helper.ResetOptions.EndMatch);
+		player.Reset(Helper.ResetOptions.FreshMatch);
 
 		var blood = player.Character.Read<Blood>();
 		Helper.SetPlayerBlood(player, blood.BloodType, blood.Quality);

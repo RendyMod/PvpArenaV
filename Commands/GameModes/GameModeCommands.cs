@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using ProjectM;
 using PvpArena.GameModes.BulletHell;
 using PvpArena.GameModes.CaptureThePancake;
+using PvpArena.GameModes.Dodgeball;
 using PvpArena.GameModes.Domination;
 using PvpArena.Models;
 using PvpArena.Services;
@@ -33,7 +34,7 @@ internal class GameModeCommands
 		}
 		else
 		{
-			sender.ReceiveMessage("Cannot start a match against someone in your clan!".Error());
+			sender.ReceiveMessage("Cannot start a match against someone in the same clan!".Error());
 		}
 	}
 
@@ -53,8 +54,8 @@ internal class GameModeCommands
 		}
 		if (!Team.IsAllies(team1Leader.Character.Read<Team>(), team2Leader.Character.Read<Team>()))
 		{
-			DominationHelper.EndMatch();
-			DominationHelper.StartMatch(team1Leader, team2Leader);
+			DodgeballHelper.EndMatch();
+			DodgeballHelper.StartMatch(team1Leader, team2Leader);
 			sender.ReceiveMessage("Match started".Success());
 		}
 		else
@@ -63,14 +64,14 @@ internal class GameModeCommands
 		}
 	}
 
-	[Command("end-domination", description: "Ends capture the pancake", adminOnly: true)]
+	[Command("end-domination", description: "Ends domination", adminOnly: true)]
 	public void EndDominationCommand(Player sender)
 	{
-		DominationHelper.EndMatch();
+		DodgeballHelper.EndMatch();
 		sender.ReceiveMessage("Match ended".Success());
 	}
 
-	[Command("start-bullet", description: "Starts capture the pancake", usage: ".start-pancake Ash Rendy", aliases: new string[] { "start bullet", "bullethell", "bullet", "strat-bullet" }, adminOnly: false)]
+	[Command("start-bullet", description: "Starts bullet hell", usage: ".start-bullet", aliases: new string[] { "start bullet", "bullethell", "bullet", "strat-bullet" }, adminOnly: false)]
 	public void StartBulletHellCommand(Player sender, Player receiver = null)
 	{
 		Player player = sender;
@@ -79,5 +80,34 @@ internal class GameModeCommands
 			player = receiver;
 		}
 		BulletHellManager.QueueForMatch(player);
+	}
+
+	[Command("start-dodgeball", description: "Starts dodgeball", usage: ".start-dodgeball Ash Rendy", aliases: new string[] { "start dodgeball", "dodgeball", "start dodgeball"}, adminOnly: true)]
+	public void StartDodgeballCommand(Player sender, Player team2Leader, Player team1Leader = null)
+	{
+		if (team1Leader == null)
+		{
+			team1Leader = sender;
+		}
+		if (!Team.IsAllies(team1Leader.Character.Read<Team>(), team2Leader.Character.Read<Team>()))
+		{
+			DodgeballHelper.EndMatch();
+			Action action = () =>
+			{
+				DodgeballHelper.StartMatch(team1Leader, team2Leader);
+			};
+			ActionScheduler.RunActionOnceAfterDelay(action, 1);
+		}
+		else
+		{
+			sender.ReceiveMessage("Cannot start a match against someone in the same clan!".Error());
+		}
+	}
+
+	[Command("end-dodgeball", description: "Ends dodgeball", usage: ".end-dodgeball", aliases: new string[] { "end dodgeball", "end dodgeball" }, adminOnly: true)]
+	public void EndDodgeballCommand(Player sender)
+	{
+		DodgeballHelper.EndMatch();
+		sender.ReceiveMessage("Match ended".Success());
 	}
 }

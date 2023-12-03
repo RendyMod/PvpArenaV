@@ -216,7 +216,7 @@ public class Player
 
 	public bool IsInDodgeball()
 	{
-		return CurrentState == PlayerState.Imprisoned;
+		return CurrentState == PlayerState.Dodgeball;
 	}
 
 	public void ReceiveMessage(string message)

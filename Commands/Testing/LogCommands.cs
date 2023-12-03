@@ -63,6 +63,31 @@ public class LogCommands
 		}
 	}
 
+
+	[Command("log-structure-position", description: "Logs position of hovered entity", adminOnly: true)]
+	public void LogStructurePositionCommand(Player sender)
+	{
+		var entity = Helper.GetHoveredEntity<CastleHeartConnection>(sender.Character);
+		if (entity != Entity.Null)
+		{
+			entity.LogPrefabName();
+			var localToWorld = entity.Read<LocalToWorld>();
+			var message = $"\"X\": {localToWorld.Position.x},\n\"Y\": {localToWorld.Position.y},\n\"Z\": {localToWorld.Position.z}";
+			sender.ReceiveMessage(message);
+			Plugin.PluginLog.LogInfo(message);
+		}
+	}
+
+
+	[Command("log-tile-position", description: "Logs position of hovered tile", adminOnly: true)]
+	public void LogTilePositionCommand(Player sender, int snapMode = (int)Helper.SnapMode.Center)
+	{
+		var snappedAimPosition = Helper.GetSnappedHoverPosition(sender, (Helper.SnapMode)snapMode);		
+		var message = $"\"X\": {snappedAimPosition.x},\n\"Y\": {snappedAimPosition.y},\n\"Z\": {snappedAimPosition.z}";
+		sender.ReceiveMessage(message);
+		Plugin.PluginLog.LogInfo(message);
+	}
+
 	[Command("log-structure-zone", description: "Logs dimensions of hovered entity", adminOnly: true)]
 	public void LogSizeCommand(Player sender, int x, int y)
 	{

@@ -23,6 +23,7 @@ using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine.Rendering.HighDefinition;
 using static PvpArena.Factories.UnitFactory;
+using static PvpArena.Helpers.Helper;
 using static RootMotion.FinalIK.Grounding;
 
 namespace PvpArena.GameModes.Domination;
@@ -140,7 +141,7 @@ public static class DominationHelper
 		{
 			team1Player.CurrentState = Player.PlayerState.Domination;
 			team1Player.MatchmakingTeam = 1;
-			team1Player.Reset(BaseGameMode.ResetOptions);
+			team1Player.Reset(ResetOptions.FreshMatch);
 			Helper.SetDefaultBlood(team1Player, DominationConfig.Config.DefaultBlood.ToLower());
 			GiveHealingPotionsIfNotPresent(team1Player);
 			team1Player.Teleport(DominationConfig.Config.Team1PlayerRespawn.ToFloat3());
@@ -153,7 +154,7 @@ public static class DominationHelper
 		{
 			team2Player.CurrentState = Player.PlayerState.Domination;
 			team2Player.MatchmakingTeam = 2;
-			team2Player.Reset(BaseGameMode.ResetOptions);
+			team2Player.Reset(ResetOptions.FreshMatch);
 			Helper.SetDefaultBlood(team2Player, DominationConfig.Config.DefaultBlood.ToLower());
 			GiveHealingPotionsIfNotPresent(team2Player);
 			team2Player.Teleport(DominationConfig.Config.Team2PlayerRespawn.ToFloat3());
@@ -182,7 +183,7 @@ public static class DominationHelper
 				{
 					player.CurrentState = Player.PlayerState.Normal;
 					player.MatchmakingTeam = 0;
-					player.Reset(BaseGameMode.ResetOptions);
+					player.Reset(ResetOptions.FreshMatch);
 					if (!player.IsAlive)
 					{
 						Helper.RespawnPlayer(player, player.Position);

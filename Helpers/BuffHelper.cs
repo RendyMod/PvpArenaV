@@ -11,6 +11,7 @@ using ProjectM.Network;
 using ProjectM.Shared;
 using PvpArena.Data;
 using PvpArena.Factories;
+using PvpArena.GameModes.BulletHell;
 using PvpArena.Models;
 using PvpArena.Services;
 using Unity.Entities;
@@ -207,6 +208,24 @@ public static partial class Helper
 	public static bool BuffPlayer(Player player, PrefabGUID buff, out Entity buffEntity, float duration = DEFAULT_DURATION, bool attemptToPersistThroughDeath = false, bool effectsOnStart = false)
 	{
 		return BuffEntity(player.Character, buff, out buffEntity, duration, attemptToPersistThroughDeath, effectsOnStart);
+	}
+
+	public static void MakeGhostlySpectator(Player player)
+	{
+		BuffPlayer(player, Prefabs.AB_Shapeshift_Mist_Buff, out var buffEntity, NO_DURATION);
+		CompletelyRemoveAbilityBarFromBuff(buffEntity);
+		FixIconForShapeshiftBuff(player, buffEntity, Prefabs.AB_Shapeshift_Mist_Group);
+		ModifyBuff(buffEntity, BuffModificationTypes.Invulnerable | BuffModificationTypes.Immaterial | BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.AbilityCastImpair | BuffModificationTypes.PickupItemImpaired | BuffModificationTypes.TargetSpellImpaired, true);
+
+		BuffPlayer(player, Prefabs.Buff_General_HideCorpse, out var invisibleBuff, NO_DURATION);
+		ModifyBuff(invisibleBuff, BuffModificationTypes.None, true);
+		/*var action = () =>
+		{
+			BuffPlayer(player, Prefabs.Buff_General_HideCorpse, out var invisibleBuff, NO_DURATION);
+			ModifyBuff(invisibleBuff, BuffModificationTypes.None, true);
+		};
+		var timer = ActionScheduler.RunActionOnceAfterDelay(action, .05f);
+		DodgeballGameMode.Timers.Add(timer);*/
 	}
 
 	public static bool BuffEntity(Entity entity, PrefabGUID buff, out Entity buffEntity, float duration = DEFAULT_DURATION, bool attemptToPersistThroughDeath = false, bool effectsOnStart = false)

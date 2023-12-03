@@ -12,6 +12,7 @@ using PvpArena.Models;
 using static PvpArena.Frameworks.CommandFramework.CommandFramework;
 using System.Numerics;
 using System;
+using PvpArena.GameModes.Dodgeball;
 
 namespace PvpArena.Commands.Debug;
 internal class TestCommands
@@ -32,15 +33,8 @@ internal class TestCommands
 	[Command("test2", description: "Used for debugging", adminOnly: true)]
 	public void Test2Command(Player sender)
 	{
-		Helper.BuffPlayer(sender, Helper.CustomBuff4, out var buffEntity);
-		var abilityBar = new AbilityBar
-		{
-			Spell1 = Prefabs.AB_Blood_Shadowbolt_AbilityGroup,
-			Spell2 = Prefabs.AB_Blood_BloodRite_AbilityGroup,
-			Weapon2 = Prefabs.AB_Vampire_Spear_Harpoon_Throw_AbilityGroup
-		};
-		abilityBar.ApplyChangesHard(buffEntity);
-	}
+        DodgeballGameMode.RevivePlayer(sender);
+    }
 
 	[Command("test3", description: "Used for debugging", adminOnly: true)]
 	public void Test3Command(Player sender, bool friendly = true)
@@ -259,7 +253,7 @@ internal class TestCommands
 		}
 	}
 
-	[Command(name: "log-zone", description: "Gets the zone assuming you are at the bottom left", usage: ".get-zone", adminOnly: true, includeInHelp: false)]
+	[Command(name: "log-zone", description: "Gets the zone assuming you are at the bottom left facing north", usage: ".get-zone", adminOnly: true, includeInHelp: false)]
 	public void GetZoneCommand(Player player, int x, int z)
 	{
 		player.ReceiveMessage($"{RectangleZone.GetZoneByCurrentCoordinates(player, x, z)}");
@@ -269,7 +263,7 @@ internal class TestCommands
 	[Command(name: "check-zone", description: "Does debug things", usage: ".check-zone", adminOnly: true, includeInHelp: false)]
 	public void CheckZoneCommand(Player player)
 	{
-		if (CaptureThePancakeConfig.Config.Team1EndZone.ToRectangleZone().Contains(player))
+		if (DodgeballConfig.Config.Team2Zone.ToRectangleZone().Contains(player))
 		{
 			player.ReceiveMessage("in zone".Success());
 		}

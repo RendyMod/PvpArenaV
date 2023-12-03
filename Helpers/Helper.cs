@@ -243,7 +243,7 @@ public static partial class Helper
         public List<string> BuffsToIgnore = new List<string>();
 
         public static ResetOptions Default => new ResetOptions();
-        public static ResetOptions EndMatch = new ResetOptions
+        public static ResetOptions FreshMatch = new ResetOptions
         {
             RemoveConsumables = true,
             RemoveShapeshifts = true,

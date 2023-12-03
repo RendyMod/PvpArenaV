@@ -215,8 +215,8 @@ public static class MatchmakingQueue
 
 		private static void ReturnPlayers(Player winner, Player loser, bool teleportLoser = true)
 		{
-			winner.Reset(Helper.ResetOptions.EndMatch);
-			loser.Reset(Helper.ResetOptions.EndMatch);
+			winner.Reset(Helper.ResetOptions.FreshMatch);
+			loser.Reset(Helper.ResetOptions.FreshMatch);
 
 			// Teleport players back to their original location.
 			winner.Teleport(winner.MatchmakingData1v1.ReturnLocation);
@@ -272,7 +272,7 @@ public static class MatchmakingQueue
 
 			foreach (var player in players)
 			{
-				player.Reset(Helper.ResetOptions.EndMatch);
+				player.Reset(Helper.ResetOptions.FreshMatch);
 				Helper.BuffPlayer(player, Prefabs.AB_InvisibilityAndImmaterial_Buff, out var buffEntity, 1);
 				Helper.SetDefaultBlood(player, PvpArenaConfig.Config.DefaultArenaBlood);
 			}
