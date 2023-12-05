@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
+using Bloodstone.API;
 using ProjectM;
 using ProjectM.Behaviours;
 using PvpArena.Factories;
@@ -175,7 +176,10 @@ public static class BulletHellManager
 				{
 					message = $"New Record: {timeSurvived.ToString("F2").Success()} / Old Record: {sortedPlayers[0].Name.Error()} - {globalRecordTime.ToString("F2").Error()}".White();
 					player.ReceiveMessage(("You have set a " + "new global record".Emphasize() + "!").White());
-					
+
+					var globalMessage = $"{player.Name.Colorify(ExtendedColor.ClanNameColor)} has set a new {"Bullet Hell".Emphasize()} record! - {timeSurvived.ToString("F2").Success()}".White();
+					ServerChatUtils.SendSystemMessageToAllClients(VWorld.Server.EntityManager, globalMessage);
+
 					player.PlayerBulletHellData.BestTime = timeSurvived.ToString("F2");
 					Core.playerBulletHellDataRepository.SaveDataAsync(new List<PlayerBulletHellData> { arena.player.PlayerBulletHellData });
 				}

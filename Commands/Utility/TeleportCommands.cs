@@ -84,9 +84,11 @@ internal class TeleportCommands
 			Timestamp = DateTime.Now,
 		};
 
-		TeleportRequestManager.AddRequest(request);
-		sender.ReceiveMessage($"Requested teleportation to {RecipientPlayer.User.Read<User>().CharacterName.ToString().Emphasize()}".White());
-		RecipientPlayer.ReceiveMessage($"{RequesterUserData.CharacterName.ToString().Emphasize()} has requested to teleport to you. Accept with .tpa.".White());
+		if (TeleportRequestManager.AddRequest(request))
+		{
+			sender.ReceiveMessage($"Requested teleportation to {RecipientPlayer.User.Read<User>().CharacterName.ToString().Emphasize()}".White());
+			RecipientPlayer.ReceiveMessage($"{RequesterUserData.CharacterName.ToString().Emphasize()} has requested to teleport to you. Accept with .tpa.".White());
+		}
 	}
 
 	[Command("tpa", description: "Approves teleportation request", usage: ".tpa", adminOnly: false, includeInHelp: false, category: "Teleport")]

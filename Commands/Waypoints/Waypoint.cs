@@ -204,9 +204,9 @@ public static class TeleportRequestManager
 {
 	private static RequestManager requestManager = new RequestManager();
 	
-	public static void AddRequest(TeleportRequest request)
+	public static bool AddRequest(TeleportRequest request)
 	{
-		requestManager.AddRequest(request);
+		return requestManager.AddRequest(request);
 	}
 
 	public static TeleportRequest GetRequest(Player recipient, Player requester)

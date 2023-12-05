@@ -31,12 +31,13 @@ public class RequestManager
 
 	private List<Request> requestOrder = new List<Request>();
 
-	public void AddRequest(Request request)
+	public bool AddRequest(Request request)
 	{
 		var existingRequest = GetRequest(request.Recipient, request.Requester);
 		if (existingRequest != null && !existingRequest.IsExpired())
 		{
-			request.Recipient.ReceiveMessage($"{request.Recipient.Name.Emphasize()} already has a pending invite".Warning());
+			request.Requester.ReceiveMessage($"{request.Recipient.Name.Emphasize()} already has a pending invite".Warning());
+			return false;
 		}
 
 		if (!activeRequests.TryGetValue(request.Recipient, out var requesterToRequestMap))
@@ -49,6 +50,7 @@ public class RequestManager
 		requesterToRequestMap[request.Requester] = request;
 
 		requestOrder.Add(request);
+		return true;
 	}
 
 	public Request GetRequest(Player recipient, Player requester)

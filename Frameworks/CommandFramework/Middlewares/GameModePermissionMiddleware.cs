@@ -8,6 +8,7 @@ using PvpArena.GameModes.Dodgeball;
 using PvpArena.GameModes.Domination;
 using PvpArena.GameModes.Matchmaking1v1;
 using PvpArena.GameModes.Prison;
+using PvpArena.GameModes.Troll;
 using PvpArena.Models;
 using static PvpArena.Frameworks.CommandFramework.CommandFramework;
 
@@ -50,6 +51,10 @@ public class GameModePermissionMiddleware : IMiddleware
 			else if (sender.IsInDodgeball())
 			{
 				allowedCommands = DodgeballGameMode.GetAllowedCommands();
+			}
+			else if (sender.IsTroll())
+			{
+				allowedCommands = TrollGameMode.GetAllowedCommands();
 			}
 			if (allowedCommands.ContainsKey(command.Name) || allowedCommands.ContainsKey("all"))
 			{
