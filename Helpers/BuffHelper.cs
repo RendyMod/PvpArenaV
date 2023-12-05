@@ -29,6 +29,7 @@ public static partial class Helper
 	public static PrefabGUID CustomBuff2 = Prefabs.Buff_Manticore_ImmaterialHomePos; //good blank slate for adding modifiers, but doesn't persist through death
 	public static PrefabGUID CustomBuff3 = Prefabs.Buff_BloodQuality_T01_OLD; //experimental blank slate
 	public static PrefabGUID CustomBuff4 = Prefabs.Buff_BloodQuality_T02_OLD; //experimental blank slate
+	public static PrefabGUID TrollBuff = CustomBuff4;
 	public static void ApplyMatchInitializationBuff(Player player)
 	{
 		Helper.BuffPlayer(player, Prefabs.Buff_General_Gloomrot_LightningStun, out var buffEntity, 5);

@@ -16,6 +16,7 @@ using PvpArena.GameModes.Dodgeball;
 using PvpArena.GameModes.Domination;
 using PvpArena.GameModes.Matchmaking1v1;
 using PvpArena.GameModes.Prison;
+using PvpArena.GameModes.Troll;
 using PvpArena.Listeners;
 using PvpArena.Models;
 using PvpArena.Patches;
@@ -106,6 +107,17 @@ public static class Core
 		var query = VWorld.Server.EntityManager.CreateEntityQuery(queryDesc);
 		Listener.AddListener(query, new ManuallySpawnedPrefabListener());
 
+		queryDesc = new EntityQueryDesc
+		{
+			All = new ComponentType[]
+			{
+				new ComponentType(Il2CppType.Of<HitColliderCast>(), ComponentType.AccessMode.ReadWrite)
+			},
+			Options = options
+		};
+		query = VWorld.Server.EntityManager.CreateEntityQuery(queryDesc);
+		Listener.AddListener(query, new AoeListener());
+
 		/*discordBot = new DiscordBot();
 		discordBot.InitializeAsync();*/
 
@@ -171,6 +183,7 @@ public static class Core
 		prisonGameMode.Dispose();
 		DummyHandler.Dispose();
 		PlayerSpawnHandler.Dispose();
+		TrollModeManager.Dispose();
 		LoginPointsService.DisposeTimersForOnlinePlayers();
 		Listener.Dispose();
 	}

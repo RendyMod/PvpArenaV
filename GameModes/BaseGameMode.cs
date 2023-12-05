@@ -27,8 +27,9 @@ public abstract class BaseGameMode
 	public abstract void HandleOnItemWasThrown(Player player, Entity eventEntity);
 	public abstract void HandleOnPlayerDamageDealt(Player player, Entity eventEntity);
 	public abstract void HandleOnPlayerChatCommand(Player player, CommandAttribute command);
+    public virtual Player.PlayerState GameModeType { get; }
 
-	private static Dictionary<string, bool> AllowedCommands = new Dictionary<string, bool>
+    private static Dictionary<string, bool> AllowedCommands = new Dictionary<string, bool>
 	{
 		{ "all", true }
 	};

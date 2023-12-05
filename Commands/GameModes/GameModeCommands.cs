@@ -8,6 +8,7 @@ using PvpArena.GameModes.BulletHell;
 using PvpArena.GameModes.CaptureThePancake;
 using PvpArena.GameModes.Dodgeball;
 using PvpArena.GameModes.Domination;
+using PvpArena.GameModes.Troll;
 using PvpArena.Models;
 using PvpArena.Services;
 using static PvpArena.Frameworks.CommandFramework.CommandFramework;
@@ -110,5 +111,18 @@ internal class GameModeCommands
 	{
 		DodgeballHelper.EndMatch();
 		sender.ReceiveMessage("Match ended".Success());
+	}
+
+	[Command("troll", description: "Used for debugging", adminOnly: true)]
+	public void TrollCommand(Player sender, Player player = null)
+	{
+		if (sender.CurrentState == Player.PlayerState.Troll)
+		{
+			TrollModeManager.RemoveTroll(player ?? sender);
+		}
+		else
+		{
+			TrollModeManager.AddTroll(player ?? sender);
+		}
 	}
 }

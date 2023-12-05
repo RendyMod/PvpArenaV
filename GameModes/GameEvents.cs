@@ -88,7 +88,7 @@ public static class GameEvents
 	public static event PlayerDamageReceivedHandler OnPlayerDamageReceived;
 
 	public delegate void PlayerProjectileCreatedHandler(Player player, Entity projectile);
-	public static event PlayerProjectileCreatedHandler OnProjectileCreated;
+	public static event PlayerProjectileCreatedHandler OnPlayerHitColliderCreated;
 
 	public delegate void PlayerChatMessageHandler(Player player, Entity eventEntity);
 	public static event PlayerChatMessageHandler OnPlayerChatMessage;
@@ -226,9 +226,9 @@ public static class GameEvents
 		OnItemWasThrown?.Invoke(closestPlayer, eventEntity);
 	}
 
-	public static void RaiseProjectileCreated(Player player, Entity projectile)
+	public static void RaisePlayerHitColliderCreated(Player player, Entity hitCollider)
 	{
-		OnProjectileCreated?.Invoke(player, projectile);
+		OnPlayerHitColliderCreated?.Invoke(player, hitCollider);
 	}
 
 	public static void RaiseDelayedSpawnEvent(Unit unit, int timeUntilSpawn)

@@ -17,6 +17,7 @@ namespace PvpArena.GameModes;
 
 public class SpectatingGameMode : BaseGameMode
 {
+	public override Player.PlayerState GameModeType => Player.PlayerState.Spectating;
 	public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
 	{
 		RemoveConsumables = false,
@@ -59,12 +60,12 @@ public class SpectatingGameMode : BaseGameMode
 
 	public override void HandleOnPlayerDowned(Player player, Entity killer)
 	{
-		if (!player.IsSpectating()) return;
+		if (player.CurrentState != GameModeType) return;
 
 	}
 	public override void HandleOnPlayerDeath(Player player, OnKillCallResult killCallResult)
 	{
-		if (!player.IsSpectating()) return;
+		if (player.CurrentState != GameModeType) return;
 
 		player.Reset(SpectatingGameMode.ResetOptions);
 		Helper.RespawnPlayer(player, PvpArenaConfig.Config.CustomSpawnLocation.ToFloat3());
@@ -78,35 +79,35 @@ public class SpectatingGameMode : BaseGameMode
 	}*/
 	public override void HandleOnPlayerChatCommand(Player player, CommandAttribute command)
 	{
-		if (!player.IsSpectating()) return;
+		if (player.CurrentState != GameModeType) return;
 
 	}
 	public override void HandleOnShapeshift(Player player, Entity eventEntity)
 	{
-		if (!player.IsSpectating()) return;
+		if (player.CurrentState != GameModeType) return;
 
 	}
 	public override void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
 	{
-		if (!player.IsSpectating()) return;
+		if (player.CurrentState != GameModeType) return;
 
 	}
 
 	public void HandleOnPlayerStartedCasting(Player player, Entity eventEntity)
 	{
-		if (!player.IsSpectating()) return;
+		if (player.CurrentState != GameModeType) return;
 
 	}
 
 	public override void HandleOnPlayerBuffed(Player player, Entity buffEntity)
 	{
-		if (!player.IsSpectating()) return;
+		if (player.CurrentState != GameModeType) return;
 
 	}
 
 	public override void HandleOnPlayerConnected(Player player)
 	{
-		if (!player.IsSpectating()) return;
+		if (player.CurrentState != GameModeType) return;
 
 		if (PvpArenaConfig.Config.UseCustomSpawnLocation)
 		{
@@ -116,7 +117,7 @@ public class SpectatingGameMode : BaseGameMode
 
 	public override void HandleOnPlayerDisconnected(Player player)
 	{
-		if (!player.IsSpectating()) return;
+		if (player.CurrentState != GameModeType) return;
 
 		player.CurrentState = Player.PlayerState.Normal;
 		Helper.RemoveBuff(player.Character, Prefabs.Admin_Observe_Invisible_Buff);
@@ -124,14 +125,14 @@ public class SpectatingGameMode : BaseGameMode
 
 	public override void HandleOnItemWasThrown(Player player, Entity eventEntity)
 	{
-		if (!player.IsSpectating()) return;
+		if (player.CurrentState != GameModeType) return;
 
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 	}
 
 	public override void HandleOnPlayerDamageDealt(Player player, Entity eventEntity)
 	{
-		if (!player.IsSpectating()) return;
+		if (player.CurrentState != GameModeType) return;
 
 		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
 		var isStructure = (damageDealtEvent.Target.Has<CastleHeartConnection>());

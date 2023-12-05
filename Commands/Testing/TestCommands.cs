@@ -18,6 +18,7 @@ using PvpArena.Services;
 using PvpArena.Patches;
 using PvpArena.Factories;
 using Unity.Collections;
+using PvpArena.GameModes.Troll;
 
 namespace PvpArena.Commands.Debug;
 internal class TestCommands
@@ -118,26 +119,9 @@ internal class TestCommands
     }
 
     [Command("test4", description: "Used for debugging", adminOnly: true)]
-	public void Test4Command(Player sender, Player target)
+	public void Test4Command(Player sender)
 	{
-		Helper.ControlOriginalCharacter(target);
-		/*		sender.Character.LogComponentTypes();
-				var buffer = sender.Character.ReadBuffer<AbilityGroupSlotBuffer>();
-				for (var i = 0; i < buffer.Length; i++)
-				{
-					var abilityGroupSlot = buffer[i];
-					abilityGroupSlot.ShowOnBar = true;
-					buffer[i] = abilityGroupSlot;
-				}
-
-				if (Helper.BuffPlayer(sender, Helper.CustomBuff4, out var buffEntity, Helper.NO_DURATION)) 
-				{
-					var abilityBar = new AbilityBar
-					{
-						Extra = Prefabs.AB_Gloomrot_SpiderTank_Gattler_Minigun_AbilityGroup
-					};
-					abilityBar.ApplyChangesSoft(buffEntity);
-				}*/
+		Helper.MakeSCT(sender, Prefabs.SCT_Type_InfoMessage, 5);
 	}
 
 	[Command("rotate-unit", description: "Used for debugging", adminOnly: true)]

@@ -23,6 +23,7 @@ namespace PvpArena.GameModes.Prison;
 
 public class PrisonGameMode : BaseGameMode
 {
+	public override Player.PlayerState GameModeType => Player.PlayerState.Imprisoned;
 	public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
 	{
 		ResetCooldowns = true,
@@ -75,7 +76,7 @@ public class PrisonGameMode : BaseGameMode
 
 	public override void HandleOnPlayerDowned(Player player, Entity killer)
 	{
-		if (!player.IsImprisoned()) return;
+		if (player.CurrentState != GameModeType) return;
 
 		player.Reset(ResetOptions);
 		if (Helper.BuffPlayer(player, Prefabs.Witch_PigTransformation_Buff, out var buffEntity, 3))
@@ -100,7 +101,7 @@ public class PrisonGameMode : BaseGameMode
 	}
 	public override void HandleOnPlayerDeath(Player player, OnKillCallResult killCallResult)
 	{
-		if (!player.IsImprisoned()) return;
+		if (player.CurrentState != GameModeType) return;
 		var pos = ImprisonService.GetPlayerCellCoordinates(player);
 		Helper.RespawnPlayer(player, pos);
 		player.Reset(ResetOptions);
@@ -110,12 +111,12 @@ public class PrisonGameMode : BaseGameMode
 
 	public override void HandleOnPlayerChatCommand(Player player, CommandAttribute command)
 	{
-		if (!player.IsImprisoned()) return;
+		if (player.CurrentState != GameModeType) return;
 
 	}
 	public override void HandleOnShapeshift(Player player, Entity eventEntity)
 	{
-		if (!player.IsImprisoned()) return;
+		if (player.CurrentState != GameModeType) return;
 
 		var enterShapeshiftEvent = eventEntity.Read<EnterShapeshiftEvent>();
 		if (enterShapeshiftEvent.Shapeshift == Prefabs.AB_Shapeshift_BloodMend_Group)
@@ -141,19 +142,19 @@ public class PrisonGameMode : BaseGameMode
 	}
 	public override void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
 	{
-		if (!player.IsImprisoned()) return;
+		if (player.CurrentState != GameModeType) return;
 
 	}
 
 	public void HandleOnPlayerStartedCasting(Player player, Entity eventEntity)
 	{
-		if (!player.IsImprisoned()) return;
+		if (player.CurrentState != GameModeType) return;
 
 	}
 
 	public override void HandleOnPlayerBuffed(Player player, Entity buffEntity)
 	{
-		if (!player.IsImprisoned()) return;
+		if (player.CurrentState != GameModeType) return;
 
 	}
 
@@ -167,21 +168,21 @@ public class PrisonGameMode : BaseGameMode
 
 	public override void HandleOnPlayerDisconnected(Player player)
 	{
-		if (!player.IsImprisoned()) return;
+		if (player.CurrentState != GameModeType) return;
 
 		player.Teleport(PrisonConfig.Config.CellCoordinateList[player.ImprisonInfo.PrisonCellNumber].ToFloat3());
 	}
 
 	public override void HandleOnItemWasThrown(Player player, Entity eventEntity)
 	{
-		if (!player.IsImprisoned()) return;
+		if (player.CurrentState != GameModeType) return;
 
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 	}
 
 	public override void HandleOnPlayerDamageDealt(Player player, Entity eventEntity)
 	{
-		if (!player.IsImprisoned()) return;
+		if (player.CurrentState != GameModeType) return;
 
 		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
 		var isStructure = damageDealtEvent.Target.Has<CastleHeartConnection>();
@@ -191,9 +192,9 @@ public class PrisonGameMode : BaseGameMode
 		}
 	}
 
-	public static void HandleOnPlayerChatMessage(Player player, Entity eventEntity)
+	public void HandleOnPlayerChatMessage(Player player, Entity eventEntity)
 	{
-		if (!player.IsImprisoned()) return;
+		if (player.CurrentState != GameModeType) return;
 
 		var chatEvent = eventEntity.Read<ChatMessageEvent>();
 		if (chatEvent.MessageType == ChatMessageType.Global)

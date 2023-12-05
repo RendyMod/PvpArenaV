@@ -26,7 +26,8 @@ public class Player
 		Spectating,
 		Domination,
 		BulletHell,
-		Dodgeball
+		Dodgeball,
+		Troll
 	}
 
 	private Entity _user;
@@ -230,6 +231,11 @@ public class Player
 	public bool IsInDodgeball()
 	{
 		return CurrentState == PlayerState.Dodgeball;
+	}
+
+	public bool IsTroll()
+	{
+		return CurrentState == PlayerState.Troll;
 	}
 
 	public void ReceiveMessage(string message)

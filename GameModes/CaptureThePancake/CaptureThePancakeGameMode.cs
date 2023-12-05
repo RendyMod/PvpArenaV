@@ -36,6 +36,7 @@ namespace PvpArena.GameModes.CaptureThePancake;
 
 public class CaptureThePancakeGameMode : BaseGameMode
 {
+    public override Player.PlayerState GameModeType => Player.PlayerState.CaptureThePancake;
 	public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
 	{
 		RemoveConsumables = false,
@@ -257,7 +258,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 	public override void HandleOnPlayerDowned(Player player, Entity killer)
 	{
-		if (!player.IsInCaptureThePancake()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 		if (killer.Exists())
 		{
@@ -332,7 +333,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 	}
 	public override void HandleOnPlayerDeath(Player player, OnKillCallResult killCallResult)
 	{
-		if (!player.IsInCaptureThePancake()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 		//clear out any queued up respawn actions since we will recreate them now that the player has died (in case they killed themselves twice in a row before the initial respawn actions finished)
 		if (PlayerRespawnTimers.TryGetValue(player, out var respawnActions))
@@ -414,20 +415,20 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 	public void HandleOnGameModeBegin(Player player)
 	{
-		if (!player.IsInCaptureThePancake()) return;
+		if (player.CurrentState != this.GameModeType) return;
 	}
 	public void HandleOnGameModeEnd(Player player)
 	{
-		if (!player.IsInCaptureThePancake()) return;
+		if (player.CurrentState != this.GameModeType) return;
 	}
 	public override void HandleOnPlayerChatCommand(Player player, CommandAttribute command)
 	{
-		if (!player.IsInCaptureThePancake()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 	}
 	public override void HandleOnShapeshift(Player player, Entity eventEntity)
 	{
-		if (!player.IsInCaptureThePancake()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 		var enterShapeshiftEvent = eventEntity.Read<ProjectM.Network.EnterShapeshiftEvent>();
 		if (!shapeshiftToShapeshift.ContainsKey(enterShapeshiftEvent.Shapeshift))
@@ -443,7 +444,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 	}
 	public override void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
 	{
-		if (!player.IsInCaptureThePancake()) return;
+		if (player.CurrentState != this.GameModeType) return;
 		if (item.ItemType == Prefabs.Item_Consumable_GlassBottle_BloodRosePotion_T02 || item.ItemType == Prefabs.Item_Consumable_Canteen_BloodRoseBrew_T01)
 		{
 			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
@@ -627,7 +628,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 	public override void HandleOnPlayerBuffed(Player player, Entity buffEntity)
 	{
-		if (!player.IsInCaptureThePancake()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 		var prefabGuid = buffEntity.Read<PrefabGUID>();
 		var buff = buffEntity.Read<Buff>();
@@ -746,7 +747,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 	public override void HandleOnPlayerConnected(Player player)
 	{
-		if (!player.IsInCaptureThePancake()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 
 		if (player.MatchmakingTeam == 1)
@@ -761,14 +762,14 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 	public override void HandleOnPlayerDisconnected(Player player)
 	{
-		if (!player.IsInCaptureThePancake()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 		Helper.DestroyEntity(player.Character);
 	}
 
 	public void HandleOnPlayerWillLoseGallopBuff(Player player, Entity eventEntity)
 	{
-		if (!player.IsInCaptureThePancake()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 		if (!(shouldRemoveGallopBuff.TryGetValue(player, out var value) && value))
 		{
@@ -778,7 +779,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 	public void HandleOnPlayerMounted(Player player, Entity eventEntity)
 	{
-		if (!player.IsInCaptureThePancake()) return;
+		if (player.CurrentState != this.GameModeType) return;
 		shouldRemoveGallopBuff[player] = false; //flag gallop buff for destruction once they dismount
 
 		Helper.RemoveAllShieldBuffs(player);
@@ -806,14 +807,14 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 	public void HandleOnPlayerDismounted(Player player, Entity eventEntity)
 	{
-		if (!player.IsInCaptureThePancake()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 		shouldRemoveGallopBuff[player] = true; // when they re-mount, re-flag gallop buff to not be destroyed
 	}
 
 	public void HandleOnPlayerInvitedToClan(Player player, Entity eventEntity)
 	{
-		if (!player.IsInCaptureThePancake()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 		player.ReceiveMessage("You may not invite players to your clan while in Capture the Pancake".Error());
@@ -821,7 +822,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 	public void HandleOnPlayerKickedFromClan(Player player, Entity eventEntity)
 	{
-		if (!player.IsInCaptureThePancake()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 		player.ReceiveMessage("You may not kick players from your clan while in Capture the Pancake".Error());
@@ -829,7 +830,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 	public void HandleOnPlayerLeftClan(Player player, Entity eventEntity)
 	{
-		if (!player.IsInCaptureThePancake()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 		player.ReceiveMessage("You may not leave your clan while in Capture the Pancake".Error());
@@ -904,7 +905,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 	public void HandleOnPlayerChatCommand(Player player, Entity eventEntity)
 	{
-		if (!player.IsInCaptureThePancake()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 
 	}
@@ -924,7 +925,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 	public override void HandleOnPlayerDamageDealt(Player player, Entity eventEntity)
 	{
-		if (!player.IsInCaptureThePancake()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
 		var targetPrefab = damageDealtEvent.Target.Read<PrefabGUID>();
@@ -954,7 +955,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 	public void HandleOnPlayerDamageReceived(Player player, Entity eventEntity)
 	{
-		if (!player.IsInCaptureThePancake()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
 		var source = damageDealtEvent.SpellSource.Read<EntityOwner>().Owner;
@@ -968,7 +969,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
     public void HandleOnPlayerStartedCasting(Player player, Entity eventEntity)
     {
-        if (!player.IsInCaptureThePancake()) return;
+        if (player.CurrentState != this.GameModeType) return;
 
 
         var abilityCastStartedEvent = eventEntity.Read<AbilityCastStartedEvent>();
@@ -1038,7 +1039,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
     public void HandleOnPlayerRespawn(Player player)
 	{
-        if (!player.IsInCaptureThePancake()) return;
+        if (player.CurrentState != this.GameModeType) return;
 
 		float3 pos = default;
 		if (player.MatchmakingTeam == 1)
@@ -1111,7 +1112,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		if (!target.Has<PlayerCharacter>()) return;
 
 		var targetPlayer = PlayerService.GetPlayerFromCharacter(target);
-		if (!source.IsInCaptureThePancake() || !source.IsInCaptureThePancake()) return;
+		if (source.CurrentState != GameModeType || targetPlayer.CurrentState != GameModeType) return;
 
 		if (!PlayerDamageDealt.ContainsKey(source)) 
 		{

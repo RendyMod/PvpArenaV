@@ -35,6 +35,8 @@ public class DodgeballGameMode : BaseGameMode
 	public static Dictionary<Player, bool> IsGhost = new Dictionary<Player, bool>();
 	public static Dictionary<int, Queue<Player>> TeamGhosts = new Dictionary<int, Queue<Player>>();
 	public static Dictionary<int, int> TeamCountersHit = new Dictionary<int, int>();
+	public override Player.PlayerState GameModeType => Player.PlayerState.Dodgeball;
+	
     public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
     {
         RemoveConsumables = true,
@@ -132,13 +134,13 @@ public class DodgeballGameMode : BaseGameMode
 
 	public override void HandleOnPlayerDowned(Player player, Entity killer)
 	{
-		if (!player.IsInDodgeball()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 		EliminatePlayer(player);
 	}
 	public override void HandleOnPlayerDeath(Player player, OnKillCallResult killCallResult)
 	{
-		if (!player.IsInDodgeball()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 		var pos = player.Position;
 		Helper.RespawnPlayer(player, pos);
@@ -154,19 +156,19 @@ public class DodgeballGameMode : BaseGameMode
 	}*/
 	public override void HandleOnPlayerChatCommand(Player player, CommandAttribute command)
 	{
-		if (!player.IsInDodgeball()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 	}
 	public override void HandleOnShapeshift(Player player, Entity eventEntity)
 	{
-		if (!player.IsInDodgeball()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 		eventEntity.Destroy();
 		player.ReceiveMessage("Cannot shapeshift during dodgeball".Error());
 	}
 	public override void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
 	{
-		if (!player.IsInDodgeball()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 		eventEntity.Destroy();
 		player.ReceiveMessage("Cannot use consumeables during dodgeball".Error());
@@ -174,15 +176,14 @@ public class DodgeballGameMode : BaseGameMode
 
 	public void HandleOnPlayerStartedCasting(Player player, Entity eventEntity)
 	{
-		if (!player.IsInDodgeball()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 	}
 
 	public override void HandleOnPlayerBuffed(Player player, Entity buffEntity)
 	{
-		if (!player.IsInDodgeball()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
-		buffEntity.LogPrefabName();
 		var prefabGuid = buffEntity.Read<PrefabGUID>();
 		if (prefabGuid == Prefabs.AB_Blood_BloodRite_Immaterial)
 		{
@@ -209,7 +210,7 @@ public class DodgeballGameMode : BaseGameMode
 
 	public override void HandleOnPlayerConnected(Player player)
 	{
-		if (!player.IsInDodgeball()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 		if (PvpArenaConfig.Config.UseCustomSpawnLocation)
 		{
@@ -219,21 +220,21 @@ public class DodgeballGameMode : BaseGameMode
 
 	public override void HandleOnPlayerDisconnected(Player player)
 	{
-		if (!player.IsInDodgeball()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
-        //kill them
+		//kill them
 	}
 
 	public override void HandleOnItemWasThrown(Player player, Entity eventEntity)
 	{
-		if (!player.IsInDodgeball()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 	}
 
 	public void HandleOnPlayerDamageReceived(Player player, Entity eventEntity)
 	{
-		if (!player.IsInDodgeball()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
 		var spell = damageDealtEvent.SpellSource.Read<PrefabGUID>();
@@ -252,7 +253,7 @@ public class DodgeballGameMode : BaseGameMode
 
 	public override void HandleOnPlayerDamageDealt(Player player, Entity eventEntity)
 	{
-		if (!player.IsInDodgeball()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
 		var spell = damageDealtEvent.SpellSource.Read<PrefabGUID>();
@@ -413,25 +414,25 @@ public class DodgeballGameMode : BaseGameMode
 
     public void HandleOnPlayerInvitedToClan(Player player, Entity eventEntity)
     {
-        if (!player.IsInDodgeball()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
-        eventEntity.Destroy();
+		eventEntity.Destroy();
         player.ReceiveMessage("You may not invite players to your clan while in Dodgeball".Error());
     }
 
     public void HandleOnPlayerKickedFromClan(Player player, Entity eventEntity)
     {
-        if (!player.IsInDodgeball()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
-        eventEntity.Destroy();
+		eventEntity.Destroy();
         player.ReceiveMessage("You may not kick players from your clan while in Dodgeball".Error());
     }
 
     public void HandleOnPlayerLeftClan(Player player, Entity eventEntity)
     {
-        if (!player.IsInDodgeball()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
-        eventEntity.Destroy();
+		eventEntity.Destroy();
         player.ReceiveMessage("You may not leave your clan while in Dodgeball".Error());
     }
 }

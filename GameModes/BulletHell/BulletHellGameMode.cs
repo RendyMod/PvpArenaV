@@ -21,6 +21,7 @@ namespace PvpArena.GameModes.BulletHell;
 
 public class BulletHellGameMode : BaseGameMode
 {
+	public override Player.PlayerState GameModeType => Player.PlayerState.BulletHell;
     public Player player = null;
 	public bool HasStarted = false;
 	public List<Timer> Timers = new List<Timer>();
@@ -28,7 +29,8 @@ public class BulletHellGameMode : BaseGameMode
 	public int ArenaNumber = 0;
 	public CircleZone FightZone;
 	public TemplateUnitSpawn UnitSpawns = new TemplateUnitSpawn();
-    public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
+	private long lastReportedInterval = 0;
+	public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
     {
         RemoveConsumables = true,
         RemoveShapeshifts = true,
@@ -81,6 +83,7 @@ public class BulletHellGameMode : BaseGameMode
 		}
 		Timers.Clear();
 		player = null;
+		lastReportedInterval = 0;
 	}
 
 	private static Dictionary<string, bool> AllowedCommands = new Dictionary<string, bool>
@@ -90,7 +93,7 @@ public class BulletHellGameMode : BaseGameMode
 
 	public override void HandleOnPlayerDowned(Player player, Entity killer)
 	{
-		if (!player.IsInBulletHell() || player != this.player) return;
+		if (player.CurrentState != GameModeType) return;
 
 		player.Reset(ResetOptions);
 		if (Helper.BuffPlayer(player, Prefabs.Witch_PigTransformation_Buff, out var buffEntity, 3))
@@ -103,7 +106,7 @@ public class BulletHellGameMode : BaseGameMode
 	}
 	public override void HandleOnPlayerDeath(Player player, OnKillCallResult killCallResult)
 	{
-		if (!player.IsInBulletHell() || player != this.player) return;
+		if (player.CurrentState != GameModeType) return;
 
 		var pos = player.Position;
 		Helper.RespawnPlayer(player, pos);
@@ -120,35 +123,35 @@ public class BulletHellGameMode : BaseGameMode
 	}*/
 	public override void HandleOnPlayerChatCommand(Player player, CommandAttribute command)
 	{
-		if (!player.IsInBulletHell() || player != this.player) return;
+		if (player.CurrentState != GameModeType) return;
 
 	}
 	public override void HandleOnShapeshift(Player player, Entity eventEntity)
 	{
-		if (!player.IsInBulletHell() || player != this.player) return;
+		if (player.CurrentState != GameModeType) return;
 
 	}
 	public override void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
 	{
-		if (!player.IsInBulletHell() || player != this.player) return;
+		if (player.CurrentState != GameModeType) return;
 
 	}
 
 	public void HandleOnPlayerStartedCasting(Player player, Entity eventEntity)
 	{
-		if (!player.IsInBulletHell() || player != this.player) return;
+		if (player.CurrentState != GameModeType) return;
 
 	}
 
 	public override void HandleOnPlayerBuffed(Player player, Entity buffEntity)
 	{
-		if (!player.IsInBulletHell() || player != this.player) return;
+		if (player.CurrentState != GameModeType) return;
 
 	}
 
 	public override void HandleOnPlayerConnected(Player player)
 	{
-		if (!player.IsInBulletHell() || player != this.player) return;
+		if (player.CurrentState != GameModeType) return;
 
 		if (PvpArenaConfig.Config.UseCustomSpawnLocation)
 		{
@@ -158,21 +161,21 @@ public class BulletHellGameMode : BaseGameMode
 
 	public override void HandleOnPlayerDisconnected(Player player)
 	{
-		if (!player.IsInBulletHell() || player != this.player) return;
+		if (player.CurrentState != GameModeType) return;
 
         BulletHellManager.EndMatch(this);
 	}
 
 	public override void HandleOnItemWasThrown(Player player, Entity eventEntity)
 	{
-		if (!player.IsInBulletHell() || player != this.player) return;
+		if (player.CurrentState != GameModeType) return;
 
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 	}
 
 	public override void HandleOnPlayerDamageDealt(Player player, Entity eventEntity)
 	{
-		if (!player.IsInBulletHell() || player != this.player) return;
+		if (player.CurrentState != GameModeType) return;
 
 		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
 		var isStructure = damageDealtEvent.Target.Has<CastleHeartConnection>();
@@ -189,11 +192,30 @@ public class BulletHellGameMode : BaseGameMode
 
 	public void HandleOnGameFrameUpdate()
 	{
-		if (HasStarted && IsOutOfBounds())
+		if (HasStarted)
 		{
-			player.ReceiveMessage("You have gone out of bounds!".Error());
-			BulletHellManager.EndMatch(this);
+			if (!IsOutOfBounds())
+			{
+				long elapsedTimeInSeconds = stopwatch.ElapsedMilliseconds / 1000;
+				long nextInterval = lastReportedInterval + 5;
+
+				if (elapsedTimeInSeconds >= nextInterval)
+				{
+					var pos = player.Position;
+					pos.y += 2;
+					Helper.MakeSCT(player, Prefabs.SCT_Type_InfoMessage, nextInterval, pos);
+					lastReportedInterval = nextInterval;
+				}
+				
+			}
+			else
+			{
+				player.ReceiveMessage("You have gone out of bounds!".Error());
+				BulletHellManager.EndMatch(this);
+			}
+			
 		}
+
 	}
 
 	public static new Dictionary<string, bool> GetAllowedCommands()

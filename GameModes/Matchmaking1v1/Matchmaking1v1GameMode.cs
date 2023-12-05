@@ -20,6 +20,7 @@ namespace PvpArena.GameModes.Matchmaking1v1;
 
 public class Matchmaking1v1GameMode : BaseGameMode
 {
+	public override Player.PlayerState GameModeType => Player.PlayerState.In1v1Matchmaking;
 	public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
 	{
 		ResetCooldowns = true,
@@ -71,7 +72,7 @@ public class Matchmaking1v1GameMode : BaseGameMode
 	}
 	public override void HandleOnPlayerDowned(Player player, Entity killer)
 	{
-		if (!player.IsIn1v1()) return;
+		if (player.CurrentState != GameModeType) return;
 
 		player.Reset(Helper.ResetOptions.FreshMatch);
 		if (Helper.BuffPlayer(player, Prefabs.Witch_PigTransformation_Buff, out var buffEntity, 3))
@@ -99,7 +100,7 @@ public class Matchmaking1v1GameMode : BaseGameMode
 	}
 	public override void HandleOnPlayerDeath(Player player, OnKillCallResult killCallResult)
 	{
-		if (!player.IsIn1v1()) return;
+		if (player.CurrentState != GameModeType) return;
 
 		var winner = MatchmakingHelper.GetOpponentForPlayer(player);
 		MatchmakingQueue.MatchManager.EndMatch(winner, player, false);
@@ -110,49 +111,49 @@ public class Matchmaking1v1GameMode : BaseGameMode
 	}
 	/*	public override void HandleOnPlayerRespawn(Player player)
 		{
-			if (!player.IsIn1v1()) return;
+			if (player.CurrentState != GameModeType) return;
 
 
 		}*/
 	public void HandleOnGameModeBegin(Player player)
 	{
-		if (!player.IsIn1v1()) return;
+		if (player.CurrentState != GameModeType) return;
 	}
 	public void HandleOnGameModeEnd(Player player)
 	{
-		if (!player.IsIn1v1()) return;
+		if (player.CurrentState != GameModeType) return;
 	}
 	public override void HandleOnPlayerChatCommand(Player player, CommandAttribute command)
 	{
-		if (!player.IsIn1v1()) return;
+		if (player.CurrentState != GameModeType) return;
 	}
 	public override void HandleOnShapeshift(Player player, Entity eventEntity)
 	{
-		if (!player.IsIn1v1()) return;
+		if (player.CurrentState != GameModeType) return;
 
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 		player.ReceiveMessage($"Shapeshifting is disabled while in a match.".Error());
 	}
 	public override void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
 	{
-		if (!player.IsIn1v1()) return;
+		if (player.CurrentState != GameModeType) return;
 
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 	}
 	public override void HandleOnPlayerBuffed(Player player, Entity buffEntity)
 	{
-		if (!player.IsIn1v1()) return;
+		if (player.CurrentState != GameModeType) return;
 	}
 
 	public override void HandleOnPlayerConnected(Player player)
 	{
-		if (!player.IsIn1v1()) return;
+		if (player.CurrentState != GameModeType) return;
 
 	}
 
 	public override void HandleOnPlayerDisconnected(Player player)
 	{
-		if (!player.IsIn1v1()) return;
+		if (player.CurrentState != GameModeType) return;
 
 
 		MatchmakingQueue.MatchManager.EndMatch(MatchmakingHelper.GetOpponentForPlayer(player), player, false);
@@ -160,14 +161,14 @@ public class Matchmaking1v1GameMode : BaseGameMode
 
 	public override void HandleOnItemWasThrown(Player player, Entity eventEntity)
 	{
-		if (!player.IsIn1v1()) return;
+		if (player.CurrentState != GameModeType) return;
 
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 	}
 
 	public override void HandleOnPlayerDamageDealt(Player player, Entity eventEntity)
 	{
-		if (!player.IsIn1v1()) return;
+		if (player.CurrentState != GameModeType) return;
 
 		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
 		var isStructure = damageDealtEvent.Target.Has<CastleHeartConnection>();

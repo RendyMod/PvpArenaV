@@ -286,10 +286,14 @@ public static partial class Helper
         GameEvents.RaisePlayerReset(player);
     }
 
-	public static void MakeSCT(Player player, PrefabGUID sctPrefab)
+	public static void MakeSCT(Player player, PrefabGUID sctPrefab, float value = 0, float3 pos = default)
 	{
+		if (pos.Equals(default(float3)))
+		{
+			pos = player.Position;
+		}
 		var sctEntity = Helper.GetPrefabEntityByPrefabGUID(Prefabs.ScrollingCombatTextMessage);
-		ScrollingCombatTextMessage.Create(VWorld.Server.EntityManager, Core.entityCommandBufferSystem.CreateCommandBuffer(), sctEntity, 0, sctPrefab, player.Position, player.Character, player.Character);
+		ScrollingCombatTextMessage.Create(VWorld.Server.EntityManager, Core.entityCommandBufferSystem.CreateCommandBuffer(), sctEntity, value, sctPrefab, pos, player.Character, player.Character);
 	}
 
 	public static void MakeSCTLocal(Player player, PrefabGUID sctPrefab)

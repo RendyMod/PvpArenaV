@@ -19,11 +19,16 @@ namespace PvpArena.GameModes;
 
 public class DefaultGameMode : BaseGameMode
 {
+	public override Player.PlayerState GameModeType => Player.PlayerState.Normal;
 	public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
 	{
 		ResetCooldowns = true,
 		RemoveShapeshifts = false,
-		RemoveConsumables = false
+		RemoveConsumables = false,
+		BuffsToIgnore = new List<string>
+		{
+			Helper.TrollBuff.LookupNameString()
+		}
 	};
 
 	private static List<PrefabGUID> ShapeshiftsToModify = new List<PrefabGUID>
@@ -125,7 +130,7 @@ public class DefaultGameMode : BaseGameMode
 
 	public override void HandleOnPlayerDowned(Player player, Entity killer)
 	{
-		if (!player.IsInDefaultMode()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 		player.Reset(ResetOptions);
 		if (Helper.BuffPlayer(player, Prefabs.Witch_PigTransformation_Buff, out var buffEntity, 3))
@@ -150,7 +155,7 @@ public class DefaultGameMode : BaseGameMode
 	}
 	public override void HandleOnPlayerDeath(Player player, OnKillCallResult killCallResult)
 	{
-		if (!player.IsInDefaultMode()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 		var pos = player.Position;
 		Helper.RespawnPlayer(player, pos);
@@ -161,12 +166,12 @@ public class DefaultGameMode : BaseGameMode
 
 	public override void HandleOnPlayerChatCommand(Player player, CommandAttribute command)
 	{
-		if (!player.IsInDefaultMode()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 	}
 	public override void HandleOnShapeshift(Player player, Entity eventEntity)
 	{
-		if (!player.IsInDefaultMode()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 
 		var enterShapeshiftEvent = eventEntity.Read<EnterShapeshiftEvent>();
@@ -216,13 +221,13 @@ public class DefaultGameMode : BaseGameMode
 	}
 	public override void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
 	{
-		if (!player.IsInDefaultMode()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 	}
 
 	public void HandleOnPlayerStartedCasting(Player player, Entity eventEntity)
 	{
-		if (!player.IsInDefaultMode()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 		var abilityCastStartedEvent = eventEntity.Read<AbilityCastStartedEvent>();
 		if (abilityCastStartedEvent.AbilityGroup.Index <= 0) return;
@@ -256,7 +261,7 @@ public class DefaultGameMode : BaseGameMode
 
 	public override void HandleOnPlayerBuffed(Player player, Entity buffEntity)
 	{
-		if (!player.IsInDefaultMode()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 		var prefabGuid = buffEntity.Read<PrefabGUID>();
 		if (prefabGuid == Prefabs.Witch_PigTransformation_Buff)
@@ -295,7 +300,7 @@ public class DefaultGameMode : BaseGameMode
 
 	public override void HandleOnPlayerConnected(Player player)
 	{
-		if (!player.IsInDefaultMode()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 		if (PvpArenaConfig.Config.UseCustomSpawnLocation)
 		{
@@ -305,20 +310,20 @@ public class DefaultGameMode : BaseGameMode
 
 	public override void HandleOnPlayerDisconnected(Player player)
 	{
-		if (!player.IsInDefaultMode()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 	}
 
 	public override void HandleOnItemWasThrown(Player player, Entity eventEntity)
 	{
-		if (!player.IsInDefaultMode()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 	}
 
 	public override void HandleOnPlayerDamageDealt(Player player, Entity eventEntity)
 	{
-		if (!player.IsInDefaultMode()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
 		
@@ -339,7 +344,7 @@ public class DefaultGameMode : BaseGameMode
 
 	public void HandleOnPlayerReset(Player player)
 	{
-		if (!player.IsInDefaultMode()) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 		var sctEntity = Helper.GetPrefabEntityByPrefabGUID(Prefabs.ScrollingCombatTextMessage);
 		ScrollingCombatTextMessage.Create(VWorld.Server.EntityManager, Core.entityCommandBufferSystem.CreateCommandBuffer(), sctEntity, 0, Prefabs.SCT_Type_MAX, player.Position, player.Character, player.Character);
