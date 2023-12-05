@@ -155,7 +155,7 @@ public class CommandFramework
 			for (int i = 0; i < parts.Count; i++)
 			{
 				potentialCommand = string.Join(" ", parts.Take(parts.Count - i));
-				if (commandRegistry.TryGetValue(potentialCommand, out matchedCommand))
+				if (commandRegistry.TryGetValue(potentialCommand.ToLower(), out matchedCommand))
 				{
 					arguments = parts.Skip(parts.Count - i).ToList();
 					if (matchedCommand != null)
