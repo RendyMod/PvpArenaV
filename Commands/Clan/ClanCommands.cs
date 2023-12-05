@@ -113,6 +113,7 @@ internal class ClanCommands
 
 				action = new ScheduledAction(Helper.AddPlayerToPlayerClanForce, new object[] { RequesterPlayer.User, RecipientPlayer.User });
 				ActionScheduler.ScheduleAction(action, 3);
+				RequesterPlayer.ReceiveMessage("You have joined the clan.".White());
 			}
 			else if (request.Type == Request.RequestType.ClanInviteRequest)
 			{
@@ -128,7 +129,7 @@ internal class ClanCommands
 				
 				action = new ScheduledAction(Helper.AddPlayerToPlayerClanForce, new object[] { RecipientPlayer.User, RequesterPlayer.User });
 				ActionScheduler.ScheduleAction(action, 3);
-				RequesterPlayer.ReceiveMessage("You have joined the clan.".White());
+				RecipientPlayer.ReceiveMessage("You have joined the clan.".White());
 			}
 		}
 		else

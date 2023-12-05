@@ -87,7 +87,7 @@ internal class TeleportCommands
 		if (TeleportRequestManager.AddRequest(request))
 		{
 			sender.ReceiveMessage($"Requested teleportation to {RecipientPlayer.User.Read<User>().CharacterName.ToString().Emphasize()}".White());
-			RecipientPlayer.ReceiveMessage($"{RequesterUserData.CharacterName.ToString().Emphasize()} has requested to teleport to you. Accept with .tpa.".White());
+			RecipientPlayer.ReceiveMessage($"{RequesterUserData.CharacterName.ToString().Emphasize()} has requested to teleport to you. Accept with {".tpa".Emphasize()}".White());
 		}
 	}
 
