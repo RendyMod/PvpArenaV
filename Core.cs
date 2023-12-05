@@ -19,7 +19,6 @@ using PvpArena.GameModes.Prison;
 using PvpArena.Listeners;
 using PvpArena.Models;
 using PvpArena.Patches;
-using PvpArena.Persistence.Json;
 using PvpArena.Persistence.MySql;
 using PvpArena.Persistence.MySql.AllDatabases;
 using PvpArena.Persistence.MySql.PlayerDatabase;
@@ -32,13 +31,13 @@ namespace PvpArena;
 
 public static class Core
 {
-	public static IDataStorage<PlayerMatchmaking1v1Data> matchmaking1V1DataRepository;
-	public static IDataStorage<PlayerPoints> pointsDataRepository;
-	public static IDataStorage<PlayerMuteInfo> muteDataRepository;
-	public static IDataStorage<PlayerBanInfo> banDataRepository;
-	public static IDataStorage<PlayerImprisonInfo> imprisonDataRepository;
-	public static IDataStorage<PlayerConfigOptions> playerConfigOptionsRepository;
-	public static IDataStorage<PlayerBulletHellData> playerBulletHellDataRepository;
+	public static PlayerMatchmaking1v1DataStorage matchmaking1V1DataRepository;
+	public static PlayerPointsStorage pointsDataRepository;
+	public static PlayerMuteInfoStorage muteDataRepository;
+	public static PlayerBanInfoStorage banDataRepository;
+	public static PlayerImprisonInfoStorage imprisonDataRepository;
+	public static PlayerConfigOptionsStorage playerConfigOptionsRepository;
+	public static PlayerBulletHellDataStorage playerBulletHellDataRepository;
     public static DefaultJewelDataStorage defaultJewelStorage;
     public static DefaultLegendaryWeaponDataStorage defaultLegendaryWeaponStorage;
 	public static MatchmakingArenasDataStorage matchmakingArenaStorage;
@@ -100,13 +99,12 @@ public static class Core
 		{
 			All = new ComponentType[]
 			{
-				new ComponentType(Il2CppType.Of<CastleHeartConnection>(), ComponentType.AccessMode.ReadWrite),
 				new ComponentType(Il2CppType.Of<CanFly>(), ComponentType.AccessMode.ReadWrite)
 			},
 			Options = options
 		};
 		var query = VWorld.Server.EntityManager.CreateEntityQuery(queryDesc);
-		Listener.AddListener(query, new ManuallySpawnedStructureListener());
+		Listener.AddListener(query, new ManuallySpawnedPrefabListener());
 
 		/*discordBot = new DiscordBot();
 		discordBot.InitializeAsync();*/
@@ -139,6 +137,9 @@ public static class Core
 		prisonGameMode = new PrisonGameMode();
 		prisonGameMode.Initialize();
 
+		DummyHandler.Initialize();
+		PlayerSpawnHandler.Initialize();
+
 		if (PvpArenaConfig.Config.PointSystemEnabled)
 		{
 			LoginPointsService.SetTimersForOnlinePlayers();
@@ -168,35 +169,10 @@ public static class Core
 		
         spectatingGameMode.Dispose();
 		prisonGameMode.Dispose();
+		DummyHandler.Dispose();
+		PlayerSpawnHandler.Dispose();
 		LoginPointsService.DisposeTimersForOnlinePlayers();
-		PersistPlayerSubData();
 		Listener.Dispose();
-	}
-
-	public static void PersistPlayerSubData()
-	{
-		try
-		{
-			var matchmakingData = PlayerService.GetPlayerSubData<PlayerMatchmaking1v1Data>();
-			matchmaking1V1DataRepository.SaveDataAsync(matchmakingData); //saved on autosave and on plugin reload
-
-			var pointsData = PlayerService.GetPlayerSubData<PlayerPoints>();
-			Unity.Debug.Log($"{pointsData[0].SteamID} {pointsData[0].TotalPoints}");
-			pointsDataRepository.SaveDataAsync(pointsData);
-
-			var banInfo = PlayerService.GetPlayerSubData<PlayerBanInfo>();
-			banDataRepository.SaveDataAsync(banInfo);
-
-			var muteInfo = PlayerService.GetPlayerSubData<PlayerMuteInfo>();
-			muteDataRepository.SaveDataAsync(muteInfo);
-
-			var playerConfigOptions = PlayerService.GetPlayerSubData<PlayerConfigOptions>();
-			playerConfigOptionsRepository.SaveDataAsync(playerConfigOptions);
-		}
-		catch (Exception e)
-		{
-			Plugin.PluginLog.LogError(e.ToString());
-		}
 	}
 }
 

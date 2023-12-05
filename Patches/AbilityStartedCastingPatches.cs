@@ -16,6 +16,7 @@ using ProjectM.UI;
 using ProjectM.Gameplay.Scripting;
 using ProjectM.Audio;
 using ProjectM.Debugging;
+using System;
 
 namespace PvpArena.Patches;
 
@@ -27,17 +28,24 @@ public static class AbilityCastStarted_SpawnPrefabSystem_ServerPatch
 	{
 		//__instance.__OnUpdate_LambdaJob0_entityQuery.LogComponentTypes();
 		
-		var entities = __instance.__OnUpdate_LambdaJob0_entityQuery.ToEntityArray(Allocator.Temp);
-		foreach (var entity in entities)
+		try
 		{
-			var abilityCastStartedEvent = entity.Read<AbilityCastStartedEvent>();
-
-			if (abilityCastStartedEvent.Character.Has<PlayerCharacter>())
+			var entities = __instance.__OnUpdate_LambdaJob0_entityQuery.ToEntityArray(Allocator.Temp);
+			foreach (var entity in entities)
 			{
-				var player = PlayerService.GetPlayerFromCharacter(abilityCastStartedEvent.Character);
-				GameEvents.RaisePlayerStartedCasting(player, entity);
+				var abilityCastStartedEvent = entity.Read<AbilityCastStartedEvent>();
+
+				if (abilityCastStartedEvent.Character.Exists() && abilityCastStartedEvent.Character.Has<PlayerCharacter>())
+				{
+					var player = PlayerService.GetPlayerFromCharacter(abilityCastStartedEvent.Character);
+					GameEvents.RaisePlayerStartedCasting(player, entity);
+				}
 			}
+			entities.Dispose();
 		}
-		entities.Dispose();
+		catch (Exception e)
+		{
+			Plugin.PluginLog.LogInfo(e.ToString());
+		}
 	}
 }

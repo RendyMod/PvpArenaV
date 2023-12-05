@@ -89,7 +89,7 @@ public static class DodgeballHelper
 		Timer timer = ActionScheduler.RunActionOnceAfterDelay(action, 5);
 		DodgeballGameMode.Timers.Add(timer);
 
-		action = () => KillPreviousEntities();
+		action = () => KillPreviousEntities(false);
 		timer = ActionScheduler.RunActionOnceAfterDelay(action, 10);
 		DodgeballGameMode.Timers.Add(timer);
 	}
@@ -131,7 +131,7 @@ public static class DodgeballHelper
 
 			if (winner > 0)
 			{
-				TeleportTeamsToCenter(DodgeballGameMode.Teams, winner, TeamSide.South);
+				TeleportTeamsToCenter(DodgeballGameMode.Teams, winner, TeamSide.West);
 			}
 			KillPreviousEntities();
 			Core.dodgeballGameMode.Dispose();
@@ -146,14 +146,25 @@ public static class DodgeballHelper
 
 	public static void SpawnStructures()
 	{
-		foreach (var structureSpawn in DodgeballConfig.Config.StructureSpawns)
+		foreach (var structureSpawn in DodgeballConfig.Config.PrefabSpawns)
 		{
 			var spawnPos = structureSpawn.Location.ToFloat3();
 			Action action = () =>
 			{
 				PrefabSpawnerService.SpawnWithCallback(structureSpawn.PrefabGUID, spawnPos, (e) =>
 				{
-					
+					if (e.Read<PrefabGUID>() == Prefabs.EH_Monster_EnergyBeam_Active)
+					{
+                        e.Add<Immortal>();
+                        e.Write(new Immortal
+                        {
+                            IsImmortal = true
+                        });
+						var lifetime = e.Read<LifeTime>();
+						lifetime.Duration = 0;
+						lifetime.EndAction = LifeTimeEndAction.None;
+						e.Write(lifetime);
+					}
 				}, structureSpawn.RotationMode, -1, true, "dodgeball");
 			};
 			Timer timer;
@@ -268,13 +279,17 @@ public static class DodgeballHelper
 		}
 	}
 
-	public static void KillPreviousEntities()
+	public static void KillPreviousEntities(bool all = true)
 	{
 		var entities = Helper.GetEntitiesByComponentTypes<CanFly>(true);
 		foreach (var entity in entities)
 		{
 			if (!entity.Has<PlayerCharacter>())
 			{
+				if (entity.Read<PrefabGUID>() == Prefabs.EH_Monster_EnergyBeam_Active && !all)
+				{
+					continue;
+				}
 				if (UnitFactory.TryGetSpawnedUnitFromEntity(entity, out SpawnedUnit spawnedUnit))
 				{
 					if (spawnedUnit.Unit.Category == "dodgeball")

@@ -30,6 +30,10 @@ public static partial class Helper
 	//Therefore, to make it do what we want, we have to change the unit's prefab blood type before running it, then change it back -.-
 	public static void SetPlayerBlood(Player player, PrefabGUID bloodType, float quality = 100)
 	{
+		if (!player.User.Exists())
+		{
+			return;
+		}
 		PrefabGUID unitPrefab;
 		PrefabGUID originalBloodType;
 		quality = Clamp(quality, 0, 100);

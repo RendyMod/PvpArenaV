@@ -20,5 +20,9 @@ $newVersion = "$major.$minor.$build"
 # Replace the version number in the .csproj file
 $newCsprojContent = [regex]::Replace($csprojContent, $pattern, "<Version>$newVersion</Version>")
 
+# Detect and preserve the original line endings
+$originalLineEnding = if ($csprojContent -match "\r\n") { "\r\n" } else { "\n" }
+$newCsprojContent = $newCsprojContent -replace "(\r\n|\n)", $originalLineEnding
+
 # Write the updated content back to the .csproj file
-Set-Content $csprojFilePath -Value $newCsprojContent
+Set-Content $csprojFilePath -Value $newCsprojContent -NoNewline

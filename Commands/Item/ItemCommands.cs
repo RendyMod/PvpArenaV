@@ -115,7 +115,7 @@ internal static class ItemCommands
 		for (var i = 0; i < buffer.Length; i++)
 		{
 			var inventoryInstanceElement = buffer[i];
-			if (inventoryInstanceElement.ExternalInventoryEntity._Entity.Index > 0)
+			if (inventoryInstanceElement.ExternalInventoryEntity._Entity.Exists())
 			{
 				//confirm the inventory belongs to the person
 				if (inventoryInstanceElement.ExternalInventoryEntity._Entity.Read<InventoryConnection>()
@@ -125,7 +125,7 @@ internal static class ItemCommands
 						.ReadBuffer<InventoryBuffer>();
 					foreach (var item in inventoryBuffer)
 					{
-						if (item.ItemEntity._Entity.Index > 0)
+						if (item.ItemEntity._Entity.Exists())
 						{
 							itemNames.Add(item.ItemEntity._Entity.LookupName().Split(" ")[0]);
 						}
@@ -139,7 +139,7 @@ internal static class ItemCommands
 		equipment.GetAllEquipmentEntities(equipmentEntities);
 		foreach (var equipmentEntity in equipmentEntities)
 		{
-			if (equipmentEntity.Index > 0)
+			if (equipmentEntity.Exists())
 			{
 				if (equipmentEntity.Read<EquippableData>().EquipmentType != EquipmentType.Weapon)
 				{

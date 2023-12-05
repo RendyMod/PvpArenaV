@@ -1,21 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
-using System.IO;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using MySqlConnector;
-using PvpArena.Configs;
-using PvpArena.Models;
-using PvpArena.Persistence.Json;
 using static PvpArena.Configs.ConfigDtos;
-using static PvpArena.Services.PlayerService;
 
 namespace PvpArena.Persistence.MySql;
 
-public abstract class MySqlDataStorage<T> : IDataStorage<T>
+public abstract class MySqlDataStorage<T>
 {
 	protected MySqlConnection _connection;
 	protected string connectionString;

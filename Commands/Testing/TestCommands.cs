@@ -13,67 +13,95 @@ using static PvpArena.Frameworks.CommandFramework.CommandFramework;
 using System.Numerics;
 using System;
 using PvpArena.GameModes.Dodgeball;
+using ProjectM.Network;
+using PvpArena.Services;
+using PvpArena.Patches;
+using PvpArena.Factories;
+using Unity.Collections;
 
 namespace PvpArena.Commands.Debug;
 internal class TestCommands
 {
 
 	[Command("test", description: "Used for debugging", adminOnly: true)]
-	public void TestCommand(Player sender)
+	public void TestCommand(Player sender, PrefabGUID prefabGuid = default, Player player = null)
 	{
-		var entity = Helper.GetHoveredEntity(sender.Character);
-		if (entity.Has<EntityInput>())
+		var target = sender;
+		if (player != null)
 		{
-			var entityInput = entity.Read<EntityInput>();
-			entityInput.SetAllAimPositions(sender.Position);
-			entity.Write(entityInput);
+			target = player;
 		}
+		if (prefabGuid == default)
+		{
+			prefabGuid = Prefabs.CHAR_BatVampire_VBlood;
+		}
+		PrefabSpawnerService.SpawnWithCallback(prefabGuid, target.Position, (e) => 
+		{
+			Helper.ControlUnit(target, e);
+			if (e.Has<UnitLevel>())
+			{
+				var level = e.Read<UnitLevel>();
+				level.Level = 200;
+				e.Write(level);
+			}
+		}, 0, -1);
 	}
 
 	[Command("test2", description: "Used for debugging", adminOnly: true)]
-	public void Test2Command(Player sender)
+	public void Test2Command(Player sender, Player player = null)
 	{
-        DodgeballGameMode.RevivePlayer(sender);
-    }
-
-	[Command("test3", description: "Used for debugging", adminOnly: true)]
-	public void Test3Command(Player sender, bool friendly = true)
-	{
-		var entity = Helper.CreateEntityWithComponents<AbilityGroupSlotModificationBuffer>();
-		var buffer = entity.ReadBuffer<AbilityGroupSlotModificationBuffer>();
-		List<PrefabGUID> abilities = new List<PrefabGUID>
+		var target = sender;
+		if (player != null)
 		{
-			PrefabGUID.Empty, // auto
-			PrefabGUID.Empty, // q
-			PrefabGUID.Empty, // dash
-			PrefabGUID.Empty, // ??
-			PrefabGUID.Empty, // e
-			PrefabGUID.Empty, // r
-			PrefabGUID.Empty, //c
-			PrefabGUID.Empty  //t
-
-		};
-		for (int i = 0; i < abilities.Count; i++)
-		{
-			buffer.Add(new AbilityGroupSlotModificationBuffer
-			{
-				NewAbilityGroup = abilities[i],
-				Owner = sender.Character,
-				Target = sender.Character,
-				Slot = i,
-				CopyCooldown = false,
-				Priority = 101
-			});
+			target = player;
 		}
-
-		/*entity.Add<AbilityGroupSlotModificationDestroy>();
-		entity.Add<ReplaceAbilityOnSlotBuff_AllInitialized>();*/
-
-
+		Helper.ControlOriginalCharacter(target);
 	}
 
+	[Command("test3", description: "Used for debugging", adminOnly: true)]
+	public void Test3Command(Player sender)
+	{
+        sender.User.LogComponentTypes();
+        var buffer = sender.User.ReadBuffer<AttachedBuffer>();
+        for (var i = 0; i < buffer.Length; i++)
+        {
+            var attached = buffer[i].Entity;
+            if (attached.Read<PrefabGUID>() == Prefabs.ProgressionCollection)
+            {
+                var buffer2 = attached.ReadBuffer<UnlockedShapeshiftElement>();
+                buffer2.Clear();
+
+                var buffer3 = attached.ReadBuffer<UnlockedRecipeElement>();
+                buffer3.Clear();
+
+                var buffer4 = attached.ReadBuffer<UnlockedBlueprintElement>();
+                buffer4.Clear();
+
+                var buffer5 = attached.ReadBuffer<UnlockedPassiveElement>();
+                buffer5.Clear();
+
+                var buffer6 = attached.ReadBuffer<UnlockedAbilityElement>();
+                buffer6.Clear();
+
+                var buffer7 = attached.ReadBuffer<UnlockedVBlood>();
+                buffer7.Clear();
+            }
+            else if (attached.Read<PrefabGUID>() == Prefabs.AchievementDataPrefab)
+            {
+                var buffer2 = attached.ReadBuffer<AchievementInProgressElement>();
+                buffer2.Clear();
+
+                var buffer3 = attached.ReadBuffer<AchievementClaimedElement>();
+                buffer3.Clear();
+
+                var buffer4 = attached.ReadBuffer<Snapshot_AchievementInProgressElement>();
+                buffer4.Clear();
+            }
+        }
+    }
+
     [Command("set-abilities", description: "Used for debugging", adminOnly: true)]
-    public void Test4Command(Player sender, PrefabGUID weapon1, PrefabGUID weapon2, Player player = null)
+    public void SetAbilitiesCommand(Player sender, PrefabGUID weapon1, PrefabGUID weapon2, Player player = null)
     {
 
         if (player == null)
@@ -90,10 +118,26 @@ internal class TestCommands
     }
 
     [Command("test4", description: "Used for debugging", adminOnly: true)]
-	public void Test4Command(Player sender, Player player)
+	public void Test4Command(Player sender, Player target)
 	{
-		Helper.BuffPlayer(player, Prefabs.Buff_Gloomrot_SentryOfficer_TurretCooldown, out var buffEntity, Helper.NO_DURATION, true);
-		Helper.ModifyBuff(buffEntity, BuffModificationTypes.BuildMenuImpair);
+		Helper.ControlOriginalCharacter(target);
+		/*		sender.Character.LogComponentTypes();
+				var buffer = sender.Character.ReadBuffer<AbilityGroupSlotBuffer>();
+				for (var i = 0; i < buffer.Length; i++)
+				{
+					var abilityGroupSlot = buffer[i];
+					abilityGroupSlot.ShowOnBar = true;
+					buffer[i] = abilityGroupSlot;
+				}
+
+				if (Helper.BuffPlayer(sender, Helper.CustomBuff4, out var buffEntity, Helper.NO_DURATION)) 
+				{
+					var abilityBar = new AbilityBar
+					{
+						Extra = Prefabs.AB_Gloomrot_SpiderTank_Gattler_Minigun_AbilityGroup
+					};
+					abilityBar.ApplyChangesSoft(buffEntity);
+				}*/
 	}
 
 	[Command("rotate-unit", description: "Used for debugging", adminOnly: true)]
@@ -161,6 +205,13 @@ internal class TestCommands
 			}
 		}
 		sender.ReceiveMessage("Done!");
+	}
+
+	[Command("enable-building", description: "Gives a player temporary build permissions", adminOnly: true)]
+	public void EnableBuildingCommand(Player sender, Player builder)
+	{
+		Helper.RemoveBuff(builder, Prefabs.Buff_Gloomrot_SentryOfficer_TurretCooldown);
+		BuildingPermissions.AuthorizedBuilders[builder] = true;
 	}
 
 
@@ -259,7 +310,7 @@ internal class TestCommands
 	[Command(name: "log-hp", description: "Gets the hp of the hovered unit", usage: ".log-hp", adminOnly: true, includeInHelp: false)]
 	public void LogHpCommand(Player sender)
 	{
-		var entity = Helper.GetHoveredEntity(sender.Character);
+		var entity = Helper.GetHoveredEntity(sender.User);
 		if (entity.Has<Health>())
 		{
 			sender.ReceiveMessage(entity.Read<Health>().Value.ToString().White());
@@ -348,7 +399,7 @@ internal class TestCommands
 	[Command("teleport-prefab", description: "Used for debugging", adminOnly: true)]
 	public static void TeleportPrefabCommand(Player sender)
 	{
-		Entity entity = Helper.GetHoveredEntity(sender.Character);
+		Entity entity = Helper.GetHoveredEntity(sender.User);
 		entity.Write(sender.Character.Read<LocalToWorld>());
 		entity.Write(sender.Character.Read<Translation>());
 		sender.ReceiveMessage("Attempted to teleport entity".Success());
@@ -396,7 +447,7 @@ internal class TestCommands
 	[Command("claim-target", description: "Used for debugging", adminOnly: true)]
 	public static void ClaimTargetCommand(Player sender)
 	{
-		var entity = Helper.GetHoveredEntity(sender.Character);
+		var entity = Helper.GetHoveredEntity(sender.User);
 
 		entity.Write(sender.Character.Read<Team>());
 		entity.Write(sender.Character.Read<TeamReference>());

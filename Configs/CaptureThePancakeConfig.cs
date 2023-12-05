@@ -79,7 +79,7 @@ public class CaptureThePancakeConfigData
 	public RectangleZoneDto Team1EndZone { get; set; } = new RectangleZoneDto();
 	public RectangleZoneDto Team2EndZone { get; set; } = new RectangleZoneDto();
 	public RectangleZoneDto MapCenter { get; set; } = new RectangleZoneDto();
-	public List<StructureSpawn> StructureSpawns { get; set; } = new List<StructureSpawn>();
+	public List<PrefabSpawn> StructureSpawns { get; set; } = new List<PrefabSpawn>();
 	public List<UnitSpawn> UnitSpawns { get; set; } = new List<UnitSpawn>();
 
 	// Additional properties...

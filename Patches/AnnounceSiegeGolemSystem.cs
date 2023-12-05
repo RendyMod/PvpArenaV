@@ -3,6 +3,7 @@ using ProjectM;
 using Unity.Collections;
 using Unity.Entities;
 using ProjectM.Shared.Systems;
+using System;
 
 namespace PvpArena.Patches;
 
@@ -11,14 +12,21 @@ public static class AnnounceSiegeWeaponSystemPatch
 {
 	public static void Prefix(AnnounceSiegeWeaponSystem __instance)
 	{
-		var entities = __instance._AnnounceSiegeWeaponQuery.ToEntityArray(Allocator.Temp);
-		foreach (var entity in entities)
+		try
 		{
-			if (entity.Has<DestroyOnSpawn>())
+			var entities = __instance._AnnounceSiegeWeaponQuery.ToEntityArray(Allocator.Temp);
+			foreach (var entity in entities)
 			{
-				entity.Add<DestroyTag>(); //this is to prevent the message from going off in chat more than once when we manually announce the siege weapon
+				if (entity.Has<DestroyOnSpawn>())
+				{
+					entity.Add<DestroyTag>(); //this is to prevent the message from going off in chat more than once when we manually announce the siege weapon
+				}
 			}
+			entities.Dispose();
 		}
-		entities.Dispose();
+		catch (Exception e)
+		{
+			Plugin.PluginLog.LogInfo(e.ToString());
+		}
 	}
 }

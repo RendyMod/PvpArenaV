@@ -135,7 +135,7 @@ namespace PvpArena
 					{
 						if (entity.Has<CastleHeartConnection>())
 						{
-							if (entity.Index > 0 && entity.Has<LocalToWorld>())
+							if (entity.Exists() && entity.Has<LocalToWorld>())
 							{
 								var localToWorld = entity.Read<LocalToWorld>();
 								var key = localToWorld.Position.xz;
@@ -170,7 +170,7 @@ namespace PvpArena
 						UnitPostActions.Remove(durationKey);
 
 						var endAction = actualDuration < 0 ? LifeTimeEndAction.None : LifeTimeEndAction.Destroy;
-
+                        actualDuration = 0;
 						var newLifeTime = new LifeTime()
 						{
 							Duration = actualDuration,
@@ -185,11 +185,11 @@ namespace PvpArena
 			}
 		}
 
-		public class ManuallySpawnedStructureListener : EntityQueryListener
+		public class ManuallySpawnedPrefabListener : EntityQueryListener
 		{
 			public void OnNewMatchFound(Entity entity)
 			{
-				if (entity.Index > 0 && entity.Has<LocalToWorld>())
+				if (entity.Exists() && entity.Has<LocalToWorld>() && !entity.Has<PlayerCharacter>() && !entity.Has<UnitSpawnData>())
 				{
 					var localToWorld = entity.Read<LocalToWorld>();
 					var key = $"{localToWorld.Position.xz}_{entity.Read<PrefabGUID>().GuidHash}";

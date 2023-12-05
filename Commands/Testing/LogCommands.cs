@@ -41,7 +41,7 @@ public class LogCommands
 	[Command("log-components", description: "Logs components of hovered entity", adminOnly: true)]
 	public void LogComponentsCommand(Player sender)
 	{
-		var entity = Helper.GetHoveredEntity<PhysicsCollider>(sender.Character);
+		var entity = Helper.GetHoveredEntity<PhysicsCollider>(sender.User);
 		if (entity != Entity.Null)
 		{
 			entity.LogComponentTypes();
@@ -52,7 +52,7 @@ public class LogCommands
 	[Command("log-position", description: "Logs position of hovered entity", adminOnly: true)]
 	public void LogPositionCommand(Player sender)
 	{
-		var entity = Helper.GetHoveredEntity(sender.Character);
+		var entity = Helper.GetHoveredEntity(sender.User);
 		if (entity != Entity.Null)
 		{
 			entity.LogPrefabName();
@@ -67,7 +67,7 @@ public class LogCommands
 	[Command("log-structure-position", description: "Logs position of hovered entity", adminOnly: true)]
 	public void LogStructurePositionCommand(Player sender)
 	{
-		var entity = Helper.GetHoveredEntity<CastleHeartConnection>(sender.Character);
+		var entity = Helper.GetHoveredEntity<CastleHeartConnection>(sender.User);
 		if (entity != Entity.Null)
 		{
 			entity.LogPrefabName();
@@ -91,7 +91,7 @@ public class LogCommands
 	[Command("log-structure-zone", description: "Logs dimensions of hovered entity", adminOnly: true)]
 	public void LogSizeCommand(Player sender, int x, int y)
 	{
-		var entity = Helper.GetHoveredEntity(sender.Character);
+		var entity = Helper.GetHoveredEntity(sender.User);
 		if (entity != Entity.Null && entity.Has<TileBounds>())
 		{
 			sender.ReceiveMessage($"Printed zone for: {entity.Read<PrefabGUID>().LookupNameString()}");

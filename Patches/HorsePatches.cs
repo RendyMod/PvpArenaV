@@ -3,6 +3,7 @@ using ProjectM;
 using Unity.Collections;
 using PvpArena.GameModes;
 using PvpArena.Services;
+using System;
 
 namespace PvpArena.Patches;
 
@@ -16,8 +17,15 @@ public static class GallopBuffSystem_DestroyPatch
 		var entities = __instance.__OnUpdate_LambdaJob0_entityQuery.ToEntityArray(Allocator.Temp);
 		foreach (var entity in entities)
 		{
-			var player = PlayerService.GetPlayerFromCharacter(entity.Read<EntityOwner>().Owner);
-			GameEvents.RaisePlayerWillLoseGallopBuff(player, entity);
+			try
+			{
+				var player = PlayerService.GetPlayerFromCharacter(entity.Read<EntityOwner>().Owner);
+				GameEvents.RaisePlayerWillLoseGallopBuff(player, entity);
+			}
+			catch (Exception e)
+			{
+				Plugin.PluginLog.LogInfo(e.ToString());
+			}
 		}
 		entities.Dispose();
 	}
@@ -31,9 +39,16 @@ public static class MountBuffSpawnSystem_SharedPatch
 		var entities = __instance.__OnUpdate_LambdaJob0_entityQuery.ToEntityArray(Allocator.Temp);
 		foreach (var entity in entities)
 		{
-			var character = entity.Read<EntityOwner>().Owner;
-			var player = PlayerService.GetPlayerFromCharacter(character);
-			GameEvents.RaisePlayerMounted(player, entity);
+			try
+			{
+				var character = entity.Read<EntityOwner>().Owner;
+				var player = PlayerService.GetPlayerFromCharacter(character);
+				GameEvents.RaisePlayerMounted(player, entity);
+			}
+			catch (Exception e)
+			{
+				Plugin.PluginLog.LogInfo(e.ToString());
+			}
 		}
 		entities.Dispose();
 	}
@@ -48,9 +63,16 @@ public static class MountBuffDestroySystem_SharedPatch
 		var entities = __instance.__OnUpdate_LambdaJob0_entityQuery.ToEntityArray(Allocator.Temp);
 		foreach (var entity in entities)
 		{
-			var character = entity.Read<EntityOwner>().Owner;
-			var player = PlayerService.GetPlayerFromCharacter(character);
-			GameEvents.RaisePlayerDismounted(player, entity);
+			try
+			{
+				var character = entity.Read<EntityOwner>().Owner;
+				var player = PlayerService.GetPlayerFromCharacter(character);
+				GameEvents.RaisePlayerDismounted(player, entity);
+			}
+			catch (Exception e)
+			{
+				Plugin.PluginLog.LogInfo(e.ToString());
+			}
 		}
 		entities.Dispose();
 	}

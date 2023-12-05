@@ -21,29 +21,37 @@ public static class RconListenerSystemPatch
 
 	public static bool Prefix(RconListenerSystem __instance, string command)
 	{
-		string input = command;
-		Plugin.PluginLog.LogInfo($"rcon command: {input}");
-
-		// Split the input into parts
-		string[] parts = input.Split(' ');
-
-		// The first part is the command
-		string commandPart = parts[0];
-
-		// The rest are the arguments
-		string[] arguments = parts.Skip(1).ToArray();
-
-		// Check if the command is in the dictionary
-		if (CommandMethods.TryGetValue(commandPart, out Action<string[]> method))
+		try
 		{
-			// Run the method and pass the arguments
-			method(arguments);
+			string input = command;
+			Plugin.PluginLog.LogInfo($"rcon command: {input}");
+
+			// Split the input into parts
+			string[] parts = input.Split(' ');
+
+			// The first part is the command
+			string commandPart = parts[0];
+
+			// The rest are the arguments
+			string[] arguments = parts.Skip(1).ToArray();
+
+			// Check if the command is in the dictionary
+			if (CommandMethods.TryGetValue(commandPart, out Action<string[]> method))
+			{
+				// Run the method and pass the arguments
+				method(arguments);
+			}
+			else
+			{
+				// Handle the case where the command is not found
+				Plugin.PluginLog.LogInfo($"RCON Command not found: {commandPart}");
+			}
 		}
-		else
+		catch (Exception e)
 		{
-			// Handle the case where the command is not found
-			Plugin.PluginLog.LogInfo($"RCON Command not found: {commandPart}");
+			Plugin.PluginLog.LogInfo(e.ToString());
 		}
+
 		return false;
 	}
 

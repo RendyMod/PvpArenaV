@@ -41,6 +41,7 @@ partial class BuffCommands
 	public void ListBuffsCommand (Player sender, Player player = null)
 	{
 		var Player = player != null ? player : sender;
+
 		var buffs = Helper.GetEntityBuffs(Player.Character);
 		foreach (var buff in buffs)
 		{
@@ -53,7 +54,7 @@ partial class BuffCommands
 	[Command("buff-target", description: "Used for debugging", adminOnly: true)]
 	public static void BuffHoveredTargetCommand(Player sender, PrefabGUID buffGuid, int duration = Helper.DEFAULT_DURATION, bool persistsThroughDeath = false, bool hasStartEffects = true)
 	{
-		Entity entity = Helper.GetHoveredEntity(sender.Character);
+		Entity entity = Helper.GetHoveredEntity(sender.User);
 		Helper.BuffEntity(entity, buffGuid, out var buffEntity, Helper.NO_DURATION, persistsThroughDeath, hasStartEffects);
 		Helper.ModifyBuff(buffEntity, BuffModificationTypes.None);
 		buffEntity.Add<DestroyBuffOnDamageTaken>();
@@ -64,7 +65,7 @@ partial class BuffCommands
 	[Command("clear-target-buffs", description: "Used for debugging", adminOnly: true)]
 	public static void ClearHoveredTargetBuffsCommand(Player sender)
 	{
-		Entity entity = Helper.GetHoveredEntity(sender.Character);
+		Entity entity = Helper.GetHoveredEntity(sender.User);
 		Helper.ClearExtraBuffs(sender.Character, new Helper.ResetOptions
 		{
 			RemoveConsumables = true,
@@ -77,7 +78,7 @@ partial class BuffCommands
     [Command("remove-target-buff", description: "Removes a buff", adminOnly: true)]
     public void UnbuffTargetCommand(Player sender, PrefabGUID buffGuid)
     {
-        var entity = Helper.GetHoveredEntity(sender.Character);
+        var entity = Helper.GetHoveredEntity(sender.User);
         Helper.RemoveBuff(entity, buffGuid);
         sender.ReceiveMessage("Removed buff.".Success());
     }
@@ -85,7 +86,7 @@ partial class BuffCommands
     [Command("list-target-buffs", description: "Lists the buffs a hovered character has", adminOnly: true)]
 	public void ListTargetBuffsCommand(Player sender)
 	{
-		var target = Helper.GetHoveredEntity(sender.Character);
+		var target = Helper.GetHoveredEntity(sender.User);
 		var buffs = Helper.GetEntityBuffs(target);
 		foreach (var buff in buffs)
 		{

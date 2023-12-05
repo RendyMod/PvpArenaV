@@ -8,6 +8,7 @@ using ProjectM.Network;
 using PvpArena.Services;
 using System.Linq;
 using PvpArena.Models;
+using System;
 
 namespace PvpArena.Patches;
 
@@ -21,25 +22,32 @@ public static class TraderPurchaseSystemPatch
 		var entities = __instance._TraderPurchaseEventQuery.ToEntityArray(Allocator.Temp);
 		foreach (var entity in entities)
 		{
-			var fromCharacter = entity.Read<FromCharacter>();
-			var Player = PlayerService.GetPlayerFromUser(fromCharacter.User);
-			var purchaseEvent = entity.Read<TraderPurchaseEvent>();
-			Entity trader = VWorld.Server.GetExistingSystem<NetworkIdSystem>()._NetworkIdToEntityMap[purchaseEvent.Trader];
-
-			var costBuffer = trader.ReadBuffer<TradeCost>();
-			var cost = -1*(costBuffer[purchaseEvent.ItemIndex].Amount);
-			if (Player.PlayerPointsData.TotalPoints >= cost)
+			try
 			{
-				Player.PlayerPointsData.TotalPoints -= cost;
-				Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { Player.PlayerPointsData });
-				Player.ReceiveMessage($"Purchased for {cost.ToString().Emphasize()} {"VPoints".Warning()}. New total points: {Player.PlayerPointsData.TotalPoints.ToString().Warning()}".Success());
+				var fromCharacter = entity.Read<FromCharacter>();
+				var Player = PlayerService.GetPlayerFromUser(fromCharacter.User);
+				var purchaseEvent = entity.Read<TraderPurchaseEvent>();
+				Entity trader = VWorld.Server.GetExistingSystem<NetworkIdSystem>()._NetworkIdToEntityMap[purchaseEvent.Trader];
 
-				RefillStock(purchaseEvent, trader);
+				var costBuffer = trader.ReadBuffer<TradeCost>();
+				var cost = -1 * (costBuffer[purchaseEvent.ItemIndex].Amount);
+				if (Player.PlayerPointsData.TotalPoints >= cost)
+				{
+					Player.PlayerPointsData.TotalPoints -= cost;
+					Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { Player.PlayerPointsData });
+					Player.ReceiveMessage($"Purchased for {cost.ToString().Emphasize()} {"VPoints".Warning()}. New total points: {Player.PlayerPointsData.TotalPoints.ToString().Warning()}".Success());
+
+					RefillStock(purchaseEvent, trader);
+				}
+				else
+				{
+					VWorld.Server.EntityManager.DestroyEntity(entity);
+					Player.ReceiveMessage($"Not enough {"VPoints".Warning()} to purchase! {Player.PlayerPointsData.TotalPoints.ToString().Warning()} / {cost}".Error());
+				}
 			}
-			else
+			catch (Exception e)
 			{
-				VWorld.Server.EntityManager.DestroyEntity(entity);
-				Player.ReceiveMessage($"Not enough {"VPoints".Warning()} to purchase! {Player.PlayerPointsData.TotalPoints.ToString().Warning()} / {cost}".Error());
+				Plugin.PluginLog.LogInfo(e.ToString());
 			}
 		}
 	}

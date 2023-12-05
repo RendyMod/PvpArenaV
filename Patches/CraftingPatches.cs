@@ -5,6 +5,7 @@ using Bloodstone.API;
 using ProjectM.Gameplay.Systems;
 using ProjectM.Network;
 using PvpArena.Services;
+using System;
 
 namespace PvpArena.Patches;
 
@@ -17,11 +18,18 @@ public static class StartCharacterCraftingSystemPatch
 		var entities = __instance._StartCharacterCraftItemEventQuery.ToEntityArray(Allocator.Temp);
 		foreach (var entity in entities)
 		{
-			var fromCharacter = entity.Read<FromCharacter>();
-			var player = PlayerService.GetPlayerFromUser(fromCharacter.User);
+			try
+			{
+				var fromCharacter = entity.Read<FromCharacter>();
+				var player = PlayerService.GetPlayerFromUser(fromCharacter.User);
 
-			VWorld.Server.EntityManager.DestroyEntity(entity);
-			player.ReceiveMessage($"Crafting is disabled.".Error());
+				VWorld.Server.EntityManager.DestroyEntity(entity);
+				player.ReceiveMessage($"Crafting is disabled.".Error());
+			}
+			catch (Exception e)
+			{
+				Plugin.PluginLog.LogInfo(e.ToString());
+			}
 		}
 	}
 }
@@ -36,11 +44,18 @@ public static class StartCraftingSystemPatch
 		var entities = __instance._StartCraftItemEventQuery.ToEntityArray(Allocator.Temp);
 		foreach (var entity in entities)
 		{
-			var fromCharacter = entity.Read<FromCharacter>();
-			var player = PlayerService.GetPlayerFromUser(fromCharacter.User);
+			try
+			{
+				var fromCharacter = entity.Read<FromCharacter>();
+				var player = PlayerService.GetPlayerFromUser(fromCharacter.User);
 
-			VWorld.Server.EntityManager.DestroyEntity(entity);
-			player.ReceiveMessage($"Crafting is disabled.".Error());
+				VWorld.Server.EntityManager.DestroyEntity(entity);
+				player.ReceiveMessage($"Crafting is disabled.".Error());
+			}
+			catch (Exception e)
+			{
+				Plugin.PluginLog.LogInfo(e.ToString());
+			}
 		}
 	}
 }

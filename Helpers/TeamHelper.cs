@@ -45,7 +45,7 @@ public static partial class Helper
 	{
 		var user = UserJoiningClan.Read<User>();
 		var clanEntity = UserInClan.Read<User>().ClanEntity._Entity;
-		if (clanEntity.Index > 0)
+		if (clanEntity.Exists())
 		{
 			Entity clanInviteRequestEntity = CreateEntityWithComponents<ClanInviteRequest_Server>();
 			clanInviteRequestEntity.Write(new ClanInviteRequest_Server
@@ -95,7 +95,7 @@ public static partial class Helper
 		var ecb = Core.entityCommandBufferSystem.CreateCommandBuffer();
 		var clanSystem = VWorld.Server.GetExistingSystem<ClanSystem_Server>();
 		var clanEntity = player.User.Read<User>().ClanEntity._Entity;
-		if (clanEntity.Index > 0)
+		if (clanEntity.Exists())
 		{
 			clanSystem.LeaveClan(ecb, clanEntity, player.User, ClanSystem_Server.LeaveReason.Leave);
 		}

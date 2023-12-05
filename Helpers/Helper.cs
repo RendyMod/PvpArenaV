@@ -25,6 +25,7 @@ using static ProjectM.SpawnBuffsAuthoring.SpawnBuffElement_Editor;
 using UnityEngine;
 using UnityEngine.Rendering;
 using PvpArena.GameModes;
+using Il2CppSystem.Security.Cryptography;
 
 namespace PvpArena.Helpers;
 
@@ -201,15 +202,23 @@ public static partial class Helper
 		}
 	}
 
-
+	//TODO: investigate doing this by making copying the Teleport player model but make a from character using a non-player character
 	public static void Teleport(this Entity unit, float3 targetPosition)
 	{
-		Player anyPlayer = default;
+		Player anyPlayer = null;
 		foreach (var player in PlayerService.OnlinePlayers.Keys)
 		{
 			anyPlayer = player;
 			break;
 		}
+        if (anyPlayer == null)
+        {
+            foreach (var player in PlayerService.UserCache.Values)
+            {
+                anyPlayer = player;
+                break;
+            }
+        }
 		var eventEntity = Helper.CreateEntityWithComponents<TeleportDebugEvent, FromCharacter>();
 		eventEntity.Write(anyPlayer.ToFromCharacter());
 		eventEntity.Write(new TeleportDebugEvent
@@ -223,16 +232,23 @@ public static partial class Helper
 
 	public static void Teleport(this Player player, float3 targetPosition)
 	{
-		var entity = VWorld.Server.EntityManager.CreateEntity(
-			ComponentType.ReadWrite<FromCharacter>(),
-			ComponentType.ReadWrite<PlayerTeleportDebugEvent>()
-		);
-		entity.Write(player.ToFromCharacter());
-		entity.Write<PlayerTeleportDebugEvent>(new()
-		{
-			Position = targetPosition,
-			Target = PlayerTeleportDebugEvent.TeleportTarget.Self
-		});
+        if (player.User.Exists())
+        {
+            var entity = VWorld.Server.EntityManager.CreateEntity(
+                ComponentType.ReadWrite<FromCharacter>(),
+                ComponentType.ReadWrite<PlayerTeleportDebugEvent>()
+            );
+            entity.Write(player.ToFromCharacter());
+            entity.Write<PlayerTeleportDebugEvent>(new()
+            {
+                Position = targetPosition,
+                Target = PlayerTeleportDebugEvent.TeleportTarget.Self
+            });
+        }
+        else
+        {
+            player.Character.Teleport(targetPosition);
+        }
 	}
 
     public class ResetOptions
@@ -294,29 +310,35 @@ public static partial class Helper
 		foreach (var ability in AbilityBuffer)
 		{
 			var AbilitySlot = ability.GroupSlotEntity._Entity;
-			var ActiveAbility = AbilitySlot.Read<AbilityGroupSlot>();
-			var ActiveAbility_Entity = ActiveAbility.StateEntity._Entity;
-			if (ActiveAbility_Entity.Index > 0)
+			if (AbilitySlot.Exists())
 			{
-				var b = ActiveAbility_Entity.Read<PrefabGUID>();
-				if (b.GuidHash == 0) continue;
-
-				if (ActiveAbility_Entity.Has<AbilityChargesState>())
+				var ActiveAbility = AbilitySlot.Read<AbilityGroupSlot>();
+				var ActiveAbility_Entity = ActiveAbility.StateEntity._Entity;
+				if (ActiveAbility_Entity.Exists())
 				{
-					var abilityChargesState = ActiveAbility_Entity.Read<AbilityChargesState>();
-					var abilityChargesData = ActiveAbility_Entity.Read<AbilityChargesData>();
-					abilityChargesState.CurrentCharges = abilityChargesData.MaxCharges;
-					abilityChargesState.ChargeTime = 0;
-					ActiveAbility_Entity.Write(abilityChargesState);
-				}
+					var b = ActiveAbility_Entity.Read<PrefabGUID>();
+					if (b.GuidHash == 0) continue;
 
-				var AbilityStateBuffer = ActiveAbility_Entity.ReadBuffer<AbilityStateBuffer>();
-				foreach (var state in AbilityStateBuffer)
-				{
-					var abilityState = state.StateEntity._Entity;
-					var abilityCooldownState = abilityState.Read<AbilityCooldownState>();
-					abilityCooldownState.CooldownEndTime = 0;
-					abilityState.Write(abilityCooldownState);
+					if (ActiveAbility_Entity.Has<AbilityChargesState>())
+					{
+						var abilityChargesState = ActiveAbility_Entity.Read<AbilityChargesState>();
+						var abilityChargesData = ActiveAbility_Entity.Read<AbilityChargesData>();
+						abilityChargesState.CurrentCharges = abilityChargesData.MaxCharges;
+						abilityChargesState.ChargeTime = 0;
+						ActiveAbility_Entity.Write(abilityChargesState);
+					}
+
+					var AbilityStateBuffer = ActiveAbility_Entity.ReadBuffer<AbilityStateBuffer>();
+					foreach (var state in AbilityStateBuffer)
+					{
+						var abilityState = state.StateEntity._Entity;
+						if (abilityState.Exists())
+						{
+							var abilityCooldownState = abilityState.Read<AbilityCooldownState>();
+							abilityCooldownState.CooldownEndTime = 0;
+							abilityState.Write(abilityCooldownState);
+						}
+					}
 				}
 			}
 		}
@@ -408,7 +430,66 @@ public static partial class Helper
         });
     }
 
-    public static void MakePlayerCcDefault(Player player)
+	public static void ApplyBuildImpairBuffToPlayer(Player player)
+	{
+		if (!player.IsAdmin)
+		{
+			if (Helper.BuffPlayer(player, Prefabs.Buff_Gloomrot_SentryOfficer_TurretCooldown, out var buffEntity2))
+			{
+				Helper.ModifyBuff(buffEntity2, BuffModificationTypes.BuildMenuImpair);
+			}
+		}
+		else
+		{
+			Helper.RemoveBuff(player, Prefabs.Buff_Gloomrot_SentryOfficer_TurretCooldown);
+		}
+	}
+
+	public static void ControlUnit(Player player, Entity unit)
+	{
+		Helper.BuffPlayer(player, Prefabs.Admin_Observe_Invisible_Buff, out var buffEntity);
+		var action = () =>
+		{
+			var controlDebugEvent = new ControlDebugEvent
+			{
+				EntityTarget = unit,
+				Target = unit.Read<NetworkId>()
+			};
+
+			if (unit.Has<AggroConsumer>())
+			{
+				var aggroConsumer = unit.Read<AggroConsumer>();
+				aggroConsumer.Active.Value = false;
+				unit.Write(aggroConsumer);
+			}
+
+			Core.debugEventsSystem.ControlUnit(player.ToFromCharacter(), controlDebugEvent);
+		};
+		ActionScheduler.RunActionOnceAfterDelay(action, 0.05f);
+	}
+
+	public static void ControlOriginalCharacter(Player player)
+	{
+		var controlledEntity = player.ControlledEntity;
+		float3 position = player.Position;
+		if (controlledEntity.Exists())
+		{
+			if (controlledEntity.Has<LocalToWorld>())
+			{
+				position = controlledEntity.Read<LocalToWorld>().Position;
+			}
+			Helper.DestroyEntity(controlledEntity);
+		}
+		
+		ControlUnit(player, player.Character);
+		var action = () => {
+			player.Teleport(position);
+			Helper.RemoveBuff(player, Prefabs.Admin_Observe_Invisible_Buff);
+		};
+		ActionScheduler.RunActionOnceAfterDelay(action, 0.05f);
+	}
+
+	public static void MakePlayerCcDefault(Player player)
     {
         player.Character.Add<BuffResistances>();
         player.Character.Write(new BuffResistances

@@ -3,6 +3,7 @@ using ProjectM;
 using Unity.Collections;
 using PvpArena.Data;
 using ProjectM.Gameplay.Systems;
+using System;
 
 namespace PvpArena.Patches;
 
@@ -14,16 +15,23 @@ public static class ProjectileSystem_Spawn_ServerPatch
 		var entities = __instance.__OnUpdate_LambdaJob0_entityQuery.ToEntityArray(Allocator.Temp);
 		foreach (var entity in entities)
 		{
-			var prefabGuid = entity.Read<PrefabGUID>();
-			if (prefabGuid == Prefabs.AB_Subdue_Projectile || prefabGuid == Prefabs.AB_Sorceress_Projectile)
+			try
 			{
-				var buffer = entity.ReadBuffer<HitColliderCast>();
-				for (var i = 0; i < buffer.Length; i++)
+				var prefabGuid = entity.Read<PrefabGUID>();
+				if (prefabGuid == Prefabs.AB_Subdue_Projectile || prefabGuid == Prefabs.AB_Sorceress_Projectile)
 				{
-					var hitCollider = buffer[i];
-					hitCollider.IgnoreImmaterial = true;
-					buffer[i] = hitCollider;
+					var buffer = entity.ReadBuffer<HitColliderCast>();
+					for (var i = 0; i < buffer.Length; i++)
+					{
+						var hitCollider = buffer[i];
+						hitCollider.IgnoreImmaterial = true;
+						buffer[i] = hitCollider;
+					}
 				}
+			}
+			catch (Exception e)
+			{
+				Plugin.PluginLog.LogInfo(e.ToString());
 			}
 		}
 	}
@@ -37,16 +45,23 @@ public static class HitCastColliderSystem_OnDestroyPatch
 		var entities = __instance.__OnUpdate_LambdaJob0_entityQuery.ToEntityArray(Allocator.Temp);
 		foreach (var entity in entities)
 		{
-			var prefabGuid = entity.Read<PrefabGUID>();
-			if (prefabGuid == Prefabs.AB_Sorceress_AoE_Throw)
+			try
 			{
-				var buffer = entity.ReadBuffer<HitColliderCast>();
-				for (var i = 0; i < buffer.Length; i++)
+				var prefabGuid = entity.Read<PrefabGUID>();
+				if (prefabGuid == Prefabs.AB_Sorceress_AoE_Throw)
 				{
-					var hitColliderCast = buffer[i];
-					hitColliderCast.IgnoreImmaterial = true;
-					buffer[i] = hitColliderCast;
+					var buffer = entity.ReadBuffer<HitColliderCast>();
+					for (var i = 0; i < buffer.Length; i++)
+					{
+						var hitColliderCast = buffer[i];
+						hitColliderCast.IgnoreImmaterial = true;
+						buffer[i] = hitColliderCast;
+					}
 				}
+			}
+			catch (Exception e)
+			{
+				Plugin.PluginLog.LogInfo(e.ToString());
 			}
 		}
 		entities.Dispose();

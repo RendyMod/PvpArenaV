@@ -42,7 +42,7 @@ public class Player
 	{
 		get
 		{
-			if (_character == default || _character.Index == 0)
+			if (!_character.Exists())
 			{
 				RetrieveCharacterFromUser();
 			}
@@ -61,6 +61,7 @@ public class Player
 	public bool IsAdmin => GetIsAdmin();
 	public bool IsOnline => GetIsOnline();
 	public bool IsAlive => GetIsAlive();
+	public Entity ControlledEntity => GetControlledEntity();
 
 	public int MatchmakingTeam { get; set; }
 
@@ -77,7 +78,7 @@ public class Player
 	{
 		if (_user != user)
 		{
-			if (user.Index == 0)
+			if (!user.Exists())
 			{
 				throw new Exception("Invalid User");
 			}
@@ -85,7 +86,7 @@ public class Player
 
 			_steamID = _user.Read<User>().PlatformId;
 			AddSteamIdsToPlayerSubData();
-			if (_character == default || _character.Index == 0)
+			if (!_character.Exists())
 			{
 				_character = _user.Read<User>().LocalCharacter._Entity;
 			}
@@ -94,10 +95,10 @@ public class Player
 
     private void SetCharacter(Entity character)
     {
-        if (character != default && character.Index != 0)
+        if (character.Exists())
         {
             _character = character;
-            if (_user == default)
+            if (!_user.Exists() && _character.Read<PlayerCharacter>().UserEntity.Exists())
             {
                 _user = _character.Read<PlayerCharacter>().UserEntity;
                 _steamID = _user.Read<User>().PlatformId;
@@ -108,10 +109,10 @@ public class Player
 
 	private void RetrieveCharacterFromUser()
 	{
-		if (_user != default && _user.Index != 0)
+		if (_user.Exists())
 		{
 			var userComponent = _user.Read<User>();
-			if (userComponent.LocalCharacter._Entity.Index != 0)
+			if (userComponent.LocalCharacter._Entity.Exists())
 			{
 				_character = userComponent.LocalCharacter._Entity;
 			}
@@ -144,7 +145,7 @@ public class Player
 
 	private bool GetIsOnline()
 	{
-		if (User.Index > 0)
+		if (User.Exists())
 		{
 			return User.Read<User>().IsConnected;
 		}
@@ -156,12 +157,24 @@ public class Player
 
 	private float3 GetPosition()
 	{
-		return User.Read<LocalToWorld>().Position;
+		if (User.Has<LocalToWorld>())
+		{
+			return User.Read<LocalToWorld>().Position;
+		}
+		else
+		{
+			return new float3(0, 0, 0);
+		}
 	}
 
 	private bool GetIsAlive()
 	{
 		return !Character.Read<Health>().IsDead && !Helper.HasBuff(this, Prefabs.Buff_General_Vampire_Wounded_Buff);
+	}
+
+	public Entity GetControlledEntity()
+	{
+		return User.Read<Controller>().Controlled._Entity;
 	}
 
 	public bool IsEligibleForMatchmaking()
@@ -257,4 +270,46 @@ public class Player
 	{
 		return Team.IsAllies(Character.Read<Team>(), player.Character.Read<Team>());
 	}
+
+	public bool HasControlledEntity()
+	{
+		if (ControlledEntity == Character)
+		{
+			return true;
+		}
+		else
+		{
+			bool isDead;
+			if (ControlledEntity.Has<Health>())
+			{
+				isDead = ControlledEntity.Read<Health>().IsDead;
+			} 
+			else
+			{
+				isDead = true;
+			}
+			if (isDead)
+			{
+				return false;
+			}
+			return ((ControlledEntity.Exists() && ControlledEntity.Has<PrefabGUID>()));
+		}
+	}
+
+	public override int GetHashCode()
+	{
+		return SteamID.GetHashCode();
+	}
+
+	public override bool Equals(object obj)
+	{
+		if (obj == null || GetType() != obj.GetType())
+		{
+			return false;
+		}
+
+		Player other = (Player)obj;
+		return SteamID == other.SteamID;
+	}
+
 }

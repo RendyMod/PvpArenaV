@@ -206,7 +206,7 @@ public class DominationGameMode : BaseGameMode
 	{
 		if (!player.IsInDomination()) return;
 
-		if (killer.Index > 0)
+		if (killer.Exists())
 		{
 			Player killerPlayer = null;
 			if (killer.Has<PlayerCharacter>())

@@ -16,7 +16,7 @@ namespace PvpArena.Configs;
 public class ConfigDtos
 {
 
-	public class StructureSpawn
+	public class PrefabSpawn
 	{
 		public PrefabGUID PrefabGUID { get; set; }
 		public CoordinateDto Location { get; set; } = new CoordinateDto();

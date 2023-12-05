@@ -76,7 +76,7 @@ public class DominationConfigData
 	public CoordinateDto Team2PlayerRespawn { get; set; } = new CoordinateDto();
 	public List<CapturePointDto> CapturePoints { get; set; } = new List<CapturePointDto>();
 	public RectangleZoneDto MapCenter { get; set; } = new RectangleZoneDto();
-	public List<StructureSpawn> StructureSpawns { get; set; } = new List<StructureSpawn>();
+	public List<PrefabSpawn> StructureSpawns { get; set; } = new List<PrefabSpawn>();
 	public List<UnitSpawn> UnitSpawns { get; set; } = new List<UnitSpawn>();
 
 	// Additional properties...

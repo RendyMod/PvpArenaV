@@ -42,8 +42,8 @@ public static class GameEvents
 	public delegate void UnitBuffedHandler(Entity unit, Entity buffEntity);
 	public static event UnitBuffedHandler OnUnitBuffed;
 
-	public delegate void PlayerUnbuffedHandler(Player player, Entity buffEntity);
-	public static event PlayerUnbuffedHandler OnPlayerUnbuffed;
+	public delegate void UnitBuffRemovedHandler(Entity unit, Entity buffEntity);
+	public static event UnitBuffRemovedHandler OnUnitBuffRemoved;
 
 	public delegate void PlayerWillLoseGallopBuffHandler(Player player, Entity eventEntity);
 	public static event PlayerWillLoseGallopBuffHandler OnPlayerWillLoseGallopBuff;
@@ -99,7 +99,16 @@ public static class GameEvents
 	public delegate void DelayedSpawnEventHandler(Unit unit, int timeUntilSpawn);
 	public static event DelayedSpawnEventHandler OnDelayedSpawn;
 
-	public delegate void GameFrameUpdateHandler();
+	public delegate void PlayerFirstTimeSpawnHandler(Player player);
+	public static event PlayerFirstTimeSpawnHandler OnPlayerFirstTimeSpawn;
+
+	public delegate void PlayerSpawningHandler(Player player, SpawnCharacter spawnCharacter);
+	public static event PlayerSpawningHandler OnPlayerSpawning;
+
+    public delegate void PlayerHasNoControlledEntityHandler(Player player);
+    public static event PlayerHasNoControlledEntityHandler OnPlayerHasNoControlledEntity;
+
+    public delegate void GameFrameUpdateHandler();
 	public static event GameFrameUpdateHandler OnGameFrameUpdate;
 
 	public static void RaisePlayerRespawn(Player player)
@@ -135,6 +144,11 @@ public static class GameEvents
 	public static void RaiseUnitBuffed(Entity unit, Entity buffEntity)
 	{
 		OnUnitBuffed?.Invoke(unit, buffEntity);
+	}
+
+	public static void RaiseUnitBuffRemoved(Entity unit, Entity buffEntity)
+	{
+		OnUnitBuffRemoved?.Invoke(unit, buffEntity);
 	}
 
 	public static void RaisePlayerUsedConsumable(Player player, Entity eventEntity, InventoryBuffer item)
@@ -237,7 +251,22 @@ public static class GameEvents
 		OnPlayerReset?.Invoke(player);
 	}
 
-	public static void RaiseGameFrameUpdate()
+	public static void RaisePlayerFirstTimeSpawn(Player player)
+	{
+		OnPlayerFirstTimeSpawn?.Invoke(player);
+	}
+
+	public static void RaisePlayerSpawning(Player player, SpawnCharacter spawnCharacter)
+	{
+		OnPlayerSpawning?.Invoke(player, spawnCharacter);
+	}
+
+    public static void RaisePlayerHasNoControlledEntity(Player player)
+    {
+        OnPlayerHasNoControlledEntity?.Invoke(player);
+    }
+
+    public static void RaiseGameFrameUpdate()
 	{
 		OnGameFrameUpdate?.Invoke();
 	}

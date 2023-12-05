@@ -24,31 +24,39 @@ public static class ChatMessageSystemPatch
 		var entities = __instance._ChatMessageQuery.ToEntityArray(Allocator.Temp);
 		foreach (var entity in entities)
 		{
-			var fromCharacter = entity.Read<FromCharacter>();
-			var chatEvent = entity.Read<ChatMessageEvent>();
-			
-			var player = PlayerService.GetPlayerFromUser(fromCharacter.User);
+			try
+			{
+				var fromCharacter = entity.Read<FromCharacter>();
+				var chatEvent = entity.Read<ChatMessageEvent>();
 
-			if (CommandHandler.ExecuteCommand(player, chatEvent.MessageText.ToString()))
-			{
-				VWorld.Server.EntityManager.DestroyEntity(entity);
-			}
-			if (player.MuteInfo.IsMuted())
-			{
-				if (player.MuteInfo.MuteDurationDays == -1)
-				{
-					player.ReceiveMessage($"You are muted indefinitely. If you feel there is a mistake, you can open a ticket on discord to appeal".Error());
-				}
-				else
-				{
-					player.ReceiveMessage($"You are muted for {player.MuteInfo.GetFormattedRemainingMuteTime()}. If you feel there is a mistake, you can open a ticket on discord to appeal".Error());
-				}
+				var player = PlayerService.GetPlayerFromUser(fromCharacter.User);
 
-				VWorld.Server.EntityManager.DestroyEntity(entity);
+				if (CommandHandler.ExecuteCommand(player, chatEvent.MessageText.ToString()))
+				{
+					VWorld.Server.EntityManager.DestroyEntity(entity);
+				}
+				if (player.MuteInfo.IsMuted())
+				{
+					if (player.MuteInfo.MuteDurationDays == -1)
+					{
+						player.ReceiveMessage($"You are muted indefinitely. If you feel there is a mistake, you can open a ticket on discord to appeal".Error());
+					}
+					else
+					{
+						player.ReceiveMessage($"You are muted for {player.MuteInfo.GetFormattedRemainingMuteTime()}. If you feel there is a mistake, you can open a ticket on discord to appeal".Error());
+					}
+
+					VWorld.Server.EntityManager.DestroyEntity(entity);
+				}
+				if (VWorld.Server.EntityManager.Exists(entity))
+				{
+					GameEvents.RaisePlayerChatMessage(player, entity);
+				}
 			}
-			if (VWorld.Server.EntityManager.Exists(entity))
+			catch (Exception e)
 			{
-				GameEvents.RaisePlayerChatMessage(player, entity);
+				Plugin.PluginLog.LogInfo(e.ToString());
+				continue;
 			}
 		}
 	}
@@ -59,10 +67,17 @@ public static class VivoxConnectionSystemPatch
 {
 	public static bool Prefix(VivoxConnectionSystem __instance, Entity entity, ref FromCharacter fromCharacter)
 	{
-		if (PlayerService.GetPlayerFromUser(fromCharacter.User).MuteInfo.IsMuted())
+		try
 		{
-			VWorld.Server.EntityManager.DestroyEntity(entity);
-			return false;
+			if (PlayerService.GetPlayerFromUser(fromCharacter.User).MuteInfo.IsMuted())
+			{
+				VWorld.Server.EntityManager.DestroyEntity(entity);
+				return false;
+			}
+		}
+		catch (Exception e)
+		{
+			Plugin.PluginLog.LogInfo(e.ToString());
 		}
 
 		return true;

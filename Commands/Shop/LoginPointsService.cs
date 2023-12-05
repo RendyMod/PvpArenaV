@@ -29,15 +29,12 @@ public static class LoginPointsService
 	public static void DisposeTimersForOnlinePlayers()
 	{
 		PlayerService.LoadAllPlayers();
-		foreach (var Player in PlayerService.UserCache.Values)
+		foreach (var Player in PlayerService.OnlinePlayers.Keys)
 		{
-			if (Player.IsOnline)
+			if (Player.PlayerPointsData.OnlineTimer != null)
 			{
-				if (Player.PlayerPointsData.OnlineTimer != null)
-				{
-					Player.PlayerPointsData.OnlineTimer.Dispose();
-					Player.PlayerPointsData.OnlineTimer = null;
-				}
+				Player.PlayerPointsData.OnlineTimer.Dispose();
+				Player.PlayerPointsData.OnlineTimer = null;
 			}
 		}
 	}

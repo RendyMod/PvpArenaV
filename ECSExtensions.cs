@@ -128,7 +128,14 @@ public static class ECSExtensions
 
 	public static string LookupName(this Entity entity)
 	{
-		return entity.Read<PrefabGUID>().LookupName();
+		if (entity.Exists())
+		{
+			return entity.Read<PrefabGUID>().LookupName();
+		}
+		else
+		{
+			return "Invalid Entity";
+		}
 	}
 	public static string LookupNameString(this PrefabGUID prefabGuid)
 	{

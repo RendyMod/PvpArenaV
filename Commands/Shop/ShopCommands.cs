@@ -19,6 +19,9 @@ internal static class ShopCommands
 	[Command("points", description: "Displays your points", usage: ".points", adminOnly: false, includeInHelp: false, aliases: new string[] { "vpoints" }, category: "Shop")]
 	public static void PointsCommand(Player sender)
 	{
+		sender.Character.LogPrefabName();
+		sender.User.LogPrefabName();
+		Plugin.PluginLog.LogInfo(sender.SteamID);
 		sender.ReceiveMessage($"You have {sender.PlayerPointsData.TotalPoints.ToString().Emphasize()} {"VPoint(s)".Warning()}".White());
 	}
 

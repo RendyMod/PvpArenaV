@@ -9,6 +9,10 @@ using PvpArena.Services;
 using PvpArena.Helpers;
 using PvpArena.Factories;
 using Unity.Transforms;
+using PvpArena.Configs;
+using Unity.Mathematics;
+using PvpArena.Models;
+using System;
 
 namespace PvpArena.Patches;
 
@@ -53,8 +57,9 @@ public static class BuffDebugSystemPatch
 						GameEvents.RaiseUnitBuffed(Character, entity);
 					}
 				}
-				catch (System.Exception e)
+				catch (Exception e)
 				{
+					Plugin.PluginLog.LogInfo(e.ToString());
 					continue;
 				}
 
@@ -71,27 +76,26 @@ public static class BuffDebugSystemPatch
 			var entities = __instance.__OnUpdate_LambdaJob0_entityQuery.ToEntityArray(Allocator.Temp);
 			foreach (var entity in entities)
 			{
-				var owner = entity.Read<EntityOwner>().Owner;
-				if (owner.Exists())
+				try
 				{
-					if (owner.Has<PlayerCharacter>())
+					var owner = entity.Read<EntityOwner>().Owner;
+					if (owner.Exists())
 					{
-						var player = PlayerService.GetPlayerFromCharacter(owner);
-						GameEvents.RaisePlayerBuffRemoved(player, entity);
-					}
-					else if (entity.Read<PrefabGUID>() == Helper.CustomBuff4 && UnitFactory.HasCategory(owner, "dummy"))
-					{
-						var health = owner.Read<Health>();
-						var destroyReason = entity.Read<DestroyData>().DestroyReason;
-						if (health.Value > 0 && !health.IsDead && destroyReason == DestroyReason.Duration)
+						if (owner.Has<PlayerCharacter>())
 						{
-							var spawnPosition = UnitFactory.GetSpawnPositionOfEntity(owner);
-							owner.Teleport(spawnPosition);
-							health.Value = health.MaxHealth;
-							health.MaxRecoveryHealth = health.MaxHealth;
-							owner.Write(health);
+							var player = PlayerService.GetPlayerFromCharacter(owner);
+							GameEvents.RaisePlayerBuffRemoved(player, entity);
+						}
+						else
+						{
+							GameEvents.RaiseUnitBuffRemoved(owner, entity);
 						}
 					}
+				}
+				catch (Exception e)
+				{
+					Plugin.PluginLog.LogInfo(e.ToString());
+					continue;
 				}
 			}
 			entities.Dispose();

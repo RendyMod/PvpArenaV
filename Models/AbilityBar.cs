@@ -9,7 +9,7 @@ using Unity.Entities;
 namespace PvpArena.Models;
 public class AbilityBar
 {
-	public PrefabGUID Unknown { get; set; } = PrefabGUID.Empty;
+	public PrefabGUID Extra { get; set; } = PrefabGUID.Empty;
 	public PrefabGUID Auto { get; set; } = PrefabGUID.Empty;
 	public PrefabGUID Weapon1 { get; set; } = PrefabGUID.Empty;
 	public PrefabGUID Weapon2 { get; set; } = PrefabGUID.Empty;
@@ -29,6 +29,7 @@ public class AbilityBar
 			case "spell1": Spell1 = ability; break;
 			case "spell2": Spell2 = ability; break;
 			case "ult": Ult = ability; break;
+			case "extra": Extra = ability; break;
 			default: throw new ArgumentException("Invalid slot");
 		}
 	}
@@ -45,7 +46,7 @@ public class AbilityBar
 	private void ApplyChanges(Entity buffEntity, bool isHard)
 	{
 		var buffer = buffEntity.AddBuffer<ReplaceAbilityOnSlotBuff>();
-		var abilities = new List<PrefabGUID> { Auto, Weapon1, Dash, Unknown, Weapon2, Spell1, Spell2, Ult };
+		var abilities = new List<PrefabGUID> { Auto, Weapon1, Dash, Extra, Weapon2, Spell1, Spell2, Ult };
 
 		for (int i = 0; i < abilities.Count; i++)
 		{

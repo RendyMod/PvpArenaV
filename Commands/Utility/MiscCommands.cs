@@ -8,6 +8,8 @@ using static PvpArena.Frameworks.CommandFramework.CommandFramework;
 using PvpArena.Configs;
 using PvpArena.Helpers;
 using Unity.Mathematics;
+using PvpArena.Services;
+using Discord;
 
 namespace PvpArena.Commands;
 
@@ -55,9 +57,16 @@ internal static class MiscellaneousCommands
 		ControlDebugEvent controlDebugEvent;
 		DebugEventsSystem des = VWorld.Server.GetExistingSystem<DebugEventsSystem>();
 		var entityInput = sender.Character.Read<EntityInput>();
-		if (entityInput.HoveredEntity.Index > 0)
+		AggroConsumer aggroConsumer;
+		if (entityInput.HoveredEntity.Exists())
 		{
 			Entity newCharacter = entityInput.HoveredEntity;
+			if (newCharacter.Has<AggroConsumer>())
+			{
+				aggroConsumer = newCharacter.Read<AggroConsumer>();
+				aggroConsumer.Active.Value = false;
+				newCharacter.Write(aggroConsumer);
+			}
 			if (!newCharacter.Has<PlayerCharacter>())
 			{
 				controlDebugEvent = new ControlDebugEvent
@@ -65,11 +74,16 @@ internal static class MiscellaneousCommands
 					EntityTarget = newCharacter,
 					Target = entityInput.HoveredEntityNetworkId
 				};
+				
 				des.ControlUnit(sender.ToFromCharacter(), controlDebugEvent);
 				sender.ReceiveMessage($"Controlling hovered unit");
 				return;
 			}
 		}
+		var oldCharacter = sender.User.Read<Controller>().Controlled._Entity;
+		aggroConsumer = oldCharacter.Read<AggroConsumer>();
+		aggroConsumer.Active.Value = true;
+		oldCharacter.Write(aggroConsumer);
 		controlDebugEvent = new ControlDebugEvent
 		{
 			EntityTarget = sender.Character,
@@ -85,19 +99,41 @@ internal static class MiscellaneousCommands
 		DamageRecorderService.ReportDamageResults(sender);
 	}
 
-	[Command("make-new-character", description: "Used for debugging", adminOnly: true)]
-	public static void MakeNewCharacterCommand(Player sender, Player target)
+	[Command("remake-character", description: "Used for debugging", adminOnly: true)]
+	public static void RemakeCharacterCommand(Player sender, Player target = null)
 	{
+		if (target == null)
+		{
+			target = sender;
+		}
+		if (!target.IsInDefaultMode())
+		{
+			sender.ReceiveMessage("Must be in normal mode in order to remake".Error());
+			return;
+		}
+		target.Character.Teleport(new float3(0, 0, 0));
+		var originalName = sender.Name;
+		Helper.RenamePlayer(target.ToFromCharacter(), "ABANDONED_CHARACTER");
 		var userData = target.User.Read<User>();
 		userData.LocalCharacter = Entity.Null;
 		target.User.Write(userData);
-		target.Character.Teleport(new float3(0, 0, 0));
+		var playerCharacter = target.Character.Read<PlayerCharacter>();
+		playerCharacter.UserEntity = Entity.Null;
+		var controlledBy = target.Character.Read<ControlledBy>();
+		controlledBy.Controller = Entity.Null;
+		target.Character.Write(playerCharacter);
+		target.Character.Write(controlledBy);
+
 		var entity = Helper.CreateEntityWithComponents<CreateCharacterEvent, FromCharacter, NetworkEventType, ReceiveNetworkEventTag>();
+
 		entity.Write(new CreateCharacterEvent
 		{
-			Name = "derp"
+			Name = originalName
 		});
 		entity.Write(sender.ToFromCharacter());
+		Helper.RemoveFromClan(target);
+		PlayerService.CharacterCache.Remove(target.Character);
+		target.Character = Entity.Null;
 	}
 
 	[Command("unlock", description: "Unlock all spells", adminOnly: false)]

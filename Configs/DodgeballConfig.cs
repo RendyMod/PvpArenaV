@@ -77,7 +77,7 @@ public class DodgeballConfigData
 	public RectangleZoneDto Team1Zone { get; set; } = new RectangleZoneDto();
 	public RectangleZoneDto Team2Zone { get; set; } = new RectangleZoneDto();
 	public RectangleZoneDto MapCenter { get; set; } = new RectangleZoneDto();
-	public List<StructureSpawn> StructureSpawns { get; set; } = new List<StructureSpawn>();
+	public List<PrefabSpawn> PrefabSpawns { get; set; } = new List<PrefabSpawn>();
 
 	// Additional properties...
 }

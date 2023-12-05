@@ -20,6 +20,8 @@ using static ProjectM.Debugging.DealDamageEventCommand;
 using UnityEngine.UI;
 using PvpArena.GameModes.Dodgeball;
 using System;
+using static PvpArena.GameModes.GameEvents;
+using Unity.Scenes;
 
 namespace PvpArena.GameModes.Dodgeball;
 
@@ -30,7 +32,6 @@ public class DodgeballGameMode : BaseGameMode
 	public static Dictionary<int, List<Player>> Teams = new Dictionary<int, List<Player>>();
 	public static List<Timer> Timers = new List<Timer>();
 	public Stopwatch stopwatch = new Stopwatch();
-	public Dictionary<int, RectangleZone> FightZones = new Dictionary<int, RectangleZone>();
 	public static Dictionary<Player, bool> IsGhost = new Dictionary<Player, bool>();
 	public static Dictionary<int, Queue<Player>> TeamGhosts = new Dictionary<int, Queue<Player>>();
 	public static Dictionary<int, int> TeamCountersHit = new Dictionary<int, int>();
@@ -58,8 +59,12 @@ public class DodgeballGameMode : BaseGameMode
 		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
 		GameEvents.OnItemWasThrown += HandleOnItemWasThrown;
 		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
-		GameEvents.OnGameFrameUpdate += HandleOnGameFrameUpdate;
-	}
+		GameEvents.OnPlayerDamageReceived += HandleOnPlayerDamageReceived;
+        GameEvents.OnPlayerInvitedToClan += HandleOnPlayerInvitedToClan;
+        GameEvents.OnPlayerLeftClan += HandleOnPlayerLeftClan;
+        GameEvents.OnPlayerKickedFromClan += HandleOnPlayerKickedFromClan;
+        /*GameEvents.OnGameFrameUpdate += HandleOnGameFrameUpdate;*/
+    }
 
 	public void Initialize(List<Player> team1Players, List<Player> team2Players)
 	{
@@ -72,8 +77,6 @@ public class DodgeballGameMode : BaseGameMode
         Timers.Add(timer);
 		Teams[1] = team1Players;
 		Teams[2] = team2Players;
-		FightZones[1] = DodgeballConfig.Config.Team1Zone.ToRectangleZone();
-		FightZones[2] = DodgeballConfig.Config.Team2Zone.ToRectangleZone();
 		TeamGhosts[1] = new Queue<Player>();
 		TeamGhosts[2] = new Queue<Player>();
 		TeamCountersHit[1] = 0;
@@ -101,8 +104,12 @@ public class DodgeballGameMode : BaseGameMode
 		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
 		GameEvents.OnItemWasThrown -= HandleOnItemWasThrown;
 		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
-		GameEvents.OnGameFrameUpdate -= HandleOnGameFrameUpdate;
-		HasStarted = false;
+		GameEvents.OnPlayerDamageReceived -= HandleOnPlayerDamageReceived;
+        GameEvents.OnPlayerInvitedToClan -= HandleOnPlayerInvitedToClan;
+        GameEvents.OnPlayerLeftClan -= HandleOnPlayerLeftClan;
+        GameEvents.OnPlayerKickedFromClan -= HandleOnPlayerKickedFromClan;
+        /*GameEvents.OnGameFrameUpdate -= HandleOnGameFrameUpdate;*/
+        HasStarted = false;
 		stopwatch.Reset();
 		foreach (var timer in Timers)
 		{
@@ -115,6 +122,7 @@ public class DodgeballGameMode : BaseGameMode
 		Teams.Clear();
 		TeamGhosts.Clear();
 		TeamCountersHit.Clear();
+		IsGhost.Clear();
 	}
 
 	private static Dictionary<string, bool> AllowedCommands = new Dictionary<string, bool>
@@ -125,7 +133,6 @@ public class DodgeballGameMode : BaseGameMode
 	public override void HandleOnPlayerDowned(Player player, Entity killer)
 	{
 		if (!player.IsInDodgeball()) return;
-
 
 		EliminatePlayer(player);
 	}
@@ -138,7 +145,6 @@ public class DodgeballGameMode : BaseGameMode
         player.Reset(ResetOptions);
         var blood = player.Character.Read<Blood>();
 		Helper.SetPlayerBlood(player, blood.BloodType, blood.Quality);
-
 		EliminatePlayer(player);
 	}
 	/*public override void HandleOnPlayerRespawn(Player player)
@@ -176,19 +182,28 @@ public class DodgeballGameMode : BaseGameMode
 	{
 		if (!player.IsInDodgeball()) return;
 
+		buffEntity.LogPrefabName();
 		var prefabGuid = buffEntity.Read<PrefabGUID>();
-		prefabGuid.LogPrefabName();
 		if (prefabGuid == Prefabs.AB_Blood_BloodRite_Immaterial)
 		{
-            Helper.HealEntity(player.Character);
-            Helper.MakeSCT(player, Prefabs.SCT_Type_MAX);
             TeamCountersHit[player.MatchmakingTeam]++;
 			if (TeamCountersHit[player.MatchmakingTeam] % DodgeballConfig.Config.BlocksToRevive == 0)
 			{
-				Plugin.PluginLog.LogInfo("Reviving teammate");
 				TeamCountersHit[player.MatchmakingTeam] = 0;
-				ReviveDeadTeammate(player);
+				if (TeamGhosts[player.MatchmakingTeam].Count > 0)
+				{
+					ReviveDeadTeammate(player);
+				}
+				else
+				{
+					Helper.HealEntity(player.Character);
+					Helper.MakeSCT(player, Prefabs.SCT_Type_MAX);
+				}
 			}
+		}
+		else if (prefabGuid == Prefabs.AB_Blood_BloodRite_SpellMod_Stealth)
+		{
+			Helper.DestroyBuff(buffEntity);
 		}
 	}
 
@@ -216,33 +231,46 @@ public class DodgeballGameMode : BaseGameMode
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 	}
 
+	public void HandleOnPlayerDamageReceived(Player player, Entity eventEntity)
+	{
+		if (!player.IsInDodgeball()) return;
+
+		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
+		var spell = damageDealtEvent.SpellSource.Read<PrefabGUID>();
+		float damagePercent;
+		if (spell == Prefabs.EH_Monster_EnergyBeam_Active && !IsGhost[player])
+		{
+			damagePercent = 2f;
+			var damageDealtEventNew = new DealDamageEvent(damageDealtEvent.Target, damageDealtEvent.MainType, damageDealtEvent.MainFactor, damageDealtEvent.ResourceModifier, damageDealtEvent.MaterialModifiers, damageDealtEvent.SpellSource, 0, damagePercent, damageDealtEvent.Modifier, damageDealtEvent.DealDamageFlags);
+			eventEntity.Write(damageDealtEventNew);
+		}
+		else
+		{
+			eventEntity.Destroy();
+		}
+	}
+
 	public override void HandleOnPlayerDamageDealt(Player player, Entity eventEntity)
 	{
 		if (!player.IsInDodgeball()) return;
 
 		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
+		var spell = damageDealtEvent.SpellSource.Read<PrefabGUID>();
 		var isStructure = damageDealtEvent.Target.Has<CastleHeartConnection>();
-		if (isStructure)
+		float damagePercent;
+		if (spell == Prefabs.AB_Blood_Shadowbolt_Projectile && !isStructure)
 		{
-			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
+			damagePercent = 1f / DodgeballConfig.Config.HitsToKill;
+			var damageDealtEventNew = new DealDamageEvent(damageDealtEvent.Target, damageDealtEvent.MainType, damageDealtEvent.MainFactor, damageDealtEvent.ResourceModifier, damageDealtEvent.MaterialModifiers, damageDealtEvent.SpellSource, 0, damagePercent, damageDealtEvent.Modifier, damageDealtEvent.DealDamageFlags);
+			eventEntity.Write(damageDealtEventNew);
 		}
 		else
 		{
-			var spell = damageDealtEvent.SpellSource.Read<PrefabGUID>();
-			spell.LogPrefabName();
-			if (spell == Prefabs.AB_Blood_Shadowbolt_Projectile)
-			{
-				float damagePercent = 1f / DodgeballConfig.Config.HitsToKill;
-				var damageDealtEventNew = new DealDamageEvent(damageDealtEvent.Target, damageDealtEvent.MainType, damageDealtEvent.MainFactor, damageDealtEvent.ResourceModifier, damageDealtEvent.MaterialModifiers, damageDealtEvent.SpellSource, 0, damagePercent, damageDealtEvent.Modifier, damageDealtEvent.DealDamageFlags);
-				eventEntity.Write(damageDealtEventNew);
-			}
-			else
-			{
-				VWorld.Server.EntityManager.DestroyEntity(eventEntity);
-			}
+			eventEntity.Destroy();
 		}
 	}
-	private bool IsOutOfBounds(Player player)
+
+/*	private bool IsOutOfBounds(Player player)
 	{
 		var enemyTeam = 1;
 		if (player.MatchmakingTeam == 1)
@@ -250,9 +278,9 @@ public class DodgeballGameMode : BaseGameMode
 			enemyTeam = 2;
 		}
 		return FightZones[enemyTeam].Contains(player) && !IsGhost[player];
-	}
+	}*/
 
-	public void HandleOnGameFrameUpdate()
+/*	public void HandleOnGameFrameUpdate()
 	{
 		if (HasStarted)
 		{
@@ -268,7 +296,7 @@ public class DodgeballGameMode : BaseGameMode
 				}
 			}
 		}
-	}
+	}*/
 
 	public static new Dictionary<string, bool> GetAllowedCommands()
 	{
@@ -277,15 +305,22 @@ public class DodgeballGameMode : BaseGameMode
 
 	private static void ReviveDeadTeammate(Player player)
 	{
-		if (TeamGhosts[player.MatchmakingTeam].Count > 0)
-		{
-			var ghost = TeamGhosts[player.MatchmakingTeam].Dequeue();
-			RevivePlayer(ghost);
-		}
+		var ghost = TeamGhosts[player.MatchmakingTeam].Dequeue();
+		RevivePlayer(ghost);
 	}
 
 	private static void EliminatePlayer(Player player)
 	{
+		if (IsGhost[player]) return;
+		/*if (player.MatchmakingTeam == 1)
+		{
+			player.Teleport(DodgeballConfig.Config.Team1StartPosition.ToFloat3());
+		}
+		else
+		{
+			player.Teleport(DodgeballConfig.Config.Team2StartPosition.ToFloat3());
+		}*/
+		
 		TeamGhosts[player.MatchmakingTeam].Enqueue(player);
 		player.Reset(ResetOptions);
 		var action = () => Helper.MakeGhostlySpectator(player);
@@ -305,7 +340,10 @@ public class DodgeballGameMode : BaseGameMode
 				bool isFriendly = teamPlayer.MatchmakingTeam == player.MatchmakingTeam;
 				var nameColorized = isFriendly ? player.Name.FriendlyTeam() : player.Name.EnemyTeam();
 				var resultColorized = isFriendly ? "eliminated".EnemyTeam() : "eliminated".FriendlyTeam();
-				teamPlayer.ReceiveMessage($"{nameColorized} has been {resultColorized}!".White());
+				if (!IsGhost[player])
+				{
+					teamPlayer.ReceiveMessage($"{nameColorized} has been {resultColorized}!".White());
+				}
 			}
 			if (allGhosts)
 			{
@@ -359,7 +397,7 @@ public class DodgeballGameMode : BaseGameMode
             IsGhost[player] = false;
         };
         ActionScheduler.RunActionOnceAfterDelay(action, .05f);
-
+		Helper.BuffPlayer(player, Prefabs.Buff_General_Phasing, out var buffEntity, 3);
 
         foreach (var team in Teams.Values)
 		{
@@ -372,5 +410,29 @@ public class DodgeballGameMode : BaseGameMode
 			}
 		}
 	}
+
+    public void HandleOnPlayerInvitedToClan(Player player, Entity eventEntity)
+    {
+        if (!player.IsInDodgeball()) return;
+
+        eventEntity.Destroy();
+        player.ReceiveMessage("You may not invite players to your clan while in Dodgeball".Error());
+    }
+
+    public void HandleOnPlayerKickedFromClan(Player player, Entity eventEntity)
+    {
+        if (!player.IsInDodgeball()) return;
+
+        eventEntity.Destroy();
+        player.ReceiveMessage("You may not kick players from your clan while in Dodgeball".Error());
+    }
+
+    public void HandleOnPlayerLeftClan(Player player, Entity eventEntity)
+    {
+        if (!player.IsInDodgeball()) return;
+
+        eventEntity.Destroy();
+        player.ReceiveMessage("You may not leave your clan while in Dodgeball".Error());
+    }
 }
 

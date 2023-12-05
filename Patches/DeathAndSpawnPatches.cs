@@ -1,24 +1,12 @@
 using HarmonyLib;
 using ProjectM;
 using Unity.Collections;
-using Unity.Entities;
-using Unity.Mathematics;
-using Unity.Transforms;
 using Bloodstone.API;
 using ProjectM.Gameplay.Systems;
-using System.Collections.Generic;
 using ProjectM.Network;
 using PvpArena.Services;
-using PvpArena.Data;
 using PvpArena.GameModes;
-using PvpArena.Configs;
-using PvpArena.Helpers;
-using UnityEngine.Jobs;
-using PvpArena.Models;
 using System;
-using Il2CppSystem.Data.Common;
-using PvpArena.Persistence.Json;
-using PvpArena.Factories;
 
 namespace PvpArena.Patches;
 
@@ -30,24 +18,28 @@ public static class DeathAndSpawnPatches
 	{
 		foreach (var killCall in __instance._OnKillCalls)
 		{
-			if (killCall.Killed.Has<PlayerCharacter>())
+			try
 			{
-				var Player = PlayerService.GetPlayerFromCharacter(killCall.Killed);
-				GameEvents.RaisePlayerDeath(Player, killCall);
-				SpawnCharacterSystemPatch.HasRespawned[Player.User] = false;
-			}
-			else
-			{
-				GameEvents.RaiseUnitDeath(killCall.Killed, killCall);
-				if (UnitFactory.HasCategory(killCall.Killed, "dummy"))
+				if (killCall.Killed.Has<PlayerCharacter>())
 				{
-					var spawnPosition = UnitFactory.GetSpawnPositionOfEntity(killCall.Killed);
-					if (spawnPosition.x != 0 && spawnPosition.y != 0 && spawnPosition.z != 0)
+					if (killCall.Killed.Has<ControlledBy>())
 					{
-						Dummy dummy = new Dummy(killCall.Killed.Read<PrefabGUID>(), killCall.Killed.Read<AggroConsumer>().Active.Value);
-						UnitFactory.SpawnUnit(dummy, spawnPosition);
+						var user = killCall.Killed.Read<ControlledBy>().Controller;
+						if (user.Exists())
+						{
+							var Player = PlayerService.GetPlayerFromCharacter(killCall.Killed);
+							GameEvents.RaisePlayerDeath(Player, killCall);
+						}
 					}
 				}
+				else
+				{
+					GameEvents.RaiseUnitDeath(killCall.Killed, killCall);
+				}
+			}
+			catch (Exception e)
+			{
+				Plugin.PluginLog.LogInfo(e.ToString());
 			}
 		}
 	}
@@ -61,22 +53,35 @@ public static class VampireDownedPatch
 		var downedEvents = __instance.__OnUpdate_LambdaJob0_entityQuery.ToEntityArray(Allocator.Temp);
 		foreach (var entity in downedEvents)
 		{
-			if (!VampireDownedServerEventSystem.TryFindRootOwner(entity, 1, VWorld.Server.EntityManager, out var victimEntity))
+			try
 			{
-				Plugin.PluginLog.LogMessage("Couldn't get victim entity");
-				return;
+				if (!VampireDownedServerEventSystem.TryFindRootOwner(entity, 1, VWorld.Server.EntityManager, out var victimEntity))
+				{
+					Plugin.PluginLog.LogMessage("Couldn't get victim entity");
+					return;
+				}
+
+				var downBuff = entity.Read<VampireDownedBuff>();
+
+				if (!VampireDownedServerEventSystem.TryFindRootOwner(downBuff.Source, 1, VWorld.Server.EntityManager, out var killerEntity))
+				{
+					Plugin.PluginLog.LogMessage("Couldn't get killer entity");
+					return;
+				}
+				if (victimEntity.Has<ControlledBy>())
+				{
+					var user = victimEntity.Read<ControlledBy>().Controller;
+					if (user.Exists())
+					{
+						var victimPlayer = PlayerService.GetPlayerFromCharacter(victimEntity);
+						GameEvents.RaisePlayerDowned(victimPlayer, killerEntity);
+					}
+				}
 			}
-
-			var downBuff = entity.Read<VampireDownedBuff>();
-
-			if (!VampireDownedServerEventSystem.TryFindRootOwner(downBuff.Source, 1, VWorld.Server.EntityManager, out var killerEntity))
+			catch (Exception e)
 			{
-				Plugin.PluginLog.LogMessage("Couldn't get killer entity");
-				return;
+				Plugin.PluginLog.LogInfo(e.ToString());
 			}
-
-			var VictimPlayer = PlayerService.GetPlayerFromCharacter(victimEntity);
-			GameEvents.RaisePlayerDowned(VictimPlayer, killerEntity);
 		}
 		downedEvents.Dispose();
 	}
@@ -105,101 +110,32 @@ public static class RespawnCharacterSystemPatch
 [HarmonyPatch(typeof(SpawnCharacterSystem), nameof(SpawnCharacterSystem.OnUpdate))]
 public static class SpawnCharacterSystemPatch
 {
-	public static Dictionary<Entity, bool> FirstTimeSpawn = new Dictionary<Entity, bool>();
-	public static Dictionary<Entity, bool> HasRespawned = new Dictionary<Entity, bool>();
-
 	public static void Prefix(SpawnCharacterSystem __instance)
 	{
 		var entities = __instance.__OnUpdate_LambdaJob0_entityQuery.ToEntityArray(Allocator.Temp);
 		foreach (var entity in entities)
 		{
-			var spawnCharacter = entity.Read<SpawnCharacter>();
-
-			var Character = spawnCharacter.User.Read<User>().LocalCharacter._Entity;
-			
-			if (!spawnCharacter.FirstTimeSpawn && spawnCharacter.HasSpawned)
+			try
 			{
-				try
+				var spawnCharacter = entity.Read<SpawnCharacter>();
+
+				if (spawnCharacter.User.Exists())
 				{
-					if (!HasRespawned.TryGetValue(entity, out bool hasRespawned) || !hasRespawned)
+					var Character = spawnCharacter.User.Read<User>().LocalCharacter._Entity;
+
+					if (Character.Exists())
 					{
 						var player = PlayerService.GetPlayerFromUser(spawnCharacter.User);
-						GameEvents.RaisePlayerRespawn(player);
-						HasRespawned[entity] = true;
+						GameEvents.RaisePlayerSpawning(player, spawnCharacter);
 					}
-				}
-				catch (Exception e)
-				{
-					Plugin.PluginLog.LogInfo("error on respawn: " + e.ToString());
 				}
 			}
-			//this hook will run multiple times during spawn, and the character won't be set at the beginning. Wait until it's set and then record it so we only run once
-			if (spawnCharacter.FirstTimeSpawn && !FirstTimeSpawn.ContainsKey(spawnCharacter.User) && Character.Index > 0)
+			catch (Exception e)
 			{
-				FirstTimeSpawn[spawnCharacter.User] = true;
-
-				var player = PlayerService.GetPlayerFromUser(spawnCharacter.User);
-
-				HandleOnFirstSpawn(player);
-				if (PvpArenaConfig.Config.UseCustomSpawnLocation)
-				{
-					float3 pos = PvpArenaConfig.Config.CustomSpawnLocation.ToFloat3();
-					var alreadyTeleported = pos == spawnCharacter.User.Read<LocalToWorld>().Position;
-					if (!(alreadyTeleported.x && alreadyTeleported.z))
-					{
-						player.Teleport(pos);
-					}
-				}
-				continue;
+				Plugin.PluginLog.LogInfo(e.ToString());
 			}
 		}
 		entities.Dispose();
-	}
-
-	// Helper method to schedule actions with delay.
-	private static void ScheduleAction(System.Action<Player> action, Player player, int delay)
-	{
-		var scheduledAction = new ScheduledAction(action, new object[] { player });
-		ActionScheduler.ScheduleAction(scheduledAction, delay);
-	}
-
-
-	private static void HandleOnFirstSpawn(Player player)
-	{
-		// Check if the character has their abilities unlocked, if not, reschedule this method.
-		if (!Helper.UserHasAbilitiesUnlocked(player.User))
-		{
-			ScheduleAction(HandleOnFirstSpawn, player, delay: 50);
-			return;
-		}
-
-		// Abilities are now unlocked, proceed to give jewels.
-		GiveJewelsAndScheduleEquipment(player);
-		Helper.SetPlayerBlood(player, Prefabs.BloodType_Warrior);
-	}
-
-	private static void GiveJewelsAndScheduleEquipment(Player player)
-	{
-		var steamId = player.SteamID;
-		// Generate jewels for the character.
-		foreach (var jewel in JewelData.abilityToPrefabDictionary)
-		{
-			string mods = Core.defaultJewelStorage.GetModsForSpell(jewel.Key, player.SteamID);
-			Helper.GenerateJewelViaEvent(player, jewel.Key, mods);
-		}
-		ScheduleAction(EquipJewels, player, delay: 2);
-		ScheduleAction(Helper.GiveDefaultLegendaries, player, delay: 3);
-		ScheduleAction(Helper.GiveArmorAndNecks, player, delay: 4);
-	}
-
-	public static void EquipJewels(Player player)
-	{
-		int inventoryIndex = 0;
-		foreach (var jewel in JewelData.abilityToPrefabDictionary)
-		{
-			Helper.EquipJewelAtSlot(player, inventoryIndex);
-			inventoryIndex++;
-		}	
 	}
 }
 

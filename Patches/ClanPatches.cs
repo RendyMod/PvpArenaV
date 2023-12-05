@@ -4,6 +4,7 @@ using ProjectM.Network;
 using ProjectM.Gameplay.Clan;
 using PvpArena.Services;
 using PvpArena.GameModes;
+using System;
 
 namespace PvpArena.Patches;
 
@@ -19,23 +20,47 @@ public static class ClanSystem_ServerPatch
 
 		foreach (var entity in inviteEventEntities)
 		{
-			var fromCharacter = entity.Read<FromCharacter>();
-			var player = PlayerService.GetPlayerFromUser(fromCharacter.User);
-			GameEvents.RaisePlayerInvitedToClan(player, entity);
+			try
+			{
+				var fromCharacter = entity.Read<FromCharacter>();
+				var player = PlayerService.GetPlayerFromUser(fromCharacter.User);
+				GameEvents.RaisePlayerInvitedToClan(player, entity);
+			}
+			catch (Exception e)
+			{
+				Plugin.PluginLog.LogInfo(e.ToString());
+				continue;
+			}
 		}
 
 		foreach (var entity in kickEventEntities)
 		{
-			var fromCharacter = entity.Read<FromCharacter>();
-			var player = PlayerService.GetPlayerFromUser(fromCharacter.User);
-			GameEvents.RaisePlayerKickedFromClan(player, entity);
+			try
+			{
+				var fromCharacter = entity.Read<FromCharacter>();
+				var player = PlayerService.GetPlayerFromUser(fromCharacter.User);
+				GameEvents.RaisePlayerKickedFromClan(player, entity);
+			}
+			catch (Exception e)
+			{
+				Plugin.PluginLog.LogInfo(e.ToString());
+				continue;
+			}
 		}
 
 		foreach (var entity in leaveEventEntities)
 		{
-			var fromCharacter = entity.Read<FromCharacter>();
-			var player = PlayerService.GetPlayerFromUser(fromCharacter.User);
-			GameEvents.RaisePlayerLeftClan(player, entity);
+			try
+			{
+				var fromCharacter = entity.Read<FromCharacter>();
+				var player = PlayerService.GetPlayerFromUser(fromCharacter.User);
+				GameEvents.RaisePlayerLeftClan(player, entity);
+			}
+			catch (Exception e)
+			{
+				Plugin.PluginLog.LogInfo(e.ToString());
+				continue;
+			}
 		}
 
 		inviteEventEntities.Dispose();

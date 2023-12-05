@@ -75,11 +75,11 @@ public static partial class Helper
 		return Core.prefabCollectionSystem._PrefabGuidToEntityMap[prefabGUID];
 	}
 
-	public static Entity GetHoveredEntity(Entity Character)
+	public static Entity GetHoveredEntity(Entity User)
 	{
-		var input = Character.Read<EntityInput>();
+		var input = User.Read<EntityInput>();
 		var position = input.AimPosition;
-		if (input.HoveredEntity.Index > 0)
+		if (input.HoveredEntity.Exists())
 		{
 			return input.HoveredEntity;
 		}
@@ -95,11 +95,11 @@ public static partial class Helper
 		return Entity.Null;
 	}
 
-	public static Entity GetHoveredEntity<T>(Entity Character)
+	public static Entity GetHoveredEntity<T>(Entity User)
 	{
-		var input = Character.Read<EntityInput>();
+		var input = User.Read<EntityInput>();
 		var position = input.AimPosition;
-		if (input.HoveredEntity.Index > 0)
+		if (input.HoveredEntity.Exists())
 		{
 			return input.HoveredEntity;
 		}
@@ -115,11 +115,11 @@ public static partial class Helper
 		return Entity.Null;
 	}
 
-	public static Entity GetHoveredEntity<T, T2>(Entity Character)
+	public static Entity GetHoveredEntity<T, T2>(Entity User)
 	{
-		var input = Character.Read<EntityInput>();
+		var input = User.Read<EntityInput>();
 		var position = input.AimPosition;
-		if (input.HoveredEntity.Index > 0)
+		if (input.HoveredEntity.Exists())
 		{
 			return input.HoveredEntity;
 		}

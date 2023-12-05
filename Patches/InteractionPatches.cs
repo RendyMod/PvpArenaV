@@ -2,6 +2,7 @@ using HarmonyLib;
 using ProjectM;
 using Unity.Collections;
 using ProjectM.Gameplay.Systems;
+using System;
 
 namespace PvpArena.Patches;
 
@@ -14,11 +15,18 @@ public static class InteractSystemServerPatch
 		var entities = __instance.__OnUpdate_LambdaJob1_entityQuery.ToEntityArray(Allocator.Temp);
 		foreach (var entity in entities)
 		{
-			var interactor = entity.Read<Interactor>();
-			if (interactor.Target.Has<Mountable>() && !Team.IsAllies(interactor.Target.Read<Team>(), entity.Read<Team>()))
+			try
 			{
-				interactor.Target = entity;
-				entity.Write(interactor);
+				var interactor = entity.Read<Interactor>();
+				if (interactor.Target.Has<Mountable>() && !Team.IsAllies(interactor.Target.Read<Team>(), entity.Read<Team>()))
+				{
+					interactor.Target = entity;
+					entity.Write(interactor);
+				}
+			}
+			catch (Exception e)
+			{
+				Plugin.PluginLog.LogInfo(e.ToString());
 			}
 		}
 	}

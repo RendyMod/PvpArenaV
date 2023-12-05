@@ -73,7 +73,7 @@ public static class OnUserConnectedPatch
 				{
 					var serverClient = __instance._ApprovedUsersLookup[userIndex];
 					var User = serverClient.UserEntity;
-					if (User.Index > 0)
+					if (User.Exists())
 					{
 						var player = PlayerService.GetPlayerFromUser(User);
 						PlayerService.OnlinePlayers.TryAdd(player, true);
@@ -84,8 +84,12 @@ public static class OnUserConnectedPatch
 							Helper.KickPlayer(player.SteamID);
 						}
 
-						if (player.Character.Index > 0)
+						if (player.Character.Exists())
 						{
+							if (!player.ControlledEntity.Exists() || player.ControlledEntity != player.Character)
+							{
+								Helper.ControlOriginalCharacter(player);
+							}
 							GameEvents.RaisePlayerConnected(player);
 							Helper.Reset(player, new Helper.ResetOptions
 							{
@@ -95,12 +99,9 @@ public static class OnUserConnectedPatch
 							{
 								//admins WILL be grandmas >:(
 								Helper.UnlockAllContent(player.ToFromCharacter());
-								Helper.RemoveBuff(player, Prefabs.Buff_Gloomrot_SentryOfficer_TurretCooldown);
 							}
-							/*else
-							{
-								AddBuffToPlayerToImpairBuilding(player);
-							}*/
+
+							Helper.ApplyBuildImpairBuffToPlayer(player);
 						}
 
 						SendWelcomeMessageToPlayer(player);
@@ -136,16 +137,4 @@ public static class OnUserConnectedPatch
 		player.ReceiveMessage(("Type " + ".help".Colorify(ExtendedColor.LightServerColor) +
 		                      " in chat to see "+"all available commands".Emphasize()).White());
 	}
-
-	/*public static void AddBuffToPlayerToImpairBuilding (Player player)
-	{
-		if (!Helper.TryGetBuff(player, Prefabs.Buff_Gloomrot_SentryOfficer_TurretCooldown, out var buffEntity))
-		{
-			AddBuffToPlayerToImpairBuilding(player);
-		}
-		else
-		{
-			Helper.ModifyBuff(buffEntity, BuffModificationTypes.BuildMenuImpair);
-		}
-	}*/
 }

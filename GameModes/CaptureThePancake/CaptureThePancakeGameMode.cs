@@ -38,7 +38,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 {
 	public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
 	{
-		RemoveConsumables = true,
+		RemoveConsumables = false,
 		RemoveShapeshifts = false,
 		ResetCooldowns = false
 	};
@@ -259,7 +259,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 	{
 		if (!player.IsInCaptureThePancake()) return;
 
-		if (killer.Index > 0)
+		if (killer.Exists())
 		{
 			Player killerPlayer = null;
 			if (killer.Has<PlayerCharacter>())
@@ -385,16 +385,6 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		PlayerRespawnTimers[player].Add(timer);
 		Helper.BuffPlayer(player, Prefabs.AB_Scarecrow_Idle_Buff, out var buffEntity2, Helper.NO_DURATION, true); //used to hide the player's bar over their character
 		Helper.RemoveBuff(player, Prefabs.Buff_General_VampirePvPDeathDebuff);
-		var blood = player.Character.Read<Blood>();
-		Helper.SetPlayerBlood(player, blood.BloodType, blood.Quality);
-		foreach (var buff in TeamToShardBuffsMap[player.MatchmakingTeam])
-		{
-			if (!BuffUtility.TryGetBuff(VWorld.Server.EntityManager, player.Character, buff, out var buffEntity))
-			{
-				var action = new ScheduledAction(Helper.BuffPlayer, new object[] { player, buff, buffEntity, Helper.NO_DURATION, true, true });
-				ActionScheduler.ScheduleAction(action, 2);
-			}
-		}
 	}
 
 	private static void DropShardsOnDeathIfApplicable(Player player)
@@ -466,12 +456,12 @@ public class CaptureThePancakeGameMode : BaseGameMode
 	{
 		var buff = buffEntity.Read<Buff>();
 		var target = buff.Target;
-		if (target.Index > 0 && Team.IsAllies(player.Character.Read<Team>(), target.Read<Team>()))
+		if (target.Exists() && Team.IsAllies(player.Character.Read<Team>(), target.Read<Team>()))
 		{
 			player.Interrupt();
 			player.ReceiveMessage("That's the wrong pancake!".Error());
 		}
-		else if (target.Index > 0)
+		else if (target.Exists())
 		{
 			var lifetime = buffEntity.Read<LifeTime>();
 			lifetime.Duration += 5;
@@ -684,53 +674,6 @@ public class CaptureThePancakeGameMode : BaseGameMode
                 Helper.DropItemFromInventory(player, Prefabs.Item_Building_Relic_Monster);
             }
         }
-		else if (prefabGuid == Prefabs.HideCharacterBuff) //this is a pseudo OnPlayerRespawn that I might make official in the future
-		{
-			float3 pos = default;
-			if (player.MatchmakingTeam == 1)
-			{
-				pos = CaptureThePancakeConfig.Config.Team1PlayerRespawn.ToFloat3();
-			}
-			else if (player.MatchmakingTeam == 2)
-			{
-				pos = CaptureThePancakeConfig.Config.Team2PlayerRespawn.ToFloat3();
-			}
-
-			var respawnDelay = CalculateRespawnDelay();
-
-
-
-			Action respawnPlayerActionPart2 = () =>
-			{
-				player.Reset(ResetOptions);
-				Helper.RemoveBuff(player, Prefabs.AB_Shapeshift_Mist_Buff);
-				Helper.BuffPlayer(player, Prefabs.Buff_General_Phasing, out var buffEntity, 3);
-				Helper.ApplyStatModifier(buffEntity, BuffModifiers.FastRespawnMoveSpeed);
-				Helper.RemoveBuffModifications(buffEntity, BuffModificationTypes.Immaterial);
-				buffEntity.Add<DestroyBuffOnDamageTaken>();
-			};
-
-			Action respawnPlayerActionPart1 = () =>
-			{
-				player.Teleport(pos);
-				Helper.RemoveBuff(player, Prefabs.AB_Scarecrow_Idle_Buff);
-				Helper.BuffPlayer(player, Helper.CustomBuff2, out var buffEntity, 3);
-				Helper.ModifyBuff(buffEntity, BuffModificationTypes.MovementImpair | BuffModificationTypes.Immaterial);
-				var timer = ActionScheduler.RunActionOnceAfterDelay(respawnPlayerActionPart2, 3);
-				PlayerRespawnTimers[player].Add(timer);
-			};
-
-			Helper.BuffPlayer(player, Prefabs.AB_Shapeshift_Mist_Buff, out buffEntity, respawnDelay);
-			Helper.CompletelyRemoveAbilityBarFromBuff(buffEntity);
-			Helper.FixIconForShapeshiftBuff(player, buffEntity, Prefabs.AB_Shapeshift_Mist_Group);
-			Helper.ModifyBuff(buffEntity, BuffModificationTypes.Invulnerable | BuffModificationTypes.Immaterial | BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.AbilityCastImpair | BuffModificationTypes.PickupItemImpaired | BuffModificationTypes.TargetSpellImpaired, true);
-
-			Helper.BuffPlayer(player, Prefabs.Buff_General_HideCorpse, out var invisibleBuff, respawnDelay);
-			Helper.ModifyBuff(invisibleBuff, BuffModificationTypes.None, true);
-
-			var timer = ActionScheduler.RunActionOnceAfterDelay(respawnPlayerActionPart1, respawnDelay-3);
-			PlayerRespawnTimers[player].Add(timer);
-		}
     }
 
 
@@ -1029,7 +972,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 
         var abilityCastStartedEvent = eventEntity.Read<AbilityCastStartedEvent>();
-        if (abilityCastStartedEvent.AbilityGroup.Index <= 0) return;
+        if (!abilityCastStartedEvent.AbilityGroup.Exists()) return;
 
         var abilityGuid = abilityCastStartedEvent.AbilityGroup.Read<PrefabGUID>();
 
@@ -1037,7 +980,6 @@ public class CaptureThePancakeGameMode : BaseGameMode
         if (AbilitiesToNotCauseBuffDestruction.TryGetValue(abilityGuid, out var buffs))
         {
 			PreventBuffDestructionIfBuffPresent(abilityCastStartedEvent, buffs);
-
 		}
 	}
 
@@ -1097,7 +1039,71 @@ public class CaptureThePancakeGameMode : BaseGameMode
     public void HandleOnPlayerRespawn(Player player)
 	{
         if (!player.IsInCaptureThePancake()) return;
+
+		float3 pos = default;
+		if (player.MatchmakingTeam == 1)
+		{
+			pos = CaptureThePancakeConfig.Config.Team1PlayerRespawn.ToFloat3();
+		}
+		else if (player.MatchmakingTeam == 2)
+		{
+			pos = CaptureThePancakeConfig.Config.Team2PlayerRespawn.ToFloat3();
+		}
+
+		var respawnDelay = CalculateRespawnDelay();
+
+
+
+		Action respawnPlayerActionPart2 = () =>
+		{
+			player.Reset(ResetOptions);
+			Helper.RemoveBuff(player, Prefabs.AB_Shapeshift_Mist_Buff);
+			if (Helper.BuffPlayer(player, Prefabs.Buff_General_Phasing, out var buffEntity, 3))
+			{
+				Helper.ApplyStatModifier(buffEntity, BuffModifiers.FastRespawnMoveSpeed);
+				Helper.RemoveBuffModifications(buffEntity, BuffModificationTypes.Immaterial);
+				buffEntity.Add<DestroyBuffOnDamageTaken>();
+			}
+		};
+
+		Action respawnPlayerActionPart1 = () =>
+		{
+			player.Teleport(pos);
+			Helper.RemoveBuff(player, Prefabs.AB_Scarecrow_Idle_Buff);
+			if (Helper.BuffPlayer(player, Helper.CustomBuff2, out var buffEntity, 3))
+			{
+				Helper.ModifyBuff(buffEntity, BuffModificationTypes.MovementImpair | BuffModificationTypes.Immaterial);
+			}
+			var timer = ActionScheduler.RunActionOnceAfterDelay(respawnPlayerActionPart2, 3);
+			PlayerRespawnTimers[player].Add(timer);
+		};
+
+		if (Helper.BuffPlayer(player, Prefabs.AB_Shapeshift_Mist_Buff, out var buffEntity, respawnDelay))
+		{
+			Helper.CompletelyRemoveAbilityBarFromBuff(buffEntity);
+			Helper.FixIconForShapeshiftBuff(player, buffEntity, Prefabs.AB_Shapeshift_Mist_Group);
+			Helper.ModifyBuff(buffEntity, BuffModificationTypes.Invulnerable | BuffModificationTypes.Immaterial | BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.AbilityCastImpair | BuffModificationTypes.PickupItemImpaired | BuffModificationTypes.TargetSpellImpaired, true);
+		}
+
+		if (Helper.BuffPlayer(player, Prefabs.Buff_General_HideCorpse, out var invisibleBuff, respawnDelay))
+		{
+			Helper.ModifyBuff(invisibleBuff, BuffModificationTypes.None, true);
+		}
 		
+
+		var timer = ActionScheduler.RunActionOnceAfterDelay(respawnPlayerActionPart1, respawnDelay - 3);
+		PlayerRespawnTimers[player].Add(timer);
+
+		var blood = player.Character.Read<Blood>();
+		Helper.SetPlayerBlood(player, blood.BloodType, blood.Quality);
+		foreach (var buff in TeamToShardBuffsMap[player.MatchmakingTeam])
+		{
+			if (!Helper.BuffPlayer(player, buff, out buffEntity, Helper.NO_DURATION))
+			{
+				var action = new ScheduledAction(Helper.BuffPlayer, new object[] { player, buff, buffEntity, Helper.NO_DURATION, true, true });
+				ActionScheduler.ScheduleAction(action, 2); //some buffs need delays or they won't be applied
+			}
+		}
 	}
 
 	public void HandleOnPlayerDamageReported(Player source, Entity target, PrefabGUID ability, DamageInfo damageInfo)
@@ -1129,7 +1135,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 			{
 				if (IsInFriendlyEndZone(player))
 				{
-					if (player.HasBuff(Prefabs.AB_Interact_Mount_Owner_Buff_Horse))
+                    if (player.HasBuff(Prefabs.AB_Interact_Mount_Owner_Buff_Horse))
 					{
 						foreach (var teamPlayer in team)
 						{

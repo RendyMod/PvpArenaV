@@ -6,6 +6,7 @@ using Bloodstone.API;
 using PvpArena.Services;
 using PvpArena.GameModes;
 using PvpArena.Models;
+using System;
 
 namespace PvpArena.Patches;
 
@@ -20,25 +21,32 @@ public static class DropItemThrowSystemPatch
 		var entities = __instance._EventQuery.ToEntityArray(Allocator.Temp);
 		foreach (var entity in entities)
 		{
-			var dropItemAroundPosition = entity.Read<DropItemAroundPosition>();
-			var onlinePlayers = PlayerService.OnlinePlayers.Keys;
-			Player closestPlayerToEvent = null;
-			foreach (var player in onlinePlayers)
+			try
 			{
-				if (math.all(math.abs(player.Position - dropItemAroundPosition.Position) < new float3(3f)))
+				var dropItemAroundPosition = entity.Read<DropItemAroundPosition>();
+				var onlinePlayers = PlayerService.OnlinePlayers.Keys;
+				Player closestPlayerToEvent = null;
+				foreach (var player in onlinePlayers)
 				{
-					closestPlayerToEvent = player;
-					break;
+					if (math.all(math.abs(player.Position - dropItemAroundPosition.Position) < new float3(3f)))
+					{
+						closestPlayerToEvent = player;
+						break;
+					}
+				}
+				if (closestPlayerToEvent == null)
+				{
+					VWorld.Server.EntityManager.DestroyEntity(entity);
+					continue;
+				}
+				else
+				{
+					GameEvents.RaiseItemWasThrown(closestPlayerToEvent, entity);
 				}
 			}
-			if (closestPlayerToEvent == null)
+			catch (Exception e)
 			{
-				VWorld.Server.EntityManager.DestroyEntity(entity);
-				continue;
-			}
-			else
-			{
-				GameEvents.RaiseItemWasThrown(closestPlayerToEvent, entity);
+				Plugin.PluginLog.LogInfo(e.ToString());
 			}
 		}
 	}

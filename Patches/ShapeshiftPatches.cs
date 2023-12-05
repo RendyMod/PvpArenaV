@@ -12,6 +12,7 @@ using static ProjectM.CastleBuilding.CastleBlockSystem;
 using UnityEngine.TextCore;
 using PvpArena.Helpers;
 using PvpArena.Models;
+using System;
 
 namespace PvpArena.Patches;
 
@@ -25,12 +26,19 @@ public static class ShapeshiftSystemPatch
 			var entities = __instance.__EnterShapeshiftJob_entityQuery.ToEntityArray(Allocator.Temp);
 			foreach (var entity in entities)
 			{
-				if (entity.Index > 0)
+				try
 				{
-					var fromCharacter = entity.Read<FromCharacter>();
+					if (entity.Exists())
+					{
+						var fromCharacter = entity.Read<FromCharacter>();
 
-					var Player = PlayerService.GetPlayerFromUser(fromCharacter.User);
-					GameEvents.RaisePlayerShapeshifted(Player, entity);
+						var Player = PlayerService.GetPlayerFromUser(fromCharacter.User);
+						GameEvents.RaisePlayerShapeshifted(Player, entity);
+					}
+				}
+				catch (Exception e)
+				{
+					Plugin.PluginLog.LogInfo(e.ToString());
 				}
 			}
 			entities.Dispose();

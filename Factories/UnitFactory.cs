@@ -303,17 +303,25 @@ public static class UnitFactory
 	{
 		buffEntity.Add<BuffModificationFlagData>();
 		BuffModificationTypes modificationTypes = BuffModificationTypes.None;
+		if (!unit.DynamicCollision)
+		{
+			modificationTypes |= BuffModificationTypes.DisableDynamicCollision;
+		}
+		if (!unit.MapCollision)
+		{
+			modificationTypes |= BuffModificationTypes.DisableMapCollision;
+		}
 		if (unit.IsRooted)
 		{
-			modificationTypes |= BuffModificationTypes.MovementImpair | BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.RelocateImpair;
+			modificationTypes |= BuffModificationTypes.MovementImpair | BuffModificationTypes.RelocateImpair;
 		}
 		if (unit.IsImmaterial)
 		{
-			modificationTypes |= BuffModificationTypes.Immaterial | BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.Invulnerable;
+			modificationTypes |= BuffModificationTypes.Immaterial | BuffModificationTypes.Invulnerable;
 		}
 		if (unit.IsInvulnerable)
 		{
-			modificationTypes |= BuffModificationTypes.Invulnerable | BuffModificationTypes.DisableDynamicCollision;	
+			modificationTypes |= BuffModificationTypes.Invulnerable;
 		}
 		if (!unit.IsTargetable)
 		{
@@ -363,6 +371,8 @@ public class Unit
 	protected bool isTargetable = true;
 	protected bool isInvisible = false;
 	protected bool isInvulnerable = false;
+	protected bool dynamicCollision = false;
+	protected bool worldCollision = true;
 	protected string category = "";
 	protected int spawnDelay = -1;
 	protected bool softSpawn = false;
@@ -380,6 +390,8 @@ public class Unit
 	public bool IsRooted { get => isRooted; set => isRooted = value; }
 	public float RespawnTime { get => respawnTime; set => respawnTime = value; }
 	public bool DrawsAggro { get => drawsAggro; set => drawsAggro = value; }
+	public bool DynamicCollision { get => dynamicCollision; set => dynamicCollision = value; }
+	public bool MapCollision { get => worldCollision; set => worldCollision = value; }
 	public bool IsTargetable { get => isTargetable; set => isTargetable = value; }
 	public string Category { get => category; set => category = value; }
 	public bool AnnounceSpawn { get => announceSpawn; set => announceSpawn = value; }
@@ -479,6 +491,7 @@ public class Dummy : Unit
 		maxHealth = 653;
 		drawsAggro = true;
 		isRooted = true;
+		dynamicCollision = true;
 		knockbackResistance = false;
         category = "dummy";
         PrefabGuid = prefabGuid;
@@ -492,7 +505,8 @@ public class Dummy : Unit
 		maxHealth = 653;
         drawsAggro = true;
         isRooted = true;
-        knockbackResistance = false;
+		dynamicCollision = true;
+		knockbackResistance = false;
         category = "dummy";
     }
 

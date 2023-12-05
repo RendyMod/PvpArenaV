@@ -124,7 +124,7 @@ public static partial class Helper
 			if (InventoryUtilities.TryGetItemAtSlot(VWorld.Server.EntityManager, player.Character, itemSlot, out InventoryBuffer item))
 			{
 				//InventoryUtilitiesServer.ClearSlot(VWorld.Server.EntityManager, player.Character, itemSlot);
-				if (item.ItemEntity._Entity.Index > 0)
+				if (item.ItemEntity._Entity.Exists())
 				{
 					Helper.DestroyEntity(item.ItemEntity._Entity);
 				}

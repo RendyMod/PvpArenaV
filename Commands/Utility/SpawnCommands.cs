@@ -4,12 +4,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ProjectM;
+using ProjectM.Network;
 using PvpArena.Data;
 using PvpArena.Factories;
 using PvpArena.Helpers;
 using PvpArena.Models;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Physics;
 using static PvpArena.Frameworks.CommandFramework.CommandFramework;
 using static PvpArena.Helpers.Helper;
 
@@ -99,6 +101,8 @@ internal class SpawnCommands
 			var entities = Helper.GetEntitiesNearPosition(sender, 100);
 			foreach (var entity in entities)
 			{
+				if (entity.Has<User>()) continue;
+				if (!entity.Has<PhysicsCollider>()) continue;
 				if (entity.Read<PrefabGUID>() == prefab)
 				{
 					Helper.DestroyEntity(entity);
@@ -108,7 +112,7 @@ internal class SpawnCommands
 		}
 		else
 		{
-			Entity entity = Helper.GetHoveredEntity(sender.Character);
+			Entity entity = Helper.GetHoveredEntity(sender.User);
 			Helper.DestroyEntity(entity);
 			sender.ReceiveMessage($"Killed entity: {entity.Read<PrefabGUID>().LookupName()}".Success());
 		}
@@ -117,7 +121,7 @@ internal class SpawnCommands
 	[Command("spawn-chest", usage: ".spawn-chest rage", adminOnly: true)]
 	public static void SpawnChestCommand(Player sender, string potion, int rotationMode = 1, int quantity = 1)
 	{
-		var entity = Helper.GetHoveredEntity(sender.Character);
+		var entity = Helper.GetHoveredEntity(sender.User);
 
 		PrefabSpawnerService.SpawnWithCallback(Prefabs.TM_WorldChest_Epic_01_Full, sender.Position, (Entity e) =>
 		{

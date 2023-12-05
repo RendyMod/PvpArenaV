@@ -29,6 +29,7 @@ using ProjectM.Shared.Systems;
 using static ProjectM.SpawnRegionSpawnSystem;
 using Unity.Physics.Authoring;
 using static ProjectM.HitColliderCast;
+using PvpArena.Helpers;
 
 namespace PvpArena.Patches;
 
@@ -169,7 +170,7 @@ public static class ReplaceAbilityOnSlotSystemPatch
 		foreach (var entity in entities)
 		{
 			var data = entity.Read<ReplaceAbilityOnSlotData>();
-			if (data.ModificationEntity.Index > 0)
+			if (data.ModificationEntity.Exists())
 			{
 				Unity.Debug.Log("greetings1");
 			}
@@ -233,5 +234,30 @@ public static class DestroyOnSpawnSystemPatch
 	}
 }*/
 
+/*[HarmonyPatch(typeof(DestroyBuffsWithDeadTargetsOrOwnersSystem), nameof(DestroyBuffsWithDeadTargetsOrOwnersSystem.OnUpdate))]
+public static class DestroyBuffsWithDeadTargetsOrOwnersSystemPatch
+{
+	public static void Prefix(DestroyBuffsWithDeadTargetsOrOwnersSystem __instance)
+	{
+		var entities = __instance.__DestroyBuffsWithDeadOwners_entityQuery.ToEntityArray(Allocator.Temp);
+		foreach (var entity in entities)
+		{
+			entity.LogPrefabName();
+			Helper.DestroyBuff(entity);
+		}
+	}
+}*/
 
+/*[HarmonyPatch(typeof(Create_ServerControlsPositionSystem), nameof(Create_ServerControlsPositionSystem.OnUpdate))]
+public static class Create_ServerControlsPositionSystemPatch
+{
+	public static void Prefix(Create_ServerControlsPositionSystem __instance)
+	{
+		__instance.__OnUpdate_LambdaJob0_entityQuery.LogComponentTypes();
+		var entities = __instance.__OnUpdate_LambdaJob0_entityQuery.ToEntityArray(Allocator.Temp);
+		
+	}
+}*/
+
+//
 //AbilitySpawnSystem
