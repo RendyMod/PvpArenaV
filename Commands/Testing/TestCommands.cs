@@ -19,13 +19,21 @@ using PvpArena.Patches;
 using PvpArena.Factories;
 using Unity.Collections;
 using PvpArena.GameModes.Troll;
+using PvpArena.GameModes.PrisonBreak;
 
 namespace PvpArena.Commands.Debug;
 internal class TestCommands
 {
 
 	[Command("test", description: "Used for debugging", adminOnly: true)]
-	public void TestCommand(Player sender, PrefabGUID prefabGuid = default, Player player = null)
+	public void TestCommand(Player sender)
+	{
+		sender.Reset(PrisonBreakGameMode.ResetOptions);
+		Helper.MakeGhostlySpectator(sender);
+	}
+
+	[Command("become", description: "Used for debugging", adminOnly: true)]
+	public void BecomeCommand(Player sender, PrefabGUID prefabGuid = default, Player player = null)
 	{
 		var target = sender;
 		if (player != null)

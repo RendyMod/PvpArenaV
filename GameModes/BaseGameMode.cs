@@ -21,7 +21,6 @@ public abstract class BaseGameMode
 	//public abstract void HandleOnPlayerRespawn(Player entity); //currently unneeded..tricky to find a way to call it only once on respawn
 	public abstract void HandleOnShapeshift(Player player, Entity eventEntity);
 	public abstract void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item);
-	public abstract void HandleOnPlayerBuffed(Player player, Entity buffEntity);
 	public abstract void HandleOnPlayerConnected(Player player);
 	public abstract void HandleOnPlayerDisconnected(Player player);
 	public abstract void HandleOnItemWasThrown(Player player, Entity eventEntity);
@@ -29,11 +28,11 @@ public abstract class BaseGameMode
 	public abstract void HandleOnPlayerChatCommand(Player player, CommandAttribute command);
     public virtual Player.PlayerState GameModeType { get; }
 
-    private static Dictionary<string, bool> AllowedCommands = new Dictionary<string, bool>
+    private static HashSet<string> AllowedCommands = new HashSet<string>
 	{
-		{ "all", true }
+		{ "all" }
 	};
-	public static Dictionary<string, bool> GetAllowedCommands()
+	public static HashSet<string> GetAllowedCommands()
 	{
 		return AllowedCommands;
 	}

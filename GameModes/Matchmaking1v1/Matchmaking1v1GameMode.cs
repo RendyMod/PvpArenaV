@@ -28,15 +28,15 @@ public class Matchmaking1v1GameMode : BaseGameMode
 		RemoveShapeshifts = true
 	};
 
-	private static Dictionary<string, bool> AllowedCommands = new Dictionary<string, bool>
-	{
-		{ "ping", true },
-		{ "help", true },
-		{ "legendary", true },
-		{ "jewel", true },
-		{ "forfeit", true },
-		{ "points", true },
-		{ "lb ranked", true },
+	private static HashSet<string> AllowedCommands = new HashSet<string>
+	{ 
+		"ping",
+		"help" ,
+		"legendary" ,
+		"jewel" ,
+		"forfeit" ,
+		"points" ,
+		"lb ranked" ,
 	};
 
 	public Matchmaking1v1GameMode()
@@ -51,7 +51,6 @@ public class Matchmaking1v1GameMode : BaseGameMode
 		GameEvents.OnPlayerDeath += HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift += HandleOnShapeshift;
 		GameEvents.OnPlayerUsedConsumable += HandleOnConsumableUse;
-		GameEvents.OnPlayerBuffed += HandleOnPlayerBuffed;
 		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
 		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
 		GameEvents.OnItemWasThrown += HandleOnItemWasThrown;
@@ -64,7 +63,6 @@ public class Matchmaking1v1GameMode : BaseGameMode
 		GameEvents.OnPlayerDeath -= HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift -= HandleOnShapeshift;
 		GameEvents.OnPlayerUsedConsumable -= HandleOnConsumableUse;
-		GameEvents.OnPlayerBuffed -= HandleOnPlayerBuffed;
 		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
 		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
 		GameEvents.OnItemWasThrown -= HandleOnItemWasThrown;
@@ -140,10 +138,6 @@ public class Matchmaking1v1GameMode : BaseGameMode
 
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 	}
-	public override void HandleOnPlayerBuffed(Player player, Entity buffEntity)
-	{
-		if (player.CurrentState != GameModeType) return;
-	}
 
 	public override void HandleOnPlayerConnected(Player player)
 	{
@@ -170,6 +164,8 @@ public class Matchmaking1v1GameMode : BaseGameMode
 	{
 		if (player.CurrentState != GameModeType) return;
 
+		if (!eventEntity.Exists()) return;
+
 		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
 		var isStructure = damageDealtEvent.Target.Has<CastleHeartConnection>();
 		if (isStructure)
@@ -178,7 +174,7 @@ public class Matchmaking1v1GameMode : BaseGameMode
 		}
 	}
 
-	public static new Dictionary<string, bool> GetAllowedCommands()
+	public static new HashSet<string> GetAllowedCommands()
 	{
 		return AllowedCommands;
 	}

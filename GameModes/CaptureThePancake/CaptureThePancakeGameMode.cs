@@ -112,16 +112,16 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		{ Prefabs.HideCharacterBuff, HandleHideCharacterBuff }
 	};
 
-	public static Dictionary<string, bool> AllowedCommands = new Dictionary<string, bool>
+	public static HashSet<string> AllowedCommands = new HashSet<string>
 	{
-		{ "ping", true },
-		{ "help", true },
-		{ "legendary", true },
-		{ "jewel", true },
-		{ "forfeit", true },
-		{ "points", true },
-		{ "lb ranked", true },
-		{ "bp", true },
+		"ping",
+		"help",
+		"legendary",
+		"jewel",
+		"forfeit",
+		"points",
+		"lb ranked",
+		"bp",
 	};
 
 	public static List<Timer> Timers = new List<Timer>();
@@ -626,7 +626,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		ActionScheduler.RunActionOnceAfterDelay(action, 2);
 	}
 
-	public override void HandleOnPlayerBuffed(Player player, Entity buffEntity)
+	public void HandleOnPlayerBuffed(Player player, Entity buffEntity)
 	{
 		if (player.CurrentState != this.GameModeType) return;
 
@@ -926,6 +926,8 @@ public class CaptureThePancakeGameMode : BaseGameMode
 	public override void HandleOnPlayerDamageDealt(Player player, Entity eventEntity)
 	{
 		if (player.CurrentState != this.GameModeType) return;
+
+		if (!eventEntity.Exists()) return;
 
 		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
 		var targetPrefab = damageDealtEvent.Target.Read<PrefabGUID>();
@@ -1264,7 +1266,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		}
 	}
 
-	public static new Dictionary<string, bool> GetAllowedCommands()
+	public static new HashSet<string> GetAllowedCommands()
 	{
 		return AllowedCommands;
 	}

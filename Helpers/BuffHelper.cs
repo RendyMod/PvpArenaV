@@ -14,8 +14,10 @@ using PvpArena.Factories;
 using PvpArena.GameModes.BulletHell;
 using PvpArena.Models;
 using PvpArena.Services;
+using Unity.Collections;
 using Unity.Entities;
 using static ProjectM.SpawnBuffsAuthoring.SpawnBuffElement_Editor;
+using static PvpArena.Helpers.Helper;
 
 namespace PvpArena.Helpers;
 
@@ -323,68 +325,64 @@ public static partial class Helper
 		return false;
 	}
 
+	public static void ClearDelayedBuffs(Entity unit, HashSet<PrefabGUID> buffsToRemove)
+	{
+		if (unit.Has<BuffBuffer>())
+		{
+			var buffs = unit.ReadBuffer<BuffBuffer>();
+
+			foreach (var buff in buffs)
+			{
+				if (buffsToRemove.Contains(buff.PrefabGuid))
+				{
+					Helper.DestroyBuff(buff.Entity);
+				}
+			}
+		}
+	}
 
 	public static void ClearExtraBuffs(Entity unit, ResetOptions resetOptions = default)
 	{
 		if (unit.Has<BuffBuffer>())
 		{
 			var buffs = unit.ReadBuffer<BuffBuffer>();
-			var stringsToIgnore = new List<string>
-			{
-				"AB_BloodBuff",
-				"SetBonus",
-				"EquipBuff",
-				"VBlood_Ability_Replace",
-				"Buff_Gloomrot_SentryOfficer_TurretCooldown",
-				"JumpFromCliffs",
-				"General_Disconnected"
-			};
-
-			if (!resetOptions.RemoveConsumables && !resetOptions.RemoveShapeshifts)
-			{
-				stringsToIgnore.Add("Shapeshift");
-			}
-
-			if (!resetOptions.RemoveConsumables)
-			{
-				stringsToIgnore.Add("UseRelic");
-				stringsToIgnore.Add("AB_Consumable");
-				stringsToIgnore.Add("Buff_BloodMoon");
-			}
-
-			if (resetOptions.BuffsToIgnore != null && resetOptions.BuffsToIgnore.Count > 0)
-			{
-				stringsToIgnore.AddRange(resetOptions.BuffsToIgnore);
-			}
 
 			foreach (var buff in buffs)
 			{
-				bool shouldRemove = true;
-				foreach (string word in stringsToIgnore)
-				{
-					if (buff.PrefabGuid.LookupName().Contains(word))
-					{
-						shouldRemove = false;
-						break;
-					}
-				}
-
-				if (shouldRemove)
+				if (ShouldDestroyBuff(buff.PrefabGuid, resetOptions))
 				{
 					Helper.DestroyBuff(buff.Entity);
 				}
 			}
+
+			var action = () => ClearDelayedBuffs(unit, ResetBuffPrefabs.DelayedBuffs);
+			ActionScheduler.RunActionOnceAfterDelay(action, 0.05f);
 		}
+	}
 
-
-		if (unit.Has<Equipment>())
+	private static bool ShouldDestroyBuff(PrefabGUID buff, ResetOptions resetOptions)
+	{
+		if (ResetBuffPrefabs.BuffsToKeep.Contains(buff))
 		{
-			var equipment = unit.Read<Equipment>();
-			if (!equipment.IsEquipped(Prefabs.Item_Cloak_Main_ShroudOfTheForest, out var equipmentType) && Helper.HasBuff(unit, Prefabs.EquipBuff_ShroudOfTheForest))
-			{
-				Helper.RemoveBuff(unit, Prefabs.EquipBuff_ShroudOfTheForest);
-			}
+			return false;
 		}
+
+		if (resetOptions.BuffsToIgnore.Contains(buff))
+		{
+			return false;
+		}
+
+		if (ResetBuffPrefabs.ConsumableBuffs.Contains(buff))
+		{
+			return resetOptions.RemoveConsumables;
+		}
+
+		if (ResetBuffPrefabs.ShapeshiftBuffs.Contains(buff))
+		{
+			return resetOptions.RemoveShapeshifts;
+		}
+
+		return true;
 	}
 
 	public static void ClearConsumablesAndShards(Entity player)

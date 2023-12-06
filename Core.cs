@@ -16,6 +16,7 @@ using PvpArena.GameModes.Dodgeball;
 using PvpArena.GameModes.Domination;
 using PvpArena.GameModes.Matchmaking1v1;
 using PvpArena.GameModes.Prison;
+using PvpArena.GameModes.PrisonBreak;
 using PvpArena.GameModes.Troll;
 using PvpArena.Listeners;
 using PvpArena.Models;
@@ -168,7 +169,7 @@ public static class Core
         matchmaking1v1GameMode.Dispose();
         if (captureThePancakeGameMode != null)
         {
-            CaptureThePancakeHelper.EndMatch();
+            PrisonBreakHelper.EndMatch();
         }
 		if (dominationGameMode != null)
 		{

@@ -75,7 +75,7 @@ public static class GameEvents
 	public delegate void UnitDeathHandler(Entity unit, OnKillCallResult killCallResult);
 	public static event UnitDeathHandler OnUnitDeath;
 
-	public delegate void ItemWasThrownHandler(Player closestPlayer, Entity eventEntity);
+	public delegate void ItemWasThrownHandler(Player player, Entity eventEntity);
 	public static event ItemWasThrownHandler OnItemWasThrown;
 
 	public delegate void PlayerDamageDealtHandler(Player player, Entity eventEntity);

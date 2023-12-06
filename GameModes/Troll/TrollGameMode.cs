@@ -18,7 +18,8 @@ public class TrollGameMode : DefaultGameMode
 	public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
     {
         RemoveConsumables = true,
-        RemoveShapeshifts = true,
+        RemoveShapeshifts = false,
+		BuffsToIgnore = new HashSet<PrefabGUID> { Helper.TrollBuff, Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Buff }
     };
 
 	private static List<ModifyUnitStatBuff_DOTS> TrollMods = new List<ModifyUnitStatBuff_DOTS>
@@ -92,12 +93,12 @@ public class TrollGameMode : DefaultGameMode
         GameEvents.OnPlayerBuffRemoved -= HandleOnPlayerBuffRemoved;
     }
 
-	private static Dictionary<string, bool> AllowedCommands = new Dictionary<string, bool>
+	private static HashSet<string> AllowedCommands = new HashSet<string>
 	{
-		{ "all", true }
+		{ "all" }
 	};
 
-	public static new Dictionary<string, bool> GetAllowedCommands()
+	public static new HashSet<string> GetAllowedCommands()
 	{
 		return AllowedCommands;
 	}
@@ -109,11 +110,17 @@ public class TrollGameMode : DefaultGameMode
 		eventEntity.Destroy();
 	}
 
+	public override void HandleOnPlayerStartedCasting(Player player, Entity eventEntity)
+	{
+		if (player.CurrentState != this.GameModeType || player != this.player) return;
+
+	}
+
 	public override void HandleOnPlayerBuffed(Player player, Entity buffEntity)
 	{
 		if (player.CurrentState != this.GameModeType || player != this.player) return;
 
-		if (buffEntity.Read<PrefabGUID>() == Helper.CustomBuff4)
+		if (buffEntity.Read<PrefabGUID>() == Helper.TrollBuff)
 		{
 			Helper.ModifyBuff(buffEntity, BuffModificationTypes.ImmuneToHazards | BuffModificationTypes.Invulnerable | BuffModificationTypes.ImmuneToSun | BuffModificationTypes.Immaterial | BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.DisableMapCollision);
 			var buffer = buffEntity.AddBuffer<ModifyUnitStatBuff_DOTS>();

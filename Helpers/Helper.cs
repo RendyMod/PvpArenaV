@@ -79,7 +79,7 @@ public static partial class Helper
 		return System.Math.Max(min, System.Math.Min(value, max));
 	}
 
-	public static void Unlock (Player player, bool unlockContent = false)
+	public static void Unlock(Player player, bool unlockContent = false)
 	{
 		var fromCharacter = player.ToFromCharacter();
 		Core.debugEventsSystem.UnlockAllResearch(fromCharacter);
@@ -256,7 +256,7 @@ public static partial class Helper
         public bool RemoveConsumables = false;
         public bool RemoveShapeshifts = false;
         public bool ResetCooldowns = true;
-        public List<string> BuffsToIgnore = new List<string>();
+        public HashSet<PrefabGUID> BuffsToIgnore = new HashSet<PrefabGUID>();
 
         public static ResetOptions Default => new ResetOptions();
         public static ResetOptions FreshMatch = new ResetOptions
@@ -264,7 +264,7 @@ public static partial class Helper
             RemoveConsumables = true,
             RemoveShapeshifts = true,
             ResetCooldowns = true,
-            BuffsToIgnore = new List<string>()
+            BuffsToIgnore = new HashSet<PrefabGUID>()
         };
     }
 
@@ -279,8 +279,6 @@ public static partial class Helper
         ClearExtraBuffs(player.Character, resetOptions);
         //delay so that removing gun e / heart strike doesnt dmg you
         var action = new ScheduledAction(HealEntity, new object[] { player.Character });
-		ActionScheduler.ScheduleAction(action, 3);
-		action = new ScheduledAction(RemoveLeech, new object[] { player.Character }); //hacky temp fix to leech being applied after the heart strike bomb is removed above
 		ActionScheduler.ScheduleAction(action, 3);
 
         GameEvents.RaisePlayerReset(player);
@@ -302,38 +300,31 @@ public static partial class Helper
 		ScrollingCombatTextMessage.CreateLocal(VWorld.Server.EntityManager, sctEntity, "hello", player.Position, new float3(0,0,0), player.User, 0f, sctPrefab);
 	}
 
-	public static void RemoveLeech(Entity character)
+	public static void ResetCooldown(Entity Character)
 	{
-		Helper.RemoveBuff(character, Prefabs.Blood_Vampire_Buff_Leech);
-		Helper.RemoveBuff(character, Prefabs.Buff_InCombat_PvPVampire);
-	}
-
-	public static void ResetCooldown(Entity PlayerCharacter)
-	{
-		var AbilityBuffer = VWorld.Server.EntityManager.GetBuffer<AbilityGroupSlotBuffer>(PlayerCharacter);
-		foreach (var ability in AbilityBuffer)
+		var buffer = Character.ReadBuffer<AbilityGroupSlotBuffer>();
+		foreach (var ability in buffer)
 		{
-			var AbilitySlot = ability.GroupSlotEntity._Entity;
-			if (AbilitySlot.Exists())
+			var abilityGroupSlotEntity = ability.GroupSlotEntity._Entity;
+			if (abilityGroupSlotEntity.Exists())
 			{
-				var ActiveAbility = AbilitySlot.Read<AbilityGroupSlot>();
-				var ActiveAbility_Entity = ActiveAbility.StateEntity._Entity;
-				if (ActiveAbility_Entity.Exists())
+				var abilityGroupSlotData = abilityGroupSlotEntity.Read<AbilityGroupSlot>();
+                if (abilityGroupSlotData.SlotId > 7) return;
+				var abilityGroupSlotStateEntity = abilityGroupSlotData.StateEntity._Entity;
+				if (abilityGroupSlotStateEntity.Exists())
 				{
-					var b = ActiveAbility_Entity.Read<PrefabGUID>();
-					if (b.GuidHash == 0) continue;
-
-					if (ActiveAbility_Entity.Has<AbilityChargesState>())
+					if (abilityGroupSlotStateEntity.Has<AbilityChargesState>())
 					{
-						var abilityChargesState = ActiveAbility_Entity.Read<AbilityChargesState>();
-						var abilityChargesData = ActiveAbility_Entity.Read<AbilityChargesData>();
+						var abilityChargesState = abilityGroupSlotStateEntity.Read<AbilityChargesState>();
+						var abilityChargesData = abilityGroupSlotStateEntity.Read<AbilityChargesData>();
 						abilityChargesState.CurrentCharges = abilityChargesData.MaxCharges;
 						abilityChargesState.ChargeTime = 0;
-						ActiveAbility_Entity.Write(abilityChargesState);
+						abilityGroupSlotStateEntity.Write(abilityChargesState);
 					}
 
-					var AbilityStateBuffer = ActiveAbility_Entity.ReadBuffer<AbilityStateBuffer>();
-					foreach (var state in AbilityStateBuffer)
+					var abilityStateBuffer = abilityGroupSlotStateEntity.ReadBuffer<AbilityStateBuffer>();
+                    
+                    foreach (var state in abilityStateBuffer)
 					{
 						var abilityState = state.StateEntity._Entity;
 						if (abilityState.Exists())
@@ -355,8 +346,6 @@ public static partial class Helper
 		health.MaxRecoveryHealth = health.MaxHealth;
 		entity.Write(health);
 	}
-
-
 
 	// Adds Blood Moon visual Effect + Witch + Rage on Toggle
 	public static void ToggleBuffsOnPlayer(Player player)

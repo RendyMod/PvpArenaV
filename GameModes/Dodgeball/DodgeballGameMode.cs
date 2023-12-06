@@ -40,7 +40,8 @@ public class DodgeballGameMode : BaseGameMode
     public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
     {
         RemoveConsumables = true,
-        RemoveShapeshifts = true
+        RemoveShapeshifts = true,
+		BuffsToIgnore = new HashSet<PrefabGUID> { Prefabs.AB_Shapeshift_Mist_Buff, Prefabs.Buff_General_HideCorpse, Helper.CustomBuff4}
     };
 
     public DodgeballGameMode()
@@ -127,7 +128,7 @@ public class DodgeballGameMode : BaseGameMode
 		IsGhost.Clear();
 	}
 
-	private static Dictionary<string, bool> AllowedCommands = new Dictionary<string, bool>
+	private static HashSet<string> AllowedCommands = new HashSet<string>
 	{
 
 	};
@@ -144,7 +145,6 @@ public class DodgeballGameMode : BaseGameMode
 
 		var pos = player.Position;
 		Helper.RespawnPlayer(player, pos);
-        player.Reset(ResetOptions);
         var blood = player.Character.Read<Blood>();
 		Helper.SetPlayerBlood(player, blood.BloodType, blood.Quality);
 		EliminatePlayer(player);
@@ -180,7 +180,7 @@ public class DodgeballGameMode : BaseGameMode
 
 	}
 
-	public override void HandleOnPlayerBuffed(Player player, Entity buffEntity)
+	public void HandleOnPlayerBuffed(Player player, Entity buffEntity)
 	{
 		if (player.CurrentState != this.GameModeType) return;
 
@@ -299,7 +299,7 @@ public class DodgeballGameMode : BaseGameMode
 		}
 	}*/
 
-	public static new Dictionary<string, bool> GetAllowedCommands()
+	public static new HashSet<string> GetAllowedCommands()
 	{
 		return AllowedCommands;
 	}
@@ -312,7 +312,6 @@ public class DodgeballGameMode : BaseGameMode
 
 	private static void EliminatePlayer(Player player)
 	{
-		if (IsGhost[player]) return;
 		/*if (player.MatchmakingTeam == 1)
 		{
 			player.Teleport(DodgeballConfig.Config.Team1StartPosition.ToFloat3());
@@ -321,13 +320,16 @@ public class DodgeballGameMode : BaseGameMode
 		{
 			player.Teleport(DodgeballConfig.Config.Team2StartPosition.ToFloat3());
 		}*/
-		
-		TeamGhosts[player.MatchmakingTeam].Enqueue(player);
+
 		player.Reset(ResetOptions);
 		var action = () => Helper.MakeGhostlySpectator(player);
 		var timer = ActionScheduler.RunActionOnceAfterDelay(action, .05);
 		Timers.Add(timer);
-		IsGhost[player] = true;
+
+		if (!IsGhost[player])
+		{
+			TeamGhosts[player.MatchmakingTeam].Enqueue(player);
+		}
 
 		foreach (var team in Teams.Values)
 		{
@@ -358,6 +360,7 @@ public class DodgeballGameMode : BaseGameMode
 				return;
 			}
 		}
+		IsGhost[player] = true;
 	}
 
 	//make rendy improve this :P

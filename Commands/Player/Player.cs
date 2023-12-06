@@ -27,7 +27,8 @@ public class Player
 		Domination,
 		BulletHell,
 		Dodgeball,
-		Troll
+		Troll,
+		PrisonBreak
 	}
 
 	private Entity _user;

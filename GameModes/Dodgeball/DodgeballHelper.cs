@@ -26,6 +26,7 @@ using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine.Rendering.HighDefinition;
 using static PvpArena.Factories.UnitFactory;
+using static PvpArena.Helpers.Helper;
 using static RootMotion.FinalIK.Grounding;
 
 namespace PvpArena.GameModes.Dodgeball;
@@ -64,7 +65,7 @@ public static class DodgeballHelper
 		{
 			team1Player.CurrentState = Player.PlayerState.Dodgeball;
 			team1Player.MatchmakingTeam = 1;
-			team1Player.Reset(BaseGameMode.ResetOptions);
+			team1Player.Reset(ResetOptions.FreshMatch);
 			SetPlayerAbilities(team1Player);
 			Helper.SetPlayerBlood(team1Player, Prefabs.BloodType_Worker, 69);
 			action = () => team1Player.Teleport(DodgeballConfig.Config.Team1StartPosition.ToFloat3());
@@ -76,7 +77,7 @@ public static class DodgeballHelper
 		{
 			team2Player.CurrentState = Player.PlayerState.Dodgeball;
 			team2Player.MatchmakingTeam = 2;
-			team2Player.Reset(BaseGameMode.ResetOptions);
+			team2Player.Reset(ResetOptions.FreshMatch);
 			SetPlayerAbilities(team2Player);
 			Helper.SetPlayerBlood(team2Player, Prefabs.BloodType_Worker, 69);
 			action = () => team2Player.Teleport(DodgeballConfig.Config.Team2StartPosition.ToFloat3());

@@ -40,22 +40,22 @@ public class SpectatingGameMode : BaseGameMode
 		GameEvents.OnItemWasThrown -= HandleOnItemWasThrown;
 	}
 
-	private static Dictionary<string, bool> AllowedCommands = new Dictionary<string, bool>
+	private static HashSet<string> AllowedCommands = new HashSet<string>
 	{
-		{ "spectate", true },
-		{ "tp", true },
-		{ "ttp", true },
-		{ "tpa", true },
-		{ "j", true },
-		{ "lw", true },
-		{ "tp list", true },
-		{ "help", true },
-		{ "bp", true },
-		{ "points", true },
-		{ "togglekillfeed", true },
-		{ "discord", true },
-		{ "ping", true },
-		{ "kit", true },
+		"spectate",
+		"tp",
+		"ttp",
+		"tpa",
+		"j",
+		"lw",
+		"tp list",
+		"help",
+		"bp",
+		"points",
+		"togglekillfeed",
+		"discord",
+		"ping",
+		"kit",
 	};
 
 	public override void HandleOnPlayerDowned(Player player, Entity killer)
@@ -99,7 +99,7 @@ public class SpectatingGameMode : BaseGameMode
 
 	}
 
-	public override void HandleOnPlayerBuffed(Player player, Entity buffEntity)
+	public void HandleOnPlayerBuffed(Player player, Entity buffEntity)
 	{
 		if (player.CurrentState != GameModeType) return;
 
@@ -134,6 +134,8 @@ public class SpectatingGameMode : BaseGameMode
 	{
 		if (player.CurrentState != GameModeType) return;
 
+		if (!eventEntity.Exists()) return;
+
 		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
 		var isStructure = (damageDealtEvent.Target.Has<CastleHeartConnection>());
 		if (isStructure)
@@ -142,7 +144,7 @@ public class SpectatingGameMode : BaseGameMode
 		}
 	}
 
-	public static new Dictionary<string, bool> GetAllowedCommands()
+	public static new HashSet<string> GetAllowedCommands()
 	{
 		return AllowedCommands;
 	}

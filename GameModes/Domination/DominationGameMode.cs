@@ -40,9 +40,9 @@ public class DominationGameMode : BaseGameMode
 	public static Dictionary<int, List<Entity>> CapturePointIndexToLights = new Dictionary<int, List<Entity>>();
 	public static Dictionary<int, int> TeamPoints = new Dictionary<int, int>();
 	public static List<Timer> Timers = new List<Timer>();
-	private static List<string> buffsToIgnore = new List<string>
+	private static HashSet<PrefabGUID> buffsToIgnore = new HashSet<PrefabGUID>
 	{
-		"Buff_General_Silver_Sickness_Burn_Debuff"
+		Prefabs.Buff_General_Silver_Sickness_Burn_Debuff
 	};
 
 
@@ -75,18 +75,18 @@ public class DominationGameMode : BaseGameMode
 		{Prefabs.AB_Shapeshift_Bear_Skin01_Group, true }
 	};
 
-	public static Dictionary<string, bool> AllowedCommands = new Dictionary<string, bool>
+	public static HashSet<string> AllowedCommands = new HashSet<string>
 	{
-		{ "ping", true },
-		{ "help", true },
-		{ "legendary", true },
-		{ "jewel", true },
-		{ "forfeit", true },
-		{ "points", true },
-		{ "lb ranked", true },
-		{ "bp", true },
-		{ "j", true },
-		{ "lw", true }
+		"ping",
+		"help",
+		"legendary",
+		"jewel",
+		"forfeit",
+		"points",
+		"lb ranked",
+		"bp",
+		"j",
+		"lw",
 	};
 
 	public static List<Timer> QueuedRespawns = new List<Timer>();
@@ -414,7 +414,7 @@ public class DominationGameMode : BaseGameMode
 		//BuffClanMembersOnConsume(player, item);
 	}
 
-	public override void HandleOnPlayerBuffed(Player player, Entity buffEntity)
+	public void HandleOnPlayerBuffed(Player player, Entity buffEntity)
 	{
 		if (player.CurrentState != GameModeType) return;
 
@@ -544,6 +544,8 @@ public class DominationGameMode : BaseGameMode
 	public override void HandleOnPlayerDamageDealt(Player player, Entity eventEntity)
 	{
 		if (player.CurrentState != GameModeType) return;
+
+		if (!eventEntity.Exists()) return;
 
 		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
 
@@ -732,7 +734,7 @@ public class DominationGameMode : BaseGameMode
 		}
 	}
 
-	public static new Dictionary<string, bool> GetAllowedCommands()
+	public static new HashSet<string> GetAllowedCommands()
 	{
 		return AllowedCommands;
 	}

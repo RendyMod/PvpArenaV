@@ -34,18 +34,47 @@ public static class TrollModeManager
 
 	public static void AddTroll(Player player)
 	{
-		player.Reset(ResetOptions.FreshMatch);
+		player.Reset(TrollGameMode.ResetOptions);
 		player.CurrentState = Player.PlayerState.Troll;
 		trollGameModes[player] = new TrollGameMode(player);
-		Helper.BuffPlayer(player, Helper.TrollBuff, out var buffEntity, Helper.NO_DURATION, true);
-		if (Helper.BuffPlayer(player, Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Buff, out var grandmaBuffEntity))
+		
+		if (Helper.BuffPlayer(player, Helper.TrollBuff, out var buffEntity, Helper.NO_DURATION, true))
 		{
-			var buffer = grandmaBuffEntity.ReadBuffer<RemoveBuffOnGameplayEvent>();
-			buffer.Clear();
-			var buffer2 = grandmaBuffEntity.ReadBuffer<RemoveBuffOnGameplayEventEntry>();
-			buffer2.Clear();
-			Helper.FixIconForShapeshiftBuff(player, grandmaBuffEntity, Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Group);
-			player.ReceiveMessage($"You have entered {"troll".Emphasize()} mode.".White());
+			buffEntity.Add<DisableAggroBuff>();
+			buffEntity.Write(new DisableAggroBuff
+			{
+				Mode = DisableAggroBuffMode.OthersDontAttackTarget
+			});
+			if (Helper.BuffPlayer(player, Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Buff, out var grandmaBuffEntity))
+			{
+				if (grandmaBuffEntity.Has<RemoveBuffOnGameplayEvent>())
+				{
+					var buffer = grandmaBuffEntity.ReadBuffer<RemoveBuffOnGameplayEvent>();
+					buffer.Clear();
+				}
+				if (grandmaBuffEntity.Has<RemoveBuffOnGameplayEventEntry>())
+				{
+					var buffer2 = grandmaBuffEntity.ReadBuffer<RemoveBuffOnGameplayEventEntry>();
+					buffer2.Clear();
+				}
+
+				if (grandmaBuffEntity.Has<CreateGameplayEventsOnAbilityTrigger>())
+				{
+					var buffer3 = grandmaBuffEntity.ReadBuffer<CreateGameplayEventsOnAbilityTrigger>();
+					buffer3.Clear();
+				}
+
+				if (grandmaBuffEntity.Has<CreateGameplayEventsOnAbilityTriggerAbilityPrefabTargets>())
+				{
+					var buffer4 = grandmaBuffEntity.ReadBuffer<CreateGameplayEventsOnAbilityTriggerAbilityPrefabTargets>();
+					buffer4.Clear();
+				}
+
+				grandmaBuffEntity.LogComponentTypes();
+				grandmaBuffEntity.Remove<DestroyOnAbilityCast>();
+				Helper.FixIconForShapeshiftBuff(player, grandmaBuffEntity, Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Group);
+				player.ReceiveMessage($"You have entered {"troll".Emphasize()} mode.".White());
+			}
 		}
 	}
 

@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using PvpArena;
 using PvpArena.GameModes;
@@ -8,68 +10,59 @@ using PvpArena.GameModes.Dodgeball;
 using PvpArena.GameModes.Domination;
 using PvpArena.GameModes.Matchmaking1v1;
 using PvpArena.GameModes.Prison;
+using PvpArena.GameModes.PrisonBreak;
 using PvpArena.GameModes.Troll;
 using PvpArena.Models;
 using static PvpArena.Frameworks.CommandFramework.CommandFramework;
 
 public class GameModePermissionMiddleware : IMiddleware
 {
+	private static Dictionary<Player.PlayerState, HashSet<string>> allowedCommandsByGameMode;
+
+	static GameModePermissionMiddleware()
+	{
+		InitializeAllowedCommands();
+	}
+
+	private static void InitializeAllowedCommands()
+	{
+		allowedCommandsByGameMode = new Dictionary<Player.PlayerState, HashSet<string>>
+		{
+			{ Player.PlayerState.Normal, DefaultGameMode.GetAllowedCommands() },
+			{ Player.PlayerState.In1v1Matchmaking, Matchmaking1v1GameMode.GetAllowedCommands() },
+			{ Player.PlayerState.CaptureThePancake, CaptureThePancakeGameMode.GetAllowedCommands() },
+			{ Player.PlayerState.Domination, DominationGameMode.GetAllowedCommands() },
+			{ Player.PlayerState.Spectating, SpectatingGameMode.GetAllowedCommands() },
+			{ Player.PlayerState.BulletHell, BulletHellGameMode.GetAllowedCommands() },
+			{ Player.PlayerState.Imprisoned, PrisonGameMode.GetAllowedCommands() },
+			{ Player.PlayerState.Dodgeball, DodgeballGameMode.GetAllowedCommands() },
+			{ Player.PlayerState.Troll, TrollGameMode.GetAllowedCommands() },
+			{ Player.PlayerState.PrisonBreak, TrollGameMode.GetAllowedCommands() }
+			// Add more game modes and their corresponding allowed commands here
+		};
+	}
 	public bool CanExecute(Player sender, CommandAttribute command, MethodInfo method)
 	{
 		try
 		{
-			if (sender.IsAdmin && command.AdminOnly) return true; //don't let admins run basic commands accidentally
-			Dictionary<string, bool> allowedCommands = default;
-			if (sender.IsInDefaultMode())
+			if (sender.IsAdmin && command.AdminOnly) return true;
+
+			if (allowedCommandsByGameMode.TryGetValue(sender.CurrentState, out var allowedCommands))
 			{
-				allowedCommands = DefaultGameMode.GetAllowedCommands();
+				if (allowedCommands.Contains(command.Name) || allowedCommands.Contains("all"))
+				{
+					return true;
+				}
 			}
-			else if (sender.IsIn1v1())
-			{
-				allowedCommands = Matchmaking1v1GameMode.GetAllowedCommands();
-			}
-			else if (sender.IsInCaptureThePancake())
-			{
-				allowedCommands = CaptureThePancakeGameMode.GetAllowedCommands();
-			}
-			else if (sender.IsInDomination())
-			{
-				allowedCommands = DominationGameMode.GetAllowedCommands();
-			}
-			else if (sender.IsSpectating())
-			{
-				allowedCommands = SpectatingGameMode.GetAllowedCommands();
-			}
-			else if (sender.IsInBulletHell())
-			{
-				allowedCommands = BulletHellGameMode.GetAllowedCommands();
-			}
-			else if (sender.IsImprisoned())
-			{
-				allowedCommands = PrisonGameMode.GetAllowedCommands();
-			}
-			else if (sender.IsInDodgeball())
-			{
-				allowedCommands = DodgeballGameMode.GetAllowedCommands();
-			}
-			else if (sender.IsTroll())
-			{
-				allowedCommands = TrollGameMode.GetAllowedCommands();
-			}
-			if (allowedCommands.ContainsKey(command.Name) || allowedCommands.ContainsKey("all"))
-			{
-				return true;
-			}
-			else
-			{
-				sender.ReceiveMessage("That command is not allowed while in this game mode".Error());
-				return false;
-			}
+
+			sender.ReceiveMessage("That command is not allowed while in this game mode".Error());
+			return false;
 		}
-		catch
+		catch (Exception ex)
 		{
-			sender.ReceiveMessage("Command settings for this game mode have not been configured yet.".Error());
+			sender.ReceiveMessage("An error occurred while processing the command.".Error());
 			return false;
 		}
 	}
+
 }

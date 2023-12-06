@@ -31,16 +31,16 @@ public class PrisonGameMode : BaseGameMode
 		RemoveConsumables = false
 	};
 
-	static Dictionary<string, bool> AllowedCommands = new Dictionary<string, bool>
+	static HashSet<string> AllowedCommands = new HashSet<string>
 	{
-		{ "ping", true },
-		{ "help", true },
-		{ "legendary", true },
-		{ "jewel", true },
-		{ "points", true },
-		{ "lb ranked", true },
-		{ "bp", true },
-		{ "recount", true }
+		"ping",
+		"help",
+		"legendary",
+		"jewel",
+		"points",
+		"lb ranked",
+		"bp",
+		"recount"
 	};
 
 	public override void Initialize()
@@ -51,7 +51,6 @@ public class PrisonGameMode : BaseGameMode
 		GameEvents.OnPlayerShapeshift += HandleOnShapeshift;
 		GameEvents.OnPlayerStartedCasting += HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerUsedConsumable += HandleOnConsumableUse;
-		GameEvents.OnPlayerBuffed += HandleOnPlayerBuffed;
 		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
 		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
 		GameEvents.OnItemWasThrown += HandleOnItemWasThrown;
@@ -66,7 +65,6 @@ public class PrisonGameMode : BaseGameMode
 		GameEvents.OnPlayerShapeshift -= HandleOnShapeshift;
 		GameEvents.OnPlayerStartedCasting -= HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerUsedConsumable -= HandleOnConsumableUse;
-		GameEvents.OnPlayerBuffed -= HandleOnPlayerBuffed;
 		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
 		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
 		GameEvents.OnItemWasThrown -= HandleOnItemWasThrown;
@@ -79,11 +77,7 @@ public class PrisonGameMode : BaseGameMode
 		if (player.CurrentState != GameModeType) return;
 
 		player.Reset(ResetOptions);
-		if (Helper.BuffPlayer(player, Prefabs.Witch_PigTransformation_Buff, out var buffEntity, 3))
-		{
-			buffEntity.Add<BuffModificationFlagData>();
-			buffEntity.Write(BuffModifiers.PigModifications);
-		}
+		Helper.MakeGhostlySpectator(player);
 
 		if (killer.Has<PlayerCharacter>())
 		{
@@ -152,12 +146,6 @@ public class PrisonGameMode : BaseGameMode
 
 	}
 
-	public override void HandleOnPlayerBuffed(Player player, Entity buffEntity)
-	{
-		if (player.CurrentState != GameModeType) return;
-
-	}
-
 	public override void HandleOnPlayerConnected(Player player)
 	{
 		if (!player.ImprisonInfo.IsImprisoned()) return;
@@ -184,6 +172,8 @@ public class PrisonGameMode : BaseGameMode
 	{
 		if (player.CurrentState != GameModeType) return;
 
+		if (!eventEntity.Exists()) return;
+
 		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
 		var isStructure = damageDealtEvent.Target.Has<CastleHeartConnection>();
 		if (isStructure)
@@ -204,7 +194,7 @@ public class PrisonGameMode : BaseGameMode
 		}
 	}
 
-	public static new Dictionary<string, bool> GetAllowedCommands()
+	public static new HashSet<string> GetAllowedCommands()
 	{
 		return AllowedCommands;
 	}

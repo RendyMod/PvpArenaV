@@ -25,9 +25,9 @@ public class DefaultGameMode : BaseGameMode
 		ResetCooldowns = true,
 		RemoveShapeshifts = false,
 		RemoveConsumables = false,
-		BuffsToIgnore = new List<string>
+		BuffsToIgnore = new HashSet<PrefabGUID>
 		{
-			Helper.TrollBuff.LookupNameString()
+			Helper.TrollBuff
 		}
 	};
 
@@ -123,9 +123,9 @@ public class DefaultGameMode : BaseGameMode
 		GameEvents.OnPlayerReset -= HandleOnPlayerReset;
 	}
 
-	private static Dictionary<string, bool> AllowedCommands = new Dictionary<string, bool>
+	private static HashSet<string> AllowedCommands = new HashSet<string>
 	{
-		{ "all", true },
+		{ "all" },
 	};
 
 	public override void HandleOnPlayerDowned(Player player, Entity killer)
@@ -203,11 +203,7 @@ public class DefaultGameMode : BaseGameMode
 					VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 					if (Helper.BuffPlayer(player, shapeshift.Value, out var buffEntity, Helper.NO_DURATION, false)) //in order to skip the slow cast / slow movement we just apply the shapeshift buff directly
 					{
-						var abilityOwner = buffEntity.Read<AbilityOwner>();
-						abilityOwner.Ability = abilityBarShared.CastAbility;
-						abilityOwner.AbilityGroup = abilityGroupEntity;
-						buffEntity.Write(abilityOwner); //shapeshift buffs forcibly applied without casting have an annoying white icon unless you set this
-
+						Helper.FixIconForShapeshiftBuff(player, buffEntity, abilityGroupEntity.Read<PrefabGUID>());
 						break;
 					} 					
 				}
@@ -225,11 +221,11 @@ public class DefaultGameMode : BaseGameMode
 
 	}
 
-	public void HandleOnPlayerStartedCasting(Player player, Entity eventEntity)
+	public virtual void HandleOnPlayerStartedCasting(Player player, Entity eventEntity)
 	{
 		if (player.CurrentState != this.GameModeType) return;
 
-		var abilityCastStartedEvent = eventEntity.Read<AbilityCastStartedEvent>();
+        var abilityCastStartedEvent = eventEntity.Read<AbilityCastStartedEvent>();
 		if (abilityCastStartedEvent.AbilityGroup.Index <= 0) return;
 
 		var abilityGuid = abilityCastStartedEvent.AbilityGroup.Read<PrefabGUID>();
@@ -259,7 +255,7 @@ public class DefaultGameMode : BaseGameMode
 		}
 	}
 
-	public override void HandleOnPlayerBuffed(Player player, Entity buffEntity)
+	public virtual void HandleOnPlayerBuffed(Player player, Entity buffEntity)
 	{
 		if (player.CurrentState != this.GameModeType) return;
 
@@ -325,6 +321,8 @@ public class DefaultGameMode : BaseGameMode
 	{
 		if (player.CurrentState != this.GameModeType) return;
 
+		if (!eventEntity.Exists()) return;
+
 		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
 		
 		var isStructure = (damageDealtEvent.Target.Has<CastleHeartConnection>());
@@ -351,7 +349,7 @@ public class DefaultGameMode : BaseGameMode
 		Helper.BuffPlayer(player, Prefabs.AB_Shapeshift_NormalForm_Buff, out var buffEntity);
 	}
 
-	public static new Dictionary<string, bool> GetAllowedCommands()
+	public static new HashSet<string> GetAllowedCommands()
 	{
 		return AllowedCommands;
 	}

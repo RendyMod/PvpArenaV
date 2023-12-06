@@ -51,7 +51,6 @@ public class BulletHellGameMode : BaseGameMode
 		GameEvents.OnPlayerShapeshift += HandleOnShapeshift;
 		GameEvents.OnPlayerStartedCasting += HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerUsedConsumable += HandleOnConsumableUse;
-		GameEvents.OnPlayerBuffed += HandleOnPlayerBuffed;
 		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
 		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
 		GameEvents.OnItemWasThrown += HandleOnItemWasThrown;
@@ -66,7 +65,6 @@ public class BulletHellGameMode : BaseGameMode
 		GameEvents.OnPlayerShapeshift -= HandleOnShapeshift;
 		GameEvents.OnPlayerStartedCasting -= HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerUsedConsumable -= HandleOnConsumableUse;
-		GameEvents.OnPlayerBuffed -= HandleOnPlayerBuffed;
 		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
 		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
 		GameEvents.OnItemWasThrown -= HandleOnItemWasThrown;
@@ -86,8 +84,8 @@ public class BulletHellGameMode : BaseGameMode
 		lastReportedInterval = 0;
 	}
 
-	private static Dictionary<string, bool> AllowedCommands = new Dictionary<string, bool>
-	{
+	private static HashSet<string> AllowedCommands = new HashSet<string>
+    {
 
 	};
 
@@ -142,13 +140,6 @@ public class BulletHellGameMode : BaseGameMode
 		if (player.CurrentState != GameModeType) return;
 
 	}
-
-	public override void HandleOnPlayerBuffed(Player player, Entity buffEntity)
-	{
-		if (player.CurrentState != GameModeType) return;
-
-	}
-
 	public override void HandleOnPlayerConnected(Player player)
 	{
 		if (player.CurrentState != GameModeType) return;
@@ -177,12 +168,15 @@ public class BulletHellGameMode : BaseGameMode
 	{
 		if (player.CurrentState != GameModeType) return;
 
-		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
-		var isStructure = damageDealtEvent.Target.Has<CastleHeartConnection>();
-		if (isStructure)
-		{
-			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
-		}
+        if (eventEntity.Exists())
+        {
+            var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
+            var isStructure = damageDealtEvent.Target.Has<CastleHeartConnection>();
+            if (isStructure)
+            {
+                VWorld.Server.EntityManager.DestroyEntity(eventEntity);
+            }
+        }
 	}
 
 	private bool IsOutOfBounds()
@@ -218,7 +212,7 @@ public class BulletHellGameMode : BaseGameMode
 
 	}
 
-	public static new Dictionary<string, bool> GetAllowedCommands()
+	public static new HashSet<string> GetAllowedCommands()
 	{
 		return AllowedCommands;
 	}
