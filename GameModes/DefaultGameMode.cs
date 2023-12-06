@@ -310,11 +310,11 @@ public class DefaultGameMode : BaseGameMode
 
 	}
 
-	public override void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType)
+	public override void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType, int slotIndex)
 	{
 		if (player.CurrentState != this.GameModeType) return;
 
-		Helper.RemoveItemAtSlotFromInventory(player, itemType, eventEntity.Read<DropInventoryItemEvent>().SlotIndex);
+		Helper.RemoveItemAtSlotFromInventory(player, itemType, slotIndex);
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 	}
 

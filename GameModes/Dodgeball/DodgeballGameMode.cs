@@ -44,7 +44,14 @@ public class DodgeballGameMode : BaseGameMode
 		BuffsToIgnore = new HashSet<PrefabGUID> { Prefabs.AB_Shapeshift_Mist_Buff, Prefabs.Buff_General_HideCorpse, Helper.CustomBuff4}
     };
 
-    public DodgeballGameMode()
+	public static Helper.ResetOptions ResetOptionsRemoveGhost { get; set; } = new Helper.ResetOptions
+	{
+		RemoveConsumables = true,
+		RemoveShapeshifts = true,
+		BuffsToIgnore = new HashSet<PrefabGUID> { Helper.CustomBuff4 }
+	};
+
+	public DodgeballGameMode()
 	{
 		
 	}
@@ -225,11 +232,11 @@ public class DodgeballGameMode : BaseGameMode
 		//kill them
 	}
 
-	public override void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType)
+	public override void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType, int slotIndex)
 	{
 		if (player.CurrentState != this.GameModeType) return;
 
-        Helper.RemoveItemAtSlotFromInventory(player, itemType, eventEntity.Read<DropInventoryItemEvent>().SlotIndex);
+        Helper.RemoveItemAtSlotFromInventory(player, itemType, slotIndex);
         VWorld.Server.EntityManager.DestroyEntity(eventEntity);
     }
 
@@ -397,7 +404,7 @@ public class DodgeballGameMode : BaseGameMode
 		{
 			player.Teleport(DodgeballConfig.Config.Team2StartPosition.ToFloat3());
 		}
-		player.Reset(ResetOptions);
+		player.Reset(ResetOptionsRemoveGhost);
         DodgeballHelper.SetPlayerAbilities(player);
         var action = () =>
         {

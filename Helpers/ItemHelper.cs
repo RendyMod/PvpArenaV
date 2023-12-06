@@ -120,6 +120,21 @@ public static partial class Helper
 	public static void RemoveItemAtSlotFromInventory(Player player, PrefabGUID itemPrefab, int itemSlot)
 	{
 		if (Helper.GetPrefabEntityByPrefabGUID(itemPrefab).Has<Relic>())
+		{
+			if (InventoryUtilities.TryGetItemAtSlot(VWorld.Server.EntityManager, player.Character, itemSlot, out InventoryBuffer item))
+			{
+				if (item.ItemEntity._Entity.Exists())
+				{
+					Helper.DestroyEntity(item.ItemEntity._Entity);
+				}
+			}
+		}
+		ClearInventorySlot(player, itemSlot);
+	}
+
+	public static void RemoveAllItemsAtSlotFromInventory(Player player, PrefabGUID itemPrefab, int itemSlot)
+	{
+		if (Helper.GetPrefabEntityByPrefabGUID(itemPrefab).Has<Relic>())
 		{	
 			if (InventoryUtilities.TryGetItemAtSlot(VWorld.Server.EntityManager, player.Character, itemSlot, out InventoryBuffer item))
 			{
@@ -144,7 +159,7 @@ public static partial class Helper
 	{
 		if (InventoryUtilities.TryGetItemSlot(VWorld.Server.EntityManager, player.Character, itemPrefab, out var slot))
 		{
-			RemoveItemAtSlotFromInventory(player, itemPrefab, slot);
+			RemoveAllItemsAtSlotFromInventory(player, itemPrefab, slot);
 		}
 	}
 

@@ -44,10 +44,28 @@ public static class DropInventoryItemSystemPatch
 			if (InventoryUtilities.TryGetItemAtSlot(VWorld.Server.EntityManager, inventoryEntity, dropItemEvent.SlotIndex, out var inventoryBuffer))
 			{
 				var player = PlayerService.GetPlayerFromUser(fromCharacter.User);
-				GameEvents.RaiseItemWasDropped(player, entity, inventoryBuffer.ItemType);
+				GameEvents.RaiseItemWasDropped(player, entity, inventoryBuffer.ItemType, dropItemEvent.SlotIndex);
 			}
 		}
 	}
+}
 
+[HarmonyPatch(typeof(DropItemSystem), nameof(DropItemSystem.OnUpdate))]
+public static class DropItemSystemPatch
+{
+	public static void Prefix(DropItemSystem __instance)
+	{
+		var entities = __instance._EventQuery.ToEntityArray(Allocator.Temp);
+		foreach (var entity in entities)
+		{
+			var dropItemEvent = entity.Read<DropItemAtSlotEvent>();
+			var fromCharacter = entity.Read<FromCharacter>();
+			if (InventoryUtilities.TryGetItemAtSlot(VWorld.Server.EntityManager, fromCharacter.Character, dropItemEvent.SlotIndex, out var inventoryBuffer))
+			{
+				var player = PlayerService.GetPlayerFromUser(fromCharacter.User);
+				GameEvents.RaiseItemWasDropped(player, entity, inventoryBuffer.ItemType, dropItemEvent.SlotIndex);
+			}
+		}
+	}
 }
 

@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using ProjectM;
 using PvpArena.Data;
-using PvpArena.GameModes.CaptureThePancake;
 using PvpArena.Helpers;
 using PvpArena.Models;
 using PvpArena.Services;
@@ -52,7 +51,7 @@ public static class PrisonBreakHelper
 			};
 
 			Timer timer = ActionScheduler.RunActionOnceAfterDelay(action, 5 - countdownNumber);
-			CaptureThePancakeGameMode.Timers.Add(timer);
+			PrisonBreakGameMode.Timers.Add(timer);
 		}
 	}
 
@@ -90,7 +89,7 @@ public static class PrisonBreakHelper
 			{
 				player.RemoveFromClan();
 				player.CurrentState = Player.PlayerState.PrisonBreak;
-				player.Reset(PrisonBreakGameMode.ResetOptions);
+				player.Reset(ResetOptions.FreshMatch);
 				SetDefaultBlood(player, PrisonBreakConfig.Config.DefaultBlood);
 				player.Teleport(PrisonConfig.Config.CellCoordinateList[index].ToFloat3());
 				BuffPlayer(player, Prefabs.AB_Consumable_PhysicalBrew_T02_Buff, out var buffEntity, NO_DURATION);
@@ -143,7 +142,7 @@ public static class PrisonBreakHelper
 
 				var action = () =>
 				{
-					TeleportTeamsToCenter(Teams, 1, TeamSide.East);
+					TeleportTeamsToCenter(Teams, 1, TeamSide.North);
 					Core.prisonBreakGameMode.Dispose();
 					DisposeTimers();
 				};

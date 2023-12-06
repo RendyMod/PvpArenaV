@@ -153,10 +153,11 @@ public class Matchmaking1v1GameMode : BaseGameMode
 		MatchmakingQueue.MatchManager.EndMatch(MatchmakingHelper.GetOpponentForPlayer(player), player, false);
 	}
 
-	public override void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType)
+	public override void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType, int slotIndex)
 	{
 		if (player.CurrentState != GameModeType) return;
 
+		Helper.RemoveItemAtSlotFromInventory(player, itemType, slotIndex);
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 	}
 

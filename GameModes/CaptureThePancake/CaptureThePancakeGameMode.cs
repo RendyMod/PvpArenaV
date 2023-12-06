@@ -910,7 +910,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 	}
 
-	public override void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType)
+	public override void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType, int slotIndex)
 	{
 		if (!player.IsInCaptureThePancake()) return;
 
@@ -918,7 +918,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		
 		if (!prefabEntity.Has<Relic>())
 		{
-			Helper.RemoveItemAtSlotFromInventory(player, itemType, eventEntity.Read<DropInventoryItemEvent>().SlotIndex);
+			Helper.RemoveItemAtSlotFromInventory(player, itemType, slotIndex);
 			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 		}
 	}

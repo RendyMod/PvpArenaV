@@ -75,7 +75,7 @@ public static class GameEvents
 	public delegate void UnitDeathHandler(Entity unit, OnKillCallResult killCallResult);
 	public static event UnitDeathHandler OnUnitDeath;
 
-	public delegate void ItemWasDroppedHandler(Player player, Entity eventEntity, PrefabGUID itemType);
+	public delegate void ItemWasDroppedHandler(Player player, Entity eventEntity, PrefabGUID itemType, int slotIndex);
 	public static event ItemWasDroppedHandler OnItemWasDropped;
 
 	public delegate void PlayerDamageDealtHandler(Player player, Entity eventEntity);
@@ -221,9 +221,9 @@ public static class GameEvents
 		OnPlayerDamageReceived?.Invoke(player, eventEntity);
 	}
 
-	public static void RaiseItemWasDropped(Player closestPlayer, Entity eventEntity, PrefabGUID itemType)
+	public static void RaiseItemWasDropped(Player closestPlayer, Entity eventEntity, PrefabGUID itemType, int slotIndex)
 	{
-		OnItemWasDropped?.Invoke(closestPlayer, eventEntity, itemType);
+		OnItemWasDropped?.Invoke(closestPlayer, eventEntity, itemType, slotIndex);
 	}
 
 	public static void RaisePlayerHitColliderCreated(Player player, Entity hitCollider)

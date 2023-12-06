@@ -27,7 +27,7 @@ public class PrisonBreakGameMode : BaseGameMode
 	public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
 	{
 		RemoveConsumables = false,
-		RemoveShapeshifts = false,
+		RemoveShapeshifts = true,
 		ResetCooldowns = false,
 		BuffsToIgnore = new HashSet<PrefabGUID> { Prefabs.AB_Shapeshift_Mist_Buff, Prefabs.Buff_General_HideCorpse }
 	};
@@ -172,7 +172,8 @@ public class PrisonBreakGameMode : BaseGameMode
 		}
 
 		player.Reset(ResetOptions);
-		Helper.MakeGhostlySpectator(player);
+		var action = () => Helper.MakeGhostlySpectator(player); //when run immediately after reset the mist buff doesn't always get applied
+		ActionScheduler.RunActionOnceAfterDelay(action, .05f);
 		PlayersAlive[player] = false;
 		CheckForWinner();
 	}
@@ -306,11 +307,11 @@ public class PrisonBreakGameMode : BaseGameMode
 
 	}
 
-	public override void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType)
+	public override void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType, int slotIndex)
 	{
 		if (player.CurrentState != GameModeType) return;
 
-		Helper.RemoveItemAtSlotFromInventory(player, itemType, eventEntity.Read<DropInventoryItemEvent>().SlotIndex);
+		Helper.RemoveItemAtSlotFromInventory(player, itemType, slotIndex);
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 	}
 

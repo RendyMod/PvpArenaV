@@ -123,11 +123,11 @@ public class SpectatingGameMode : BaseGameMode
 		Helper.RemoveBuff(player.Character, Prefabs.Admin_Observe_Invisible_Buff);
 	}
 
-	public override void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType)
+	public override void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType, int slotIndex)
 	{
 		if (player.CurrentState != GameModeType) return;
 
-		Helper.RemoveItemAtSlotFromInventory(player, itemType, eventEntity.Read<DropInventoryItemEvent>().SlotIndex);
+		Helper.RemoveItemAtSlotFromInventory(player, itemType, slotIndex);
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 	}
 

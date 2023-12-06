@@ -23,7 +23,7 @@ public abstract class BaseGameMode
 	public abstract void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item);
 	public abstract void HandleOnPlayerConnected(Player player);
 	public abstract void HandleOnPlayerDisconnected(Player player);
-	public abstract void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType);
+	public abstract void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType, int slotIndex);
 	public abstract void HandleOnPlayerDamageDealt(Player player, Entity eventEntity);
 	public abstract void HandleOnPlayerChatCommand(Player player, CommandAttribute command);
     public virtual Player.PlayerState GameModeType { get; }

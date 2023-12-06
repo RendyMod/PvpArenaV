@@ -161,10 +161,11 @@ public class PrisonGameMode : BaseGameMode
 		player.Teleport(PrisonConfig.Config.CellCoordinateList[player.ImprisonInfo.PrisonCellNumber].ToFloat3());
 	}
 
-	public override void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType)
+	public override void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType, int slotIndex)
 	{
 		if (player.CurrentState != GameModeType) return;
 
+		Helper.RemoveItemAtSlotFromInventory(player, itemType, slotIndex);
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 	}
 
