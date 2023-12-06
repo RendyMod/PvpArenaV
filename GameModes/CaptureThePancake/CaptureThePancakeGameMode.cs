@@ -163,7 +163,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		GameEvents.OnPlayerLeftClan += HandleOnPlayerLeftClan;
 		GameEvents.OnUnitBuffed += HandleOnUnitBuffed;
 		GameEvents.OnUnitDeath += HandleOnUnitDeath;
-		GameEvents.OnItemWasThrown += HandleOnItemWasThrown;
+		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
 		GameEvents.OnGameFrameUpdate += HandleOnGameFrameUpdate;
 		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
 		GameEvents.OnPlayerDamageReceived += HandleOnPlayerDamageReceived;
@@ -214,7 +214,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		GameEvents.OnPlayerLeftClan -= HandleOnPlayerLeftClan;
 		GameEvents.OnUnitBuffed -= HandleOnUnitBuffed;
 		GameEvents.OnUnitDeath -= HandleOnUnitDeath;
-		GameEvents.OnItemWasThrown -= HandleOnItemWasThrown;
+		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
 		GameEvents.OnGameFrameUpdate -= HandleOnGameFrameUpdate;
 		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
 		GameEvents.OnPlayerDamageReceived -= HandleOnPlayerDamageReceived;
@@ -910,15 +910,15 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 	}
 
-	public override void HandleOnItemWasThrown(Player closestPlayer, Entity eventEntity)
+	public override void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType)
 	{
-		//we have no guarantee that this is the player that threw it, just that they are close to the item
-		//this should be enough to at least verify the game mode
-		if (!closestPlayer.IsInCaptureThePancake()) return;
+		if (!player.IsInCaptureThePancake()) return;
 
-		var dropItemAroundPositionEvent = eventEntity.Read<DropItemAroundPosition>();
-		if (!dropItemAroundPositionEvent.ItemEntity.Has<Relic>())
+		var prefabEntity = Helper.GetPrefabEntityByPrefabGUID(itemType);
+		
+		if (!prefabEntity.Has<Relic>())
 		{
+			Helper.RemoveItemAtSlotFromInventory(player, itemType, eventEntity.Read<DropInventoryItemEvent>().SlotIndex);
 			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 		}
 	}

@@ -134,7 +134,7 @@ public class DominationGameMode : BaseGameMode
 		GameEvents.OnPlayerKickedFromClan += HandleOnPlayerKickedFromClan;
 		GameEvents.OnPlayerLeftClan += HandleOnPlayerLeftClan;
 		GameEvents.OnUnitBuffed += HandleOnUnitBuffed;
-		GameEvents.OnItemWasThrown += HandleOnItemWasThrown;
+		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
 		GameEvents.OnGameFrameUpdate += HandleOnGameFrameUpdate;
 		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
 
@@ -182,7 +182,7 @@ public class DominationGameMode : BaseGameMode
 		GameEvents.OnPlayerKickedFromClan += HandleOnPlayerKickedFromClan;
 		GameEvents.OnPlayerLeftClan += HandleOnPlayerLeftClan;
 		GameEvents.OnUnitBuffed -= HandleOnUnitBuffed;
-		GameEvents.OnItemWasThrown -= HandleOnItemWasThrown;
+		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
 		GameEvents.OnGameFrameUpdate -= HandleOnGameFrameUpdate;
 		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
 		Teams.Clear();
@@ -532,11 +532,9 @@ public class DominationGameMode : BaseGameMode
 
 	}
 
-	public override void HandleOnItemWasThrown(Player closestPlayer, Entity eventEntity)
+	public override void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType)
 	{
-		//we have no guarantee that this is the player that threw it, just that they are close to the item
-		//this should be enough to at least verify the game mode
-		if (!closestPlayer.IsInDomination()) return;
+		if (!player.IsInDomination()) return;
 
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 	}

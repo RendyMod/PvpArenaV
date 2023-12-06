@@ -127,6 +127,7 @@ public static partial class Helper
 				if (item.ItemEntity._Entity.Exists())
 				{
 					Helper.DestroyEntity(item.ItemEntity._Entity);
+					ClearInventorySlot(player, itemSlot);
 				}
 				else
 				{
@@ -154,6 +155,7 @@ public static partial class Helper
 		return InventoryUtilities.HasItemInInventories(VWorld.Server.EntityManager, inventories, itemPrefab, 1);
 	}
 
+	//this won't get picked up by our current OnDrop listeners -- modify this to use DropInventoryItemEvent in the future
 	public static void DropItemFromInventory(Player player, PrefabGUID item)
 	{
 		var entity = Helper.CreateEntityWithComponents<DropItemAroundPosition, FromCharacter>();

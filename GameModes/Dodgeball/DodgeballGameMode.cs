@@ -60,7 +60,7 @@ public class DodgeballGameMode : BaseGameMode
 		GameEvents.OnPlayerBuffed += HandleOnPlayerBuffed;
 		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
 		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
-		GameEvents.OnItemWasThrown += HandleOnItemWasThrown;
+		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
 		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
 		GameEvents.OnPlayerDamageReceived += HandleOnPlayerDamageReceived;
         GameEvents.OnPlayerInvitedToClan += HandleOnPlayerInvitedToClan;
@@ -105,7 +105,7 @@ public class DodgeballGameMode : BaseGameMode
 		GameEvents.OnPlayerBuffed -= HandleOnPlayerBuffed;
 		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
 		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
-		GameEvents.OnItemWasThrown -= HandleOnItemWasThrown;
+		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
 		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
 		GameEvents.OnPlayerDamageReceived -= HandleOnPlayerDamageReceived;
         GameEvents.OnPlayerInvitedToClan -= HandleOnPlayerInvitedToClan;
@@ -225,12 +225,13 @@ public class DodgeballGameMode : BaseGameMode
 		//kill them
 	}
 
-	public override void HandleOnItemWasThrown(Player player, Entity eventEntity)
+	public override void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType)
 	{
 		if (player.CurrentState != this.GameModeType) return;
 
-		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
-	}
+        Helper.RemoveItemAtSlotFromInventory(player, itemType, eventEntity.Read<DropInventoryItemEvent>().SlotIndex);
+        VWorld.Server.EntityManager.DestroyEntity(eventEntity);
+    }
 
 	public void HandleOnPlayerDamageReceived(Player player, Entity eventEntity)
 	{

@@ -101,7 +101,7 @@ public class DefaultGameMode : BaseGameMode
 		GameEvents.OnPlayerBuffed += HandleOnPlayerBuffed;
 		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
 		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
-		GameEvents.OnItemWasThrown += HandleOnItemWasThrown;
+		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
 		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
 		GameEvents.OnPlayerDamageReported += HandleOnPlayerDamageReported;
 		GameEvents.OnPlayerReset += HandleOnPlayerReset;
@@ -117,7 +117,7 @@ public class DefaultGameMode : BaseGameMode
 		GameEvents.OnPlayerBuffed -= HandleOnPlayerBuffed;
 		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
 		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
-		GameEvents.OnItemWasThrown -= HandleOnItemWasThrown;
+		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
 		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
 		GameEvents.OnPlayerDamageReported -= HandleOnPlayerDamageReported;
 		GameEvents.OnPlayerReset -= HandleOnPlayerReset;
@@ -310,10 +310,11 @@ public class DefaultGameMode : BaseGameMode
 
 	}
 
-	public override void HandleOnItemWasThrown(Player player, Entity eventEntity)
+	public override void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType)
 	{
 		if (player.CurrentState != this.GameModeType) return;
 
+		Helper.RemoveItemAtSlotFromInventory(player, itemType, eventEntity.Read<DropInventoryItemEvent>().SlotIndex);
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 	}
 

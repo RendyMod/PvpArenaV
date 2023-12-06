@@ -31,6 +31,7 @@ using static ProjectM.SpawnBuffsAuthoring.SpawnBuffElement_Editor;
 using ProjectM.Shared.Systems;
 using static DamageRecorderService;
 using Cpp2IL.Core.Extensions;
+using static Il2CppSystem.Xml.XmlWellFormedWriter.AttributeValueCache;
 
 namespace PvpArena.GameModes.PrisonBreak;
 
@@ -90,7 +91,7 @@ public class PrisonBreakGameMode : BaseGameMode
 		GameEvents.OnPlayerKickedFromClan += HandleOnPlayerKickedFromClan;
 		GameEvents.OnPlayerLeftClan += HandleOnPlayerLeftClan;
 		GameEvents.OnUnitDeath += HandleOnUnitDeath;
-		GameEvents.OnItemWasThrown += HandleOnItemWasThrown;
+		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
 		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
 
 		stopwatch.Start();
@@ -120,7 +121,7 @@ public class PrisonBreakGameMode : BaseGameMode
 		GameEvents.OnPlayerKickedFromClan -= HandleOnPlayerKickedFromClan;
 		GameEvents.OnPlayerLeftClan -= HandleOnPlayerLeftClan;
 		GameEvents.OnUnitDeath -= HandleOnUnitDeath;
-		GameEvents.OnItemWasThrown -= HandleOnItemWasThrown;
+		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
 		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
 
 		PlayersAlive.Clear();
@@ -307,12 +308,11 @@ public class PrisonBreakGameMode : BaseGameMode
 
 	}
 
-	public override void HandleOnItemWasThrown(Player closestPlayer, Entity eventEntity)
+	public override void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType)
 	{
-		//we have no guarantee that this is the player that threw it, just that they are close to the item
-		//this should be enough to at least verify the game mode
-		if (closestPlayer.CurrentState != GameModeType) return;
+		if (player.CurrentState != GameModeType) return;
 
+		Helper.RemoveItemAtSlotFromInventory(player, itemType, eventEntity.Read<DropInventoryItemEvent>().SlotIndex);
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 	}
 

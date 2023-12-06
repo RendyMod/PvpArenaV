@@ -53,7 +53,7 @@ public class BulletHellGameMode : BaseGameMode
 		GameEvents.OnPlayerUsedConsumable += HandleOnConsumableUse;
 		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
 		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
-		GameEvents.OnItemWasThrown += HandleOnItemWasThrown;
+		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
 		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
 		GameEvents.OnGameFrameUpdate += HandleOnGameFrameUpdate;
 	}
@@ -67,7 +67,7 @@ public class BulletHellGameMode : BaseGameMode
 		GameEvents.OnPlayerUsedConsumable -= HandleOnConsumableUse;
 		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
 		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
-		GameEvents.OnItemWasThrown -= HandleOnItemWasThrown;
+		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
 		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
 		GameEvents.OnGameFrameUpdate -= HandleOnGameFrameUpdate;
 		HasStarted = false;
@@ -157,12 +157,13 @@ public class BulletHellGameMode : BaseGameMode
         BulletHellManager.EndMatch(this);
 	}
 
-	public override void HandleOnItemWasThrown(Player player, Entity eventEntity)
+	public override void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType)
 	{
 		if (player.CurrentState != GameModeType) return;
 
-		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
-	}
+        Helper.RemoveItemAtSlotFromInventory(player, itemType, eventEntity.Read<DropInventoryItemEvent>().SlotIndex);
+        VWorld.Server.EntityManager.DestroyEntity(eventEntity);
+    }
 
 	public override void HandleOnPlayerDamageDealt(Player player, Entity eventEntity)
 	{

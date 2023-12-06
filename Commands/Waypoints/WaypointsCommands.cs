@@ -67,7 +67,7 @@ public class WaypointsCommands
 		}
 	}
 
-	[Command("tp-list", description: "Displays the waypoints list", adminOnly: false, includeInHelp: true, category: "Teleport")]
+	[Command("tp-list", description: "Displays the waypoints list", adminOnly: false, includeInHelp: true, aliases: new string[] { "tp list", "tplist" }, category: "Teleport")]
 	public void ListWaypointsCommand (Player sender)
 	{
 		WaypointManager.LoadWaypoints();

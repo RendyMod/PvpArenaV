@@ -53,7 +53,7 @@ public class Matchmaking1v1GameMode : BaseGameMode
 		GameEvents.OnPlayerUsedConsumable += HandleOnConsumableUse;
 		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
 		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
-		GameEvents.OnItemWasThrown += HandleOnItemWasThrown;
+		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
 		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
 	}
 	public override void Dispose()
@@ -65,7 +65,7 @@ public class Matchmaking1v1GameMode : BaseGameMode
 		GameEvents.OnPlayerUsedConsumable -= HandleOnConsumableUse;
 		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
 		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
-		GameEvents.OnItemWasThrown -= HandleOnItemWasThrown;
+		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
 		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
 	}
 	public override void HandleOnPlayerDowned(Player player, Entity killer)
@@ -153,7 +153,7 @@ public class Matchmaking1v1GameMode : BaseGameMode
 		MatchmakingQueue.MatchManager.EndMatch(MatchmakingHelper.GetOpponentForPlayer(player), player, false);
 	}
 
-	public override void HandleOnItemWasThrown(Player player, Entity eventEntity)
+	public override void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType)
 	{
 		if (player.CurrentState != GameModeType) return;
 

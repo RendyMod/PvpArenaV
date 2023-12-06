@@ -30,14 +30,14 @@ public class SpectatingGameMode : BaseGameMode
 		GameEvents.OnPlayerDeath += HandleOnPlayerDeath;
 		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
 		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
-		GameEvents.OnItemWasThrown += HandleOnItemWasThrown;
+		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
 	}
 	public override void Dispose()
 	{
 		GameEvents.OnPlayerDeath -= HandleOnPlayerDeath;
 		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
 		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
-		GameEvents.OnItemWasThrown -= HandleOnItemWasThrown;
+		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
 	}
 
 	private static HashSet<string> AllowedCommands = new HashSet<string>
@@ -123,10 +123,11 @@ public class SpectatingGameMode : BaseGameMode
 		Helper.RemoveBuff(player.Character, Prefabs.Admin_Observe_Invisible_Buff);
 	}
 
-	public override void HandleOnItemWasThrown(Player player, Entity eventEntity)
+	public override void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType)
 	{
 		if (player.CurrentState != GameModeType) return;
 
+		Helper.RemoveItemAtSlotFromInventory(player, itemType, eventEntity.Read<DropInventoryItemEvent>().SlotIndex);
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 	}
 

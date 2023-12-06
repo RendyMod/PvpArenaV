@@ -7,50 +7,14 @@ using PvpArena.Services;
 using PvpArena.GameModes;
 using PvpArena.Models;
 using System;
+using PvpArena.Data;
+using PvpArena.Listeners;
+using Unity.Entities;
+using ProjectM.Network;
 
 namespace PvpArena.Patches;
 
 
-
-
-[HarmonyPatch(typeof(DropItemThrowSystem), nameof(DropItemThrowSystem.OnUpdate))]
-public static class DropItemThrowSystemPatch
-{
-	public static void Prefix(DropItemThrowSystem __instance)
-	{
-		var entities = __instance._EventQuery.ToEntityArray(Allocator.Temp);
-		foreach (var entity in entities)
-		{
-			try
-			{
-				var dropItemAroundPosition = entity.Read<DropItemAroundPosition>();
-				var onlinePlayers = PlayerService.OnlinePlayers.Keys;
-				Player closestPlayerToEvent = null;
-				foreach (var player in onlinePlayers)
-				{
-					if (math.all(math.abs(player.Position - dropItemAroundPosition.Position) < new float3(3f)))
-					{
-						closestPlayerToEvent = player;
-						break;
-					}
-				}
-				if (closestPlayerToEvent == null)
-				{
-					VWorld.Server.EntityManager.DestroyEntity(entity);
-					continue;
-				}
-				else
-				{
-					GameEvents.RaiseItemWasThrown(closestPlayerToEvent, entity);
-				}
-			}
-			catch (Exception e)
-			{
-				Plugin.PluginLog.LogInfo(e.ToString());
-			}
-		}
-	}
-}
 
 /*[HarmonyPatch(typeof(ItemPickupSystem), nameof(ItemPickupSystem.OnUpdate))]
 public static class ItemPickupSystemPatch
@@ -66,21 +30,24 @@ public static class ItemPickupSystemPatch
 	}
 }*/
 
-/*[HarmonyPatch(typeof(DropInventoryItemSystem), nameof(DropInventoryItemSystem.OnUpdate))]
+[HarmonyPatch(typeof(DropInventoryItemSystem), nameof(DropInventoryItemSystem.OnUpdate))]
 public static class DropInventoryItemSystemPatch
 {
 	public static void Prefix(DropInventoryItemSystem __instance)
 	{
-		__instance._Query.LogComponentTypes();
 		var entities = __instance._Query.ToEntityArray(Allocator.Temp);
 		foreach (var entity in entities)
 		{
 			var dropItemEvent = entity.Read<DropInventoryItemEvent>();
-			Unity.Debug.Log(dropItemEvent.SlotIndex);
-			Helper.networkIdSystem._NetworkIdToEntityMap[dropItemEvent.Inventory].LogComponentTypes();
-			entity.LogComponentTypes();
+			var inventoryEntity = Core.networkIdSystem._NetworkIdToEntityMap[dropItemEvent.Inventory];
+			var fromCharacter = entity.Read<FromCharacter>();
+			if (InventoryUtilities.TryGetItemAtSlot(VWorld.Server.EntityManager, inventoryEntity, dropItemEvent.SlotIndex, out var inventoryBuffer))
+			{
+				var player = PlayerService.GetPlayerFromUser(fromCharacter.User);
+				GameEvents.RaiseItemWasDropped(player, entity, inventoryBuffer.ItemType);
+			}
 		}
 	}
 
 }
-*/
+
