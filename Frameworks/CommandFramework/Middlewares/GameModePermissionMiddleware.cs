@@ -37,7 +37,7 @@ public class GameModePermissionMiddleware : IMiddleware
 			{ Player.PlayerState.Imprisoned, PrisonGameMode.GetAllowedCommands() },
 			{ Player.PlayerState.Dodgeball, DodgeballGameMode.GetAllowedCommands() },
 			{ Player.PlayerState.Troll, TrollGameMode.GetAllowedCommands() },
-			{ Player.PlayerState.PrisonBreak, TrollGameMode.GetAllowedCommands() }
+			{ Player.PlayerState.PrisonBreak, PrisonBreakGameMode.GetAllowedCommands() }
 			// Add more game modes and their corresponding allowed commands here
 		};
 	}

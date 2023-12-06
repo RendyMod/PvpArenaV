@@ -309,7 +309,6 @@ public static partial class Helper
 			if (abilityGroupSlotEntity.Exists())
 			{
 				var abilityGroupSlotData = abilityGroupSlotEntity.Read<AbilityGroupSlot>();
-                if (abilityGroupSlotData.SlotId > 7) return;
 				var abilityGroupSlotStateEntity = abilityGroupSlotData.StateEntity._Entity;
 				if (abilityGroupSlotStateEntity.Exists())
 				{

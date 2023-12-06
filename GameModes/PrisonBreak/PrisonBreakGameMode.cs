@@ -43,16 +43,16 @@ public class PrisonBreakGameMode : BaseGameMode
 		{Prefabs.AB_Shapeshift_BloodMend_Group, true }
 	};
 
-	public static Dictionary<string, bool> AllowedCommands = new Dictionary<string, bool>
+	public static HashSet<string> AllowedCommands = new HashSet<string>
 	{
-		{ "ping", true },
-		{ "help", true },
-		{ "legendary", true },
-		{ "jewel", true },
-		{ "forfeit", true },
-		{ "points", true },
-		{ "lb ranked", true },
-		{ "bp", true },
+		"ping",
+		"help",
+		"legendary",
+		"jewel",
+		"forfeit",
+		"points",
+		"lb ranked",
+		"bp",
 	};
 
 	public static List<Timer> Timers = new List<Timer>();
@@ -167,7 +167,8 @@ public class PrisonBreakGameMode : BaseGameMode
 
 		player.Reset(ResetOptions);
 		var action = () => Helper.MakeGhostlySpectator(player); //when run immediately after reset the mist buff doesn't always get applied
-		ActionScheduler.RunActionOnceAfterDelay(action, .05f);
+		var timer = ActionScheduler.RunActionOnceAfterDelay(action, .05f);
+		Timers.Add(timer);
 		PlayersAlive[player] = false;
 		CheckForWinner();
 	}
@@ -319,7 +320,7 @@ public class PrisonBreakGameMode : BaseGameMode
 		}
 	}
 
-	public static new Dictionary<string, bool> GetAllowedCommands()
+	public static new HashSet<string> GetAllowedCommands()
 	{
 		return AllowedCommands;
 	}

@@ -240,7 +240,7 @@ public class DodgeballGameMode : BaseGameMode
 		float damagePercent;
 		if (spell == Prefabs.EH_Monster_EnergyBeam_Active && !IsGhost[player])
 		{
-			damagePercent = 2f;
+			damagePercent = 4f;
 			var damageDealtEventNew = new DealDamageEvent(damageDealtEvent.Target, damageDealtEvent.MainType, damageDealtEvent.MainFactor, damageDealtEvent.ResourceModifier, damageDealtEvent.MaterialModifiers, damageDealtEvent.SpellSource, 0, damagePercent, damageDealtEvent.Modifier, damageDealtEvent.DealDamageFlags);
 			eventEntity.Write(damageDealtEventNew);
 		}

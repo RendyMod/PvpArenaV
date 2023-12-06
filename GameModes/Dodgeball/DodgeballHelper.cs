@@ -276,7 +276,14 @@ public static class DodgeballHelper
 		{
 			float x = isHorizontal ? startCoordX + i * spacing - (team.Count - 1) * spacing / 2 : startCoordX;
 			float z = isHorizontal ? startCoordZ : startCoordZ + i * spacing - (team.Count - 1) * spacing / 2;
-			team[i].Teleport(new float3(x, team[i].Position.y, z));
+			if (team[i].IsOnline)
+			{
+				team[i].Teleport(new float3(x, team[i].Position.y, z));
+			}
+			else
+			{
+				team[i].Teleport(new float3(0, 0, 0));
+			}
 		}
 	}
 
