@@ -92,7 +92,7 @@ public static class UnitFactory
 
 	public static bool TryGetSpawnedUnitFromEntity(Entity unitEntity, out SpawnedUnit unit)
 	{
-		if (unitEntity.Has<ResistanceData>())
+		if (unitEntity.Has<ResistanceData>() && unitEntity.Has<CanFly>())
 		{
 			var resistanceData = unitEntity.Read<ResistanceData>();
 			var hash = (int)(resistanceData.FireResistance_RedcuedIgiteChancePerRating / 1000);

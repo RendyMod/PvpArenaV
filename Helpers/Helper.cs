@@ -182,6 +182,10 @@ public static partial class Helper
 
 	public static void DestroyEntity(Entity entity)
 	{
+		if (entity.Has<CanFly>())
+		{
+			entity.Remove<CanFly>(); //this prevents a unit from being respawned when killed this way
+		}
 		StatChangeUtility.KillOrDestroyEntity(VWorld.Server.EntityManager, entity, entity, entity, 0, true);
 	}
 

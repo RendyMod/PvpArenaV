@@ -230,7 +230,7 @@ public static class CaptureThePancakeHelper
 				}
 				else
 				{
-					if (entity.Has<ResistanceData>() && entity.Read<ResistanceData>().GarlicResistance_IncreasedExposureFactorPerRating == StringToFloatHash("pancake"))
+					if (UnitFactory.HasCategory(entity, "pancake"))
 					{
 						Helper.DestroyEntity(entity);
 					}
@@ -447,14 +447,14 @@ public static class CaptureThePancakeHelper
 					Helper.RespawnPlayer(player, player.Position);
 				}
 			}
-			KillPreviousEntities();
-			if (winner > 0)
+			if (winner > 0 && CaptureThePancakeGameMode.Teams.Count > 0)
 			{
 				var action = () => {
 					TeleportTeamsToCenter(CaptureThePancakeGameMode.Teams, winner, TeamSide.East);
 					Core.captureThePancakeGameMode.Dispose();
 					UnitFactory.DisposeTimers("pancake");
 					DisposeTimers();
+					KillPreviousEntities();
 				};
 				ActionScheduler.RunActionOnceAfterDelay(action, .1);
 			}
@@ -463,6 +463,7 @@ public static class CaptureThePancakeHelper
 				Core.captureThePancakeGameMode.Dispose();
 				UnitFactory.DisposeTimers("pancake");
 				DisposeTimers();
+				KillPreviousEntities();
 			}
 		}
 		catch (Exception e)
@@ -470,6 +471,7 @@ public static class CaptureThePancakeHelper
 			Core.captureThePancakeGameMode.Dispose();
 			UnitFactory.DisposeTimers("pancake");
 			DisposeTimers();
+			KillPreviousEntities();
 			Plugin.PluginLog.LogError(e.ToString());
 		}
 	}

@@ -21,5 +21,5 @@ $newVersion = "$major.$minor.$build"
 # Replace the version number in the .csproj file
 $newCsprojContent = $csprojContent -replace $pattern, "<Version>$newVersion</Version>"
 
-# Write the updated content back to the .csproj file
-Set-Content $csprojFilePath -Value $newCsprojContent
+# Write the updated content back to the .csproj file using WriteAllText to preserve line endings
+[System.IO.File]::WriteAllText($csprojFilePath, $newCsprojContent)
