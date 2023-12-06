@@ -11,6 +11,7 @@ using PvpArena.Data;
 using PvpArena.Listeners;
 using Unity.Entities;
 using ProjectM.Network;
+using UnityEngine.Jobs;
 
 namespace PvpArena.Patches;
 
@@ -47,6 +48,7 @@ public static class DropInventoryItemSystemPatch
 				GameEvents.RaiseItemWasDropped(player, entity, inventoryBuffer.ItemType, dropItemEvent.SlotIndex);
 			}
 		}
+		entities.Dispose();
 	}
 }
 
@@ -66,6 +68,21 @@ public static class DropItemSystemPatch
 				GameEvents.RaiseItemWasDropped(player, entity, inventoryBuffer.ItemType, dropItemEvent.SlotIndex);
 			}
 		}
+		entities.Dispose();
+
+		//for now this behavior is universal
+		entities = __instance._EventQuery2.ToEntityArray(Allocator.Temp);
+		foreach (var entity in entities)
+		{
+			var dropEquippedItemEvent = entity.Read<DropEquippedItemEvent>();
+			var fromCharacter = entity.Read<FromCharacter>();
+			var player = PlayerService.GetPlayerFromUser(fromCharacter.User);
+			var equipment = player.Character.Read<Equipment>();
+			equipment.UnequipItem(dropEquippedItemEvent.EquipmentType);
+			player.Character.Write(equipment);
+			entity.Destroy();
+		}
+		entities.Dispose();
 	}
 }
 

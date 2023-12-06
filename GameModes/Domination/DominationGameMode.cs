@@ -31,7 +31,6 @@ public class DominationGameMode : BaseGameMode
 		BuffsToIgnore = buffsToIgnore
 	};
 	public static bool MatchActive = false;
-	private static bool Overtime = false;
 
 	public static Dictionary<int, List<Player>> Teams = new Dictionary<int, List<Player>>();
 	private static List<CapturePoint> CapturePoints = new List<CapturePoint>();
@@ -121,22 +120,18 @@ public class DominationGameMode : BaseGameMode
 				}
 			}
 		}
-
+		BaseInitialize();
 		GameEvents.OnPlayerRespawn += HandleOnPlayerRespawn;
 		GameEvents.OnPlayerDowned += HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath += HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift += HandleOnShapeshift;
 		GameEvents.OnPlayerUsedConsumable += HandleOnConsumableUse;
 		GameEvents.OnPlayerBuffed += HandleOnPlayerBuffed;
-		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
-		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
 		GameEvents.OnPlayerInvitedToClan += HandleOnPlayerInvitedToClan;
 		GameEvents.OnPlayerKickedFromClan += HandleOnPlayerKickedFromClan;
 		GameEvents.OnPlayerLeftClan += HandleOnPlayerLeftClan;
 		GameEvents.OnUnitBuffed += HandleOnUnitBuffed;
-		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
 		GameEvents.OnGameFrameUpdate += HandleOnGameFrameUpdate;
-		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
 
 		foreach (var timer in Timers)
 		{
@@ -170,21 +165,18 @@ public class DominationGameMode : BaseGameMode
 	public override void Dispose()
 	{
 		MatchActive = false;
+		BaseDispose();
 		GameEvents.OnPlayerRespawn -= HandleOnPlayerRespawn;
 		GameEvents.OnPlayerDowned -= HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath -= HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift -= HandleOnShapeshift;
 		GameEvents.OnPlayerUsedConsumable -= HandleOnConsumableUse;
 		GameEvents.OnPlayerBuffed -= HandleOnPlayerBuffed;
-		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
-		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
 		GameEvents.OnPlayerInvitedToClan += HandleOnPlayerInvitedToClan;
 		GameEvents.OnPlayerKickedFromClan += HandleOnPlayerKickedFromClan;
 		GameEvents.OnPlayerLeftClan += HandleOnPlayerLeftClan;
 		GameEvents.OnUnitBuffed -= HandleOnUnitBuffed;
-		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
 		GameEvents.OnGameFrameUpdate -= HandleOnGameFrameUpdate;
-		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
 		Teams.Clear();
 		playerKills.Clear();
 		playerDeaths.Clear();
@@ -480,12 +472,6 @@ public class DominationGameMode : BaseGameMode
 		}
 	}
 
-	public override void HandleOnPlayerDisconnected(Player player)
-	{
-		if (player.CurrentState != GameModeType) return;
-
-	}
-
 	public void HandleOnPlayerInvitedToClan(Player player, Entity eventEntity)
 	{
 		if (player.CurrentState != GameModeType) return;
@@ -530,29 +516,6 @@ public class DominationGameMode : BaseGameMode
 		if (player.CurrentState != GameModeType) return;
 
 
-	}
-
-	public override void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType, int slotIndex)
-	{
-		if (!player.IsInDomination()) return;
-
-		Helper.RemoveItemAtSlotFromInventory(player, itemType, slotIndex);
-		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
-	}
-
-	public override void HandleOnPlayerDamageDealt(Player player, Entity eventEntity)
-	{
-		if (player.CurrentState != GameModeType) return;
-
-		if (!eventEntity.Exists()) return;
-
-		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
-
-		var isStructure = damageDealtEvent.Target.Has<CastleHeartConnection>();
-		if (isStructure)
-		{
-			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
-		}
 	}
 
 	public void HandleOnGameFrameUpdate()

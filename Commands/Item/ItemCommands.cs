@@ -15,24 +15,29 @@ using PvpArena.Helpers;
 internal static class ItemCommands
 {
 	[Command("give-gearset", adminOnly: true)]
-	public static void GiveGearSetCommand (Player sender, Player _foundPlayer, string kitType)
+	public static void GiveGearSetCommand (Player sender, string kitType, Player _foundPlayer = null)
 	{
+		Player targetPlayer = sender;
+		if (_foundPlayer != null)
+		{
+			targetPlayer = _foundPlayer;
+		}
 		if (!ItemSet.ItemSetDictionary.ContainsKey(kitType.ToLower()))
 			return;
 
 		ItemSet itemSetToSpawn = ItemSet.ItemSetDictionary[kitType.ToLower()];
 
-		Helper.AddItemToInventory(_foundPlayer.Character, itemSetToSpawn.chestPrefab, 1,
+		Helper.AddItemToInventory(targetPlayer.Character, itemSetToSpawn.chestPrefab, 1,
 			out Entity itemChestEntity);
-		Helper.AddItemToInventory(_foundPlayer.Character, itemSetToSpawn.glovesPrefab, 1,
+		Helper.AddItemToInventory(targetPlayer.Character, itemSetToSpawn.glovesPrefab, 1,
 			out Entity itemGlovesEntity);
-		Helper.AddItemToInventory(_foundPlayer.Character, itemSetToSpawn.legsPrefab, 1,
+		Helper.AddItemToInventory(targetPlayer.Character, itemSetToSpawn.legsPrefab, 1,
 			out Entity itemLegsEntity);
-		Helper.AddItemToInventory(_foundPlayer.Character, itemSetToSpawn.bootsPrefab, 1,
+		Helper.AddItemToInventory(targetPlayer.Character, itemSetToSpawn.bootsPrefab, 1,
 			out Entity itemBootsEntity);
 
 		sender.ReceiveMessage(("Gave: " + kitType.Emphasize() + " set to " +
-		           _foundPlayer.Name.Emphasize() + ".").Success());
+				   targetPlayer.Name.Emphasize() + ".").Success());
 	}
 
 	[Command("give-secretweapons", adminOnly: true)]

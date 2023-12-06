@@ -42,11 +42,6 @@ public static class OnUserDisconnectedPatch
 					}
 
 					MatchmakingQueue.Leave(Player);
-
-					if (!Player.IsImprisoned())
-					{
-						Player.Teleport(new float3(0, 0, 0));
-					}
 				}
 			}
 		}

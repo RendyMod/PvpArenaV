@@ -27,17 +27,13 @@ public class SpectatingGameMode : BaseGameMode
 
 	public override void Initialize()
 	{
+		BaseInitialize();
 		GameEvents.OnPlayerDeath += HandleOnPlayerDeath;
-		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
-		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
-		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
 	}
 	public override void Dispose()
 	{
+		BaseDispose();
 		GameEvents.OnPlayerDeath -= HandleOnPlayerDeath;
-		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
-		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
-		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
 	}
 
 	private static HashSet<string> AllowedCommands = new HashSet<string>
@@ -105,44 +101,13 @@ public class SpectatingGameMode : BaseGameMode
 
 	}
 
-	public override void HandleOnPlayerConnected(Player player)
-	{
-		if (player.CurrentState != GameModeType) return;
-
-		if (PvpArenaConfig.Config.UseCustomSpawnLocation)
-		{
-			player.Teleport(PvpArenaConfig.Config.CustomSpawnLocation.ToFloat3());
-		}
-	}
-
 	public override void HandleOnPlayerDisconnected(Player player)
 	{
 		if (player.CurrentState != GameModeType) return;
 
+		base.HandleOnPlayerDisconnected(player);
 		player.CurrentState = Player.PlayerState.Normal;
 		Helper.RemoveBuff(player.Character, Prefabs.Admin_Observe_Invisible_Buff);
-	}
-
-	public override void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType, int slotIndex)
-	{
-		if (player.CurrentState != GameModeType) return;
-
-		Helper.RemoveItemAtSlotFromInventory(player, itemType, slotIndex);
-		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
-	}
-
-	public override void HandleOnPlayerDamageDealt(Player player, Entity eventEntity)
-	{
-		if (player.CurrentState != GameModeType) return;
-
-		if (!eventEntity.Exists()) return;
-
-		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
-		var isStructure = (damageDealtEvent.Target.Has<CastleHeartConnection>());
-		if (isStructure)
-		{
-			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
-		}
 	}
 
 	public static new HashSet<string> GetAllowedCommands()

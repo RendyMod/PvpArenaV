@@ -146,6 +146,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 	public override void Initialize()
 	{
 		MatchActive = true;
+		BaseInitialize();
 		GameEvents.OnPlayerRespawn += HandleOnPlayerRespawn;
 		GameEvents.OnPlayerDowned += HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath += HandleOnPlayerDeath;
@@ -156,16 +157,12 @@ public class CaptureThePancakeGameMode : BaseGameMode
         GameEvents.OnPlayerWillLoseGallopBuff += HandleOnPlayerWillLoseGallopBuff;
 		GameEvents.OnPlayerMounted += HandleOnPlayerMounted;
 		GameEvents.OnPlayerDismounted += HandleOnPlayerDismounted;
-		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
-		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
 		GameEvents.OnPlayerInvitedToClan += HandleOnPlayerInvitedToClan;
 		GameEvents.OnPlayerKickedFromClan += HandleOnPlayerKickedFromClan;
 		GameEvents.OnPlayerLeftClan += HandleOnPlayerLeftClan;
 		GameEvents.OnUnitBuffed += HandleOnUnitBuffed;
 		GameEvents.OnUnitDeath += HandleOnUnitDeath;
-		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
 		GameEvents.OnGameFrameUpdate += HandleOnGameFrameUpdate;
-		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
 		GameEvents.OnPlayerDamageReceived += HandleOnPlayerDamageReceived;
         GameEvents.OnDelayedSpawn += HandleOnDelayedSpawnEvent;
         GameEvents.OnPlayerStartedCasting += HandleOnPlayerStartedCasting;
@@ -197,6 +194,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 	public override void Dispose()
 	{
 		MatchActive = false;
+		BaseDispose();
 		GameEvents.OnPlayerRespawn -= HandleOnPlayerRespawn;
 		GameEvents.OnPlayerDowned -= HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath -= HandleOnPlayerDeath;
@@ -207,16 +205,12 @@ public class CaptureThePancakeGameMode : BaseGameMode
         GameEvents.OnPlayerWillLoseGallopBuff -= HandleOnPlayerWillLoseGallopBuff;
 		GameEvents.OnPlayerMounted -= HandleOnPlayerMounted;
 		GameEvents.OnPlayerDismounted -= HandleOnPlayerDismounted;
-		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
-		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
 		GameEvents.OnPlayerInvitedToClan -= HandleOnPlayerInvitedToClan;
 		GameEvents.OnPlayerKickedFromClan -= HandleOnPlayerKickedFromClan;
 		GameEvents.OnPlayerLeftClan -= HandleOnPlayerLeftClan;
 		GameEvents.OnUnitBuffed -= HandleOnUnitBuffed;
 		GameEvents.OnUnitDeath -= HandleOnUnitDeath;
-		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
 		GameEvents.OnGameFrameUpdate -= HandleOnGameFrameUpdate;
-		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
 		GameEvents.OnPlayerDamageReceived -= HandleOnPlayerDamageReceived;
         GameEvents.OnDelayedSpawn -= HandleOnDelayedSpawnEvent;
         GameEvents.OnPlayerStartedCasting -= HandleOnPlayerStartedCasting;
@@ -765,6 +759,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		if (player.CurrentState != this.GameModeType) return;
 
 		Helper.DestroyEntity(player.Character);
+		base.HandleOnPlayerDisconnected(player);
 	}
 
 	public void HandleOnPlayerWillLoseGallopBuff(Player player, Entity eventEntity)

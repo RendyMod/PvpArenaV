@@ -59,16 +59,13 @@ public class DodgeballGameMode : BaseGameMode
 	public override void Initialize()
 	{
 		/*GameEvents.OnPlayerRespawn += HandleOnPlayerRespawn;*/
+		BaseInitialize();
 		GameEvents.OnPlayerDowned += HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath += HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift += HandleOnShapeshift;
 		GameEvents.OnPlayerStartedCasting += HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerUsedConsumable += HandleOnConsumableUse;
 		GameEvents.OnPlayerBuffed += HandleOnPlayerBuffed;
-		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
-		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
-		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
-		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
 		GameEvents.OnPlayerDamageReceived += HandleOnPlayerDamageReceived;
         GameEvents.OnPlayerInvitedToClan += HandleOnPlayerInvitedToClan;
         GameEvents.OnPlayerLeftClan += HandleOnPlayerLeftClan;
@@ -104,16 +101,13 @@ public class DodgeballGameMode : BaseGameMode
 	public override void Dispose()
 	{
 		/*GameEvents.OnPlayerRespawn -= HandleOnPlayerRespawn;*/
+		BaseDispose();
 		GameEvents.OnPlayerDowned -= HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath -= HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift -= HandleOnShapeshift;
 		GameEvents.OnPlayerStartedCasting -= HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerUsedConsumable -= HandleOnConsumableUse;
 		GameEvents.OnPlayerBuffed -= HandleOnPlayerBuffed;
-		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
-		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
-		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
-		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
 		GameEvents.OnPlayerDamageReceived -= HandleOnPlayerDamageReceived;
         GameEvents.OnPlayerInvitedToClan -= HandleOnPlayerInvitedToClan;
         GameEvents.OnPlayerLeftClan -= HandleOnPlayerLeftClan;
@@ -219,9 +213,13 @@ public class DodgeballGameMode : BaseGameMode
 	{
 		if (player.CurrentState != this.GameModeType) return;
 
-		if (PvpArenaConfig.Config.UseCustomSpawnLocation)
+		if (player.MatchmakingTeam == 1)
 		{
-			player.Teleport(PvpArenaConfig.Config.CustomSpawnLocation.ToFloat3()); //replace this with training tp
+			player.Teleport(DodgeballConfig.Config.Team1StartPosition.ToFloat3());
+		}
+		else
+		{
+			player.Teleport(DodgeballConfig.Config.Team2StartPosition.ToFloat3());
 		}
 	}
 
@@ -229,16 +227,9 @@ public class DodgeballGameMode : BaseGameMode
 	{
 		if (player.CurrentState != this.GameModeType) return;
 
-		//kill them
+		base.HandleOnPlayerDisconnected(player);
+		Helper.DestroyEntity(player.Character);
 	}
-
-	public override void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType, int slotIndex)
-	{
-		if (player.CurrentState != this.GameModeType) return;
-
-        Helper.RemoveItemAtSlotFromInventory(player, itemType, slotIndex);
-        VWorld.Server.EntityManager.DestroyEntity(eventEntity);
-    }
 
 	public void HandleOnPlayerDamageReceived(Player player, Entity eventEntity)
 	{

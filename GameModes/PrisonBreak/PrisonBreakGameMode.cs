@@ -60,17 +60,14 @@ public class PrisonBreakGameMode : BaseGameMode
 
 	public override void Initialize()
 	{
+		BaseInitialize();
 		GameEvents.OnPlayerRespawn += HandleOnPlayerRespawn;
 		GameEvents.OnPlayerDowned += HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath += HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift += HandleOnShapeshift;
 		GameEvents.OnPlayerUsedConsumable += HandleOnConsumableUse;
-		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
-		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
 		GameEvents.OnPlayerInvitedToClan += HandleOnPlayerInvitedToClan;
 		GameEvents.OnUnitDeath += HandleOnUnitDeath;
-		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
-		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
 		GameEvents.OnPlayerBuffed += HandleOnPlayerBuffed;
 
 		foreach (var player in PlayerService.OnlinePlayers.Keys)
@@ -93,17 +90,14 @@ public class PrisonBreakGameMode : BaseGameMode
 	}
 	public override void Dispose()
 	{
+		BaseDispose();
 		GameEvents.OnPlayerRespawn -= HandleOnPlayerRespawn;
 		GameEvents.OnPlayerDowned -= HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath -= HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift -= HandleOnShapeshift;
 		GameEvents.OnPlayerUsedConsumable -= HandleOnConsumableUse;
-		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
-		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
 		GameEvents.OnPlayerInvitedToClan -= HandleOnPlayerInvitedToClan;
 		GameEvents.OnUnitDeath -= HandleOnUnitDeath;
-		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
-		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
 		GameEvents.OnPlayerBuffed -= HandleOnPlayerBuffed;
 
 		PlayersAlive.Clear();
@@ -279,16 +273,11 @@ public class PrisonBreakGameMode : BaseGameMode
 		player.ReceiveMessage("You can't drink those in prison!".Error());
 	}
 
-	public override void HandleOnPlayerConnected(Player player)
-	{
-		if (player.CurrentState != GameModeType) return;
-
-	}
-
 	public override void HandleOnPlayerDisconnected(Player player)
 	{
 		if (player.CurrentState != GameModeType) return;
 
+		base.HandleOnPlayerDisconnected(player);
 		Helper.DestroyEntity(player.Character);
 	}
 
@@ -305,29 +294,6 @@ public class PrisonBreakGameMode : BaseGameMode
 		if (player.CurrentState != GameModeType) return;
 
 
-	}
-
-	public override void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType, int slotIndex)
-	{
-		if (player.CurrentState != GameModeType) return;
-
-		Helper.RemoveItemAtSlotFromInventory(player, itemType, slotIndex);
-		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
-	}
-
-	public override void HandleOnPlayerDamageDealt(Player player, Entity eventEntity)
-	{
-		if (player.CurrentState != GameModeType) return;
-
-		if (!eventEntity.Exists()) return;
-
-		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
-
-		var isStructure = damageDealtEvent.Target.Has<CastleHeartConnection>();
-		if (isStructure)
-		{
-			eventEntity.Destroy();
-		}
 	}
 
 	public void HandleOnPlayerRespawn(Player player)

@@ -34,7 +34,7 @@ internal class PrisonCommands
 			}
 			else
 			{
-				durationMessage = $"for {numberOfDays} days";
+				durationMessage = $"for {numberOfDays} day(s)";
 			}
 			Helper.SendSystemMessageToAllClients($"{imprisonedPlayer.Name.Colorify(ExtendedColor.ClanNameColor)} has been imprisoned {durationMessage}.".Error());
 			imprisonedPlayer.ReceiveMessage($"You have been imprisoned {durationMessage}.".Error());

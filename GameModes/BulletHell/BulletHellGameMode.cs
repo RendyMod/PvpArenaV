@@ -51,8 +51,6 @@ public class BulletHellGameMode : BaseGameMode
 		GameEvents.OnPlayerShapeshift += HandleOnShapeshift;
 		GameEvents.OnPlayerStartedCasting += HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerUsedConsumable += HandleOnConsumableUse;
-		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
-		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
 		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
 		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
 		GameEvents.OnGameFrameUpdate += HandleOnGameFrameUpdate;
@@ -65,8 +63,6 @@ public class BulletHellGameMode : BaseGameMode
 		GameEvents.OnPlayerShapeshift -= HandleOnShapeshift;
 		GameEvents.OnPlayerStartedCasting -= HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerUsedConsumable -= HandleOnConsumableUse;
-		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
-		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
 		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
 		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
 		GameEvents.OnGameFrameUpdate -= HandleOnGameFrameUpdate;
@@ -140,44 +136,13 @@ public class BulletHellGameMode : BaseGameMode
 		if (player.CurrentState != GameModeType) return;
 
 	}
-	public override void HandleOnPlayerConnected(Player player)
-	{
-		if (player.CurrentState != GameModeType) return;
-
-		if (PvpArenaConfig.Config.UseCustomSpawnLocation)
-		{
-			player.Teleport(PvpArenaConfig.Config.CustomSpawnLocation.ToFloat3()); //replace this with training tp
-		}
-	}
 
 	public override void HandleOnPlayerDisconnected(Player player)
 	{
 		if (player.CurrentState != GameModeType) return;
 
         BulletHellManager.EndMatch(this);
-	}
-
-	public override void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType, int slotIndex)
-	{
-		if (player.CurrentState != GameModeType) return;
-
-        Helper.RemoveItemAtSlotFromInventory(player, itemType, slotIndex);
-        VWorld.Server.EntityManager.DestroyEntity(eventEntity);
-    }
-
-	public override void HandleOnPlayerDamageDealt(Player player, Entity eventEntity)
-	{
-		if (player.CurrentState != GameModeType) return;
-
-        if (eventEntity.Exists())
-        {
-            var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
-            var isStructure = damageDealtEvent.Target.Has<CastleHeartConnection>();
-            if (isStructure)
-            {
-                VWorld.Server.EntityManager.DestroyEntity(eventEntity);
-            }
-        }
+        base.HandleOnPlayerDisconnected(player);
 	}
 
 	private bool IsOutOfBounds()

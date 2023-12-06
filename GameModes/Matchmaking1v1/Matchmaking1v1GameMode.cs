@@ -46,27 +46,19 @@ public class Matchmaking1v1GameMode : BaseGameMode
 
 	public override void Initialize()
 	{
-		/*GameEvents.OnPlayerRespawn += HandleOnPlayerRespawn;*/
+		BaseInitialize();
 		GameEvents.OnPlayerDowned += HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath += HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift += HandleOnShapeshift;
 		GameEvents.OnPlayerUsedConsumable += HandleOnConsumableUse;
-		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
-		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
-		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
-		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
 	}
 	public override void Dispose()
 	{
-		/*GameEvents.OnPlayerRespawn -= HandleOnPlayerRespawn;*/
+		BaseDispose();
 		GameEvents.OnPlayerDowned -= HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath -= HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift -= HandleOnShapeshift;
 		GameEvents.OnPlayerUsedConsumable -= HandleOnConsumableUse;
-		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
-		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
-		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
-		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
 	}
 	public override void HandleOnPlayerDowned(Player player, Entity killer)
 	{
@@ -139,40 +131,12 @@ public class Matchmaking1v1GameMode : BaseGameMode
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 	}
 
-	public override void HandleOnPlayerConnected(Player player)
-	{
-		if (player.CurrentState != GameModeType) return;
-
-	}
-
 	public override void HandleOnPlayerDisconnected(Player player)
 	{
 		if (player.CurrentState != GameModeType) return;
-
+		base.HandleOnPlayerDisconnected(player);
 
 		MatchmakingQueue.MatchManager.EndMatch(MatchmakingHelper.GetOpponentForPlayer(player), player, false);
-	}
-
-	public override void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType, int slotIndex)
-	{
-		if (player.CurrentState != GameModeType) return;
-
-		Helper.RemoveItemAtSlotFromInventory(player, itemType, slotIndex);
-		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
-	}
-
-	public override void HandleOnPlayerDamageDealt(Player player, Entity eventEntity)
-	{
-		if (player.CurrentState != GameModeType) return;
-
-		if (!eventEntity.Exists()) return;
-
-		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
-		var isStructure = damageDealtEvent.Target.Has<CastleHeartConnection>();
-		if (isStructure)
-		{
-			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
-		}
 	}
 
 	public static new HashSet<string> GetAllowedCommands()

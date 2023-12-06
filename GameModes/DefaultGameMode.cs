@@ -92,33 +92,25 @@ public class DefaultGameMode : BaseGameMode
 
 	public override void Initialize()
 	{
-		/*GameEvents.OnPlayerRespawn += HandleOnPlayerRespawn;*/
+		BaseInitialize();
 		GameEvents.OnPlayerDowned += HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath += HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift += HandleOnShapeshift;
 		GameEvents.OnPlayerStartedCasting += HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerUsedConsumable += HandleOnConsumableUse;
 		GameEvents.OnPlayerBuffed += HandleOnPlayerBuffed;
-		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
-		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
-		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
-		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
 		GameEvents.OnPlayerDamageReported += HandleOnPlayerDamageReported;
 		GameEvents.OnPlayerReset += HandleOnPlayerReset;
 	}
 	public override void Dispose()
 	{
-		/*GameEvents.OnPlayerRespawn -= HandleOnPlayerRespawn;*/
+		BaseDispose();
 		GameEvents.OnPlayerDowned -= HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath -= HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift -= HandleOnShapeshift;
 		GameEvents.OnPlayerStartedCasting -= HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerUsedConsumable -= HandleOnConsumableUse;
 		GameEvents.OnPlayerBuffed -= HandleOnPlayerBuffed;
-		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
-		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
-		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
-		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
 		GameEvents.OnPlayerDamageReported -= HandleOnPlayerDamageReported;
 		GameEvents.OnPlayerReset -= HandleOnPlayerReset;
 	}
@@ -291,45 +283,6 @@ public class DefaultGameMode : BaseGameMode
 				buffEntity.Add<BuffModificationFlagData>();
 				buffEntity.Write(BuffModifiers.DefaultShapeshiftModifications);
 			}
-		}
-	}
-
-	public override void HandleOnPlayerConnected(Player player)
-	{
-		if (player.CurrentState != this.GameModeType) return;
-
-		if (PvpArenaConfig.Config.UseCustomSpawnLocation)
-		{
-			player.Teleport(PvpArenaConfig.Config.CustomSpawnLocation.ToFloat3());
-		}
-	}
-
-	public override void HandleOnPlayerDisconnected(Player player)
-	{
-		if (player.CurrentState != this.GameModeType) return;
-
-	}
-
-	public override void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType, int slotIndex)
-	{
-		if (player.CurrentState != this.GameModeType) return;
-
-		Helper.RemoveItemAtSlotFromInventory(player, itemType, slotIndex);
-		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
-	}
-
-	public override void HandleOnPlayerDamageDealt(Player player, Entity eventEntity)
-	{
-		if (player.CurrentState != this.GameModeType) return;
-
-		if (!eventEntity.Exists()) return;
-
-		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
-		
-		var isStructure = (damageDealtEvent.Target.Has<CastleHeartConnection>());
-		if (isStructure)
-		{
-			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 		}
 	}
 
