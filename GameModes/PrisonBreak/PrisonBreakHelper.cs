@@ -86,20 +86,23 @@ public static class PrisonBreakHelper
 		var index = 0;
 		foreach (var player in PrisonBreakGameMode.PlayersAlive.Keys)
 		{
-			player.RemoveFromClan();
-			player.CurrentState = Player.PlayerState.PrisonBreak;
-			player.Reset(PrisonBreakGameMode.ResetOptions);
-			SetDefaultBlood(player, PrisonBreakConfig.Config.DefaultBlood);
-			player.Teleport(PrisonConfig.Config.CellCoordinateList[index].ToFloat3());
-			BuffPlayer(player, Prefabs.AB_Consumable_PhysicalBrew_T02_Buff, out var buffEntity, NO_DURATION);
-			BuffPlayer(player, Prefabs.AB_Consumable_SpellBrew_T02_Buff, out buffEntity, NO_DURATION);
-			if (BuffPlayer(player, Prefabs.Buff_General_Phasing, out buffEntity, 10))
+			if (player.IsInDefaultMode())
 			{
-				ModifyBuff(buffEntity, BuffModificationTypes.AbilityCastImpair);
-			}
+				player.RemoveFromClan();
+				player.CurrentState = Player.PlayerState.PrisonBreak;
+				player.Reset(PrisonBreakGameMode.ResetOptions);
+				SetDefaultBlood(player, PrisonBreakConfig.Config.DefaultBlood);
+				player.Teleport(PrisonConfig.Config.CellCoordinateList[index].ToFloat3());
+				BuffPlayer(player, Prefabs.AB_Consumable_PhysicalBrew_T02_Buff, out var buffEntity, NO_DURATION);
+				BuffPlayer(player, Prefabs.AB_Consumable_SpellBrew_T02_Buff, out buffEntity, NO_DURATION);
+				if (BuffPlayer(player, Prefabs.Buff_General_Phasing, out buffEntity, 10))
+				{
+					ModifyBuff(buffEntity, BuffModificationTypes.AbilityCastImpair);
+				}
 
-			index++;
-			player.ReceiveMessage($"The match will start in {"10".Emphasize()} seconds. {"Get ready!".Emphasize()}".White());
+				index++;
+				player.ReceiveMessage($"The match will start in {"10".Emphasize()} seconds. {"Get ready!".Emphasize()}".White());
+			}
 		}
 
 		action = () => { StartMatchCountdown(); };
