@@ -1,33 +1,16 @@
 using System;
-using System.Buffers;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Linq;
-using System.Reflection.Metadata.Ecma335;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-using Bloodstone.API;
-using Discord;
-using Il2CppSystem.Linq.Expressions.Interpreter;
 using ProjectM;
-using ProjectM.CastleBuilding;
-using ProjectM.Gameplay.Systems;
-using ProjectM.Hybrid;
-using ProjectM.Sequencer;
-using ProjectM.Shared;
-using PvpArena.Configs;
 using PvpArena.Data;
-using PvpArena.Factories;
+using PvpArena.GameModes.PrisonBreak;
 using PvpArena.Helpers;
 using PvpArena.Models;
 using PvpArena.Services;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Transforms;
-using UnityEngine.Rendering.HighDefinition;
-using static PvpArena.Factories.UnitFactory;
-using static RootMotion.FinalIK.Grounding;
+using static PvpArena.Helpers.Helper;
 
 namespace PvpArena.GameModes.CaptureThePancake;
 
@@ -47,165 +30,24 @@ public static class PrisonBreakHelper
 		timers.Clear();
 	}
 
-	public static void SpawnStructures(Player player1, Player player2)
-	{
-		foreach (var structureSpawn in CaptureThePancakeConfig.Config.StructureSpawns)
-		{
-			var spawnPos = structureSpawn.Location.ToFloat3();
-			if (structureSpawn.Type.ToLower() == "shard chest" && structureSpawn.SpawnDelay >= 30)
-			{
-				foreach (var team in CaptureThePancakeGameMode.Teams.Values)
-				{
-					foreach (var player in team)
-					{
-						player.ReceiveMessage($"The {structureSpawn.Description} will spawn in {structureSpawn.SpawnDelay} seconds!".Warning());
-					}
-				}
-			}
-			Action action = () =>
-			{
-				PrefabSpawnerService.SpawnWithCallback(structureSpawn.PrefabGUID, spawnPos, (e) =>
-				{
-					if (e.Has<Health>() && structureSpawn.Health > 0)
-					{
-						var health = e.Read<Health>();
-						health.MaxHealth.Value = structureSpawn.Health;
-						health.Value = structureSpawn.Health;
-						health.MaxRecoveryHealth = structureSpawn.Health;
-						e.Write(health);
-					}
-					if (structureSpawn.Team == 1)
-					{
-						e.Write(player1.Character.Read<Team>());
-						e.Write(player1.Character.Read<TeamReference>());
-					}
-					else if (structureSpawn.Team == 2)
-					{
-						e.Write(player2.Character.Read<Team>());
-						e.Write(player2.Character.Read<TeamReference>());
-					}
-
-					if (structureSpawn.InventoryItems.Count > 0)
-					{
-						e.Add<DestroyWhenInventoryIsEmpty>();
-						//InventoryUtilitiesServer.ClearInventory(VWorld.Server.EntityManager, e);
-						foreach (var inventoryItem in structureSpawn.InventoryItems)
-						{
-							Helper.AddItemToInventory(e, inventoryItem, 1, out Entity itemEntity);
-						}
-					}
-
-					if (structureSpawn.PrefabGUID == Prefabs.TM_Castle_Wall_Door_Metal_Wide_Tier02_Standard)
-					{
-						if (structureSpawn.Description == "Spawn Gate")
-						{
-							HandleGateOpeningAtMatchStart(e);
-						}
-						else
-						{
-							if (structureSpawn.Description == "Winged Horror Gate")
-							{
-								CaptureThePancakeGameMode.WingedHorrorGate = e;
-							}
-							else if (structureSpawn.Description == "Monster Gate")
-							{
-								CaptureThePancakeGameMode.MonsterGate = e;
-							}
-
-							e.Remove<Interactable>();
-							var door = e.Read<Door>();
-							door.OpenState = false;
-							Helper.BuffEntity(e, Prefabs.Buff_Voltage_Stage2, out var buffEntity, Helper.NO_DURATION);
-							e.Write(door);
-						}
-					}
-
-					if (structureSpawn.Type.ToLower() == "shard chest" && structureSpawn.SpawnDelay > 0)
-					{
-						foreach (var team in CaptureThePancakeGameMode.Teams.Values)
-						{
-							foreach (var player in team)
-							{
-								player.ReceiveMessage($"The {structureSpawn.Description.NeutralTeam()} has {"spawned".Emphasize()}!".White());
-							}
-						}
-					}
-
-				}, structureSpawn.RotationMode, -1, true, "pancake");
-			};
-			Timer timer;
-			if (structureSpawn.SpawnDelay > 0)
-			{
-				timer = ActionScheduler.RunActionOnceAfterDelay(action, structureSpawn.SpawnDelay);
-				timers.Add(timer);
-			}
-			else
-			{
-				action();
-			}
-
-
-			if (structureSpawn.Type.ToLower() == "shard chest" && structureSpawn.SpawnDelay > 60)
-			{
-				action = () =>
-				{
-					foreach (var team in CaptureThePancakeGameMode.Teams.Values)
-					{
-						foreach (var player in team)
-						{
-							player.ReceiveMessage($"The {structureSpawn.Description} will spawn in 30 seconds!".Warning());
-						}
-					}
-				};
-
-				timer = ActionScheduler.RunActionOnceAfterDelay(action, structureSpawn.SpawnDelay - 30);
-				timers.Add(timer);
-			}
-		}
-	}
-
-	private static void HandleGateOpeningAtMatchStart(Entity e)
-	{
-		e.Remove<Interactable>();
-		var spawnDoor = e.Read<Door>();
-		spawnDoor.OpenState = false;
-		e.Write(spawnDoor);
-
-		Action action = () =>
-		{
-			spawnDoor.OpenState = true;
-			e.Write(spawnDoor);
-		};
-		var timer = ActionScheduler.RunActionOnceAfterDelay(action, 10);
-		CaptureThePancakeGameMode.Timers.Add(timer);
-	}
-
 	private static void StartMatchCountdown()
 	{
 		for (int i = 5; i >= 0; i--)
 		{
-			int countdownNumber = i; // Introduce a new variable
+			int countdownNumber = i;
 
 			Action action = () =>
 			{
-				foreach (var team in CaptureThePancakeGameMode.Teams.Values)
-				{
-					foreach (var player in team)
+				foreach (var player in PrisonBreakGameMode.PlayersAlive.Keys)
+				{	
+					if (countdownNumber > 0)
 					{
-						if (countdownNumber > 0)
-						{
-							player.ReceiveMessage($"The match will start in: {countdownNumber.ToString().Emphasize()}".White());
-						}
-						else
-						{
-							player.ReceiveMessage($"The match has started. {"Go!".Emphasize()}".White());
-						}
+						player.ReceiveMessage($"The match will start in: {countdownNumber.ToString().Emphasize()}".White());
 					}
-				}
-
-				if (countdownNumber == 0)
-				{
-					SpawnUnits(CaptureThePancakeGameMode.Teams[1][0], CaptureThePancakeGameMode.Teams[2][0]);
+					else
+					{
+						player.ReceiveMessage($"The match has started. {"Go!".Emphasize()}".White());
+					}
 				}
 			};
 
@@ -214,261 +56,113 @@ public static class PrisonBreakHelper
 		}
 	}
 
-	public static void KillPreviousEntities()
+	private static List<Entity> GetAllGates()
 	{
-		var entities = Helper.GetEntitiesByComponentTypes<CanFly>(true);
-		foreach (var entity in entities)
+		var allGates = Helper.GetEntitiesByComponentTypes<Door>(true);
+		var prisonZone = PrisonBreakConfig.Config.PrisonZone.ToRectangleZone();
+		List<Entity> prisonGates = new List<Entity>();
+		foreach (var gate in allGates)
 		{
-			if (!entity.Has<PlayerCharacter>())
+			if (prisonZone.Contains(gate))
 			{
-				if (UnitFactory.TryGetSpawnedUnitFromEntity(entity, out SpawnedUnit spawnedUnit))
-				{
-					if (spawnedUnit.Unit.Category == "pancake")
-					{
-						Helper.DestroyEntity(entity);
-					}
-				}
-				else
-				{
-					if (entity.Has<ResistanceData>() && entity.Read<ResistanceData>().GarlicResistance_IncreasedExposureFactorPerRating == StringToFloatHash("pancake"))
-					{
-						Helper.DestroyEntity(entity);
-					}
-/*					else if (entity.Has<CanFly>() && entity.Read<PrefabGUID>() == Prefabs.Resource_PlayerDeathContainer_Drop)
-					{
-						Helper.DestroyEntity(entity);
-					}*/
-				}
+				prisonGates.Add(gate);
 			}
 		}
-		var relics = Helper.GetEntitiesByComponentTypes<SpawnSequenceForEntity, ItemPickup, PlaySequenceOnPickup>(true);
-		foreach (var relic in relics)
-		{
-			if (relic.Read<PrefabGUID>() == Prefabs.Resource_Drop_Relic)
-			{
-				Helper.DestroyEntity(relic);
-			}
-		}
+		return prisonGates;
 	}
 
-	public static void DropItemsIntoBag(Player player, List<PrefabGUID> items, int quantity = 1)
+	public static void StartMatch()
 	{
-		PrefabSpawnerService.SpawnWithCallback(Prefabs.Resource_PlayerDeathContainer_Drop, player.Position, (Entity e) =>
-		{
-			e.Write(new PlayerDeathContainer
-			{
-				DeadUserEntity = player.User
-			});
-			e.Remove<DestroyWhenInventoryIsEmpty>();
-			e.Write(new DestroyAfterDuration()
-			{
-				EndTime = float.MaxValue,
-				Duration = float.MaxValue
-			});
-			e.Remove<DestroyAfterDurationCounter>();
-			foreach (var item in items)
-			{
-				Helper.AddItemToInventory(e, item, quantity, out var itemEntity);
-			}
-			e.Add<DestroyWhenInventoryIsEmpty>();
-		}, 0, -1, true, "pancake");
-	}
-
-	public static void GiveVerminSalvesIfNotPresent(Player player)
-	{
-		if (!Helper.PlayerHasItemInInventories(player, Prefabs.Item_Consumable_Salve_Vermin))
-		{
-			Helper.AddItemToInventory(player.Character, Prefabs.Item_Consumable_Salve_Vermin, 1, out Entity entity);
-		}
-		Helper.RemoveItemFromInventory(player, Prefabs.Item_Consumable_Canteen_BloodRoseBrew_T01);
-		Helper.RemoveItemFromInventory(player, Prefabs.Item_Consumable_GlassBottle_BloodRosePotion_T02);
-	}
-
-	public static void ClaimEyesOfTwilight(Player p1, Player p2)
-	{
-		var entities = Helper.GetEntitiesByComponentTypes<RelicRadar>(true);
-		var players = new List<Player> { p1, p2 };
-		for (var i = 0; i < entities.Length && i < 2; i++)
-		{
-			var entity = entities[i];
-			entity.Write(players[i].Character.Read<TeamReference>());
-			entity.Write(players[i].Character.Read<Team>());
-			var userOwner = entity.Read<UserOwner>();
-			userOwner.Owner = players[i].User;
-			entity.Write(userOwner);
-		}
-	}
-
-	public static void StartMatch(Player team1LeaderPlayer, Player team2LeaderPlayer)
-	{
-		ClaimEyesOfTwilight(team1LeaderPlayer, team2LeaderPlayer);
-		var team1Players = team1LeaderPlayer.GetClanMembers();
-		var team2Players = team2LeaderPlayer.GetClanMembers();
-		Core.captureThePancakeGameMode.Initialize(team1Players, team2Players);
-		SpawnStructures(team1LeaderPlayer, team2LeaderPlayer);
+		Core.prisonBreakGameMode.Initialize();
 		Action action;
-		
-		foreach (var team1Player in team1Players)
+		var gates = GetAllGates();
+		foreach (var gate in gates)
 		{
-			team1Player.CurrentState = Player.PlayerState.CaptureThePancake;
-			team1Player.MatchmakingTeam = 1;
-			team1Player.Reset(BaseGameMode.ResetOptions);
-			Helper.SetDefaultBlood(team1Player, CaptureThePancakeConfig.Config.DefaultBlood.ToLower());
-			GiveVerminSalvesIfNotPresent(team1Player);
-			action = () => team1Player.Teleport(CaptureThePancakeConfig.Config.Team1PlayerRespawn.ToFloat3());
-			ActionScheduler.RunActionOnceAfterDelay(action, .1);
-			team1Player.ReceiveMessage($"The match will start in {"10".Emphasize()} seconds. {"Get ready!".Emphasize()}".White());
-			try
-			{
-				Helper.RemoveItemFromInventory(team1Player, Prefabs.Item_Building_Relic_Monster);
-				Helper.RemoveItemFromInventory(team1Player, Prefabs.Item_Building_Relic_Manticore);
-			}
-			catch
-			{
-
-			}
+			var door = gate.Read<Door>();
+			door.OpenState = false;
+			gate.Write(door);
 		}
 
-		foreach (var team2Player in team2Players)
+		var index = 0;
+		foreach (var player in PrisonBreakGameMode.PlayersAlive.Keys)
 		{
-			team2Player.CurrentState = Player.PlayerState.CaptureThePancake;
-			team2Player.MatchmakingTeam = 2;
-			team2Player.Reset(BaseGameMode.ResetOptions);
-			Helper.SetDefaultBlood(team2Player, CaptureThePancakeConfig.Config.DefaultBlood.ToLower());
-			GiveVerminSalvesIfNotPresent(team2Player);
-			action = () => team2Player.Teleport(CaptureThePancakeConfig.Config.Team2PlayerRespawn.ToFloat3());
-			ActionScheduler.RunActionOnceAfterDelay(action, .1);
-			team2Player.ReceiveMessage($"The match will start in {"10".Emphasize()} seconds. {"Get ready!".Emphasize()}".White());
-			try
+			Helper.RemoveFromClan(player);
+			player.CurrentState = Player.PlayerState.PrisonBreak;
+			player.Reset(PrisonBreakGameMode.ResetOptions);
+			Helper.SetDefaultBlood(player, PrisonBreakConfig.Config.DefaultBlood);
+			player.Teleport(PrisonConfig.Config.CellCoordinateList[index].ToFloat3());
+			Helper.BuffPlayer(player, Prefabs.AB_Consumable_PhysicalBrew_T02_Buff, out var buffEntity, Helper.NO_DURATION);
+			Helper.BuffPlayer(player, Prefabs.AB_Consumable_SpellBrew_T02_Buff, out buffEntity, Helper.NO_DURATION);
+			if (Helper.BuffPlayer(player, Prefabs.Buff_General_Phasing, out buffEntity, 10))
 			{
-				Helper.RemoveItemFromInventory(team2Player, Prefabs.Item_Building_Relic_Monster);
-				Helper.RemoveItemFromInventory(team2Player, Prefabs.Item_Building_Relic_Manticore);
+				Helper.ModifyBuff(buffEntity, BuffModificationTypes.AbilityCastImpair);
 			}
-			catch
-			{
 
-			}
+			index++;
+			player.ReceiveMessage($"The match will start in {"10".Emphasize()} seconds. {"Get ready!".Emphasize()}".White());
 		}
 
 		action = () => { StartMatchCountdown(); };
 
 		Timer timer = ActionScheduler.RunActionOnceAfterDelay(action, 5);
-		CaptureThePancakeGameMode.Timers.Add(timer);
-	}
-
-	private static void SpawnUnits(Player team1LeaderPlayer, Player team2LeaderPlayer)
-	{
-		foreach (var unitSettings in CaptureThePancakeConfig.Config.UnitSpawns)
+		PrisonBreakGameMode.Timers.Add(timer);
+		action = () =>
 		{
-			Unit unitToSpawn;
-			var unitType = unitSettings.Type.ToLower();
-			if (unitType == "turret")
+			foreach (var gate in gates)
 			{
-				unitToSpawn = new Turret(unitSettings.PrefabGUID, unitSettings.Team, unitSettings.Level);
+				var door = gate.Read<Door>();
+				door.OpenState = true;
+				gate.Write(door);
 			}
-			else if (unitType == "boss")
-			{
-				unitToSpawn = new Boss(unitSettings.PrefabGUID, unitSettings.Team, unitSettings.Level);
-				unitToSpawn.IsRooted = true;
-			}
-			else if (unitType == "angram")
-			{
-				unitToSpawn = new AngramBoss(unitSettings.Team, unitSettings.Level);
-			}
-			else if (unitType == "horse")
-			{
-				unitToSpawn = new ObjectiveHorse(unitSettings.Team);
-			}
-			else if (unitType == "lightningrod")
-			{
-				unitToSpawn = new LightningBoss(unitSettings.Team, unitSettings.Level);
-			}
-			else if (unitType == "healingorb")
-			{
-				unitToSpawn = new HealingOrb();
-			}
-			else
-			{
-				unitToSpawn = new Unit(unitSettings.PrefabGUID, unitSettings.Team, unitSettings.Level);
-				unitToSpawn.IsRooted = true;
-			}
-			unitToSpawn.MaxHealth = unitSettings.Health;
-			unitToSpawn.Category = "pancake";
-			unitToSpawn.RespawnTime = unitSettings.RespawnTime;
-			unitToSpawn.SpawnDelay = unitSettings.SpawnDelay;
-			if (unitSettings.SpawnDelay > 30)
-			{
-				unitToSpawn.AnnounceSpawn = true;
-			}
-			Player teamLeader;
-			if (unitToSpawn.Team == 1)
-			{
-				teamLeader = team1LeaderPlayer;
-			}
-			else if (unitToSpawn.Team == 2)
-			{
-				teamLeader = team2LeaderPlayer;
-			}
-			else
-			{
-				teamLeader = null;
-			}
-			UnitFactory.SpawnUnit(unitToSpawn, unitSettings.Location.ToFloat3(), teamLeader);
-		}
+		};
+		ActionScheduler.RunActionOnceAfterDelay(action, 10);
 	}
 
-	public static void EndMatch(int winner = 0)
+	public static void EndMatch(Player winner = null)
 	{
 		try
 		{
-			var relics = Helper.GetEntitiesByComponentTypes<Relic>();
-			foreach (var relic in relics)
+			if (winner != null)
 			{
-				Helper.DestroyEntity(relic);
-			}
-			foreach (var timer in CaptureThePancakeGameMode.Timers)
-			{
-				if (timer != null)
+				Dictionary<int, List<Player>> Teams = new Dictionary<int, List<Player>>
 				{
-					timer.Dispose();
-				}
-			}
-			CaptureThePancakeGameMode.Timers.Clear();
+					{ 1, new List<Player> { winner } },
+					{ 2, PrisonBreakGameMode.PlayersAlive.Keys.Where(player => player != winner).ToList() }
+				};
 
-			foreach (var team in CaptureThePancakeGameMode.Teams.Values)
-			{
-				foreach (var player in team)
+				foreach (var player in PrisonBreakGameMode.PlayersAlive.Keys)
 				{
-					Helper.RemoveItemFromInventory(player, Prefabs.Item_Building_Relic_Monster);
-					Helper.RemoveItemFromInventory(player, Prefabs.Item_Building_Relic_Manticore);
 					player.CurrentState = Player.PlayerState.Normal;
 					player.MatchmakingTeam = 0;
-					player.Reset(BaseGameMode.ResetOptions);
 					Helper.RespawnPlayer(player, player.Position);
+					player.Reset(ResetOptions.FreshMatch);
 				}
-			}
-			KillPreviousEntities();
-			if (winner > 0)
-			{
+
 				var action = () => {
-					TeleportTeamsToCenter(CaptureThePancakeGameMode.Teams, winner, TeamSide.East);
-					Core.captureThePancakeGameMode.Dispose();
-					UnitFactory.DisposeTimers("pancake");
+					TeleportTeamsToCenter(Teams, 1, TeamSide.East);
+					Core.prisonBreakGameMode.Dispose();
 					DisposeTimers();
 				};
 				ActionScheduler.RunActionOnceAfterDelay(action, .1);
+				Core.prisonBreakGameMode.Dispose();
 			}
 			else
 			{
-				Core.captureThePancakeGameMode.Dispose();
-				UnitFactory.DisposeTimers("pancake");
+
+				foreach (var player in PrisonBreakGameMode.PlayersAlive.Keys)
+				{
+					player.CurrentState = Player.PlayerState.Normal;
+					player.MatchmakingTeam = 0;
+					Helper.RespawnPlayer(player, player.Position);
+					player.Reset(ResetOptions.FreshMatch);
+				}
+				Core.prisonBreakGameMode.Dispose();
 				DisposeTimers();
 			}
 		}
 		catch (Exception e)
 		{
-			Core.captureThePancakeGameMode.Dispose();
-			UnitFactory.DisposeTimers("pancake");
+			Core.prisonBreakGameMode.Dispose();
 			DisposeTimers();
 			Plugin.PluginLog.LogError(e.ToString());
 		}
@@ -487,7 +181,7 @@ public static class PrisonBreakHelper
 	int winningTeam,
 	TeamSide teamOneSide)
 	{
-		var mapCenter = CaptureThePancakeConfig.Config.MapCenter;
+		var mapCenter = PrisonBreakConfig.Config.MapCenter;
 		float playerSpacing = 2f;  // Adjust this as needed for the distance between players.
 
 		// Determine the center coordinates

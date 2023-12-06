@@ -56,6 +56,7 @@ public class PrisonGameMode : BaseGameMode
 		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
 		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
 		GameEvents.OnPlayerChatMessage += HandleOnPlayerChatMessage;
+		GameEvents.OnPlayerInvitedToClan += HandleOnPlayerInvitedToClan;
 	}
 	public override void Dispose()
 	{
@@ -70,6 +71,7 @@ public class PrisonGameMode : BaseGameMode
 		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
 		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
 		GameEvents.OnPlayerChatMessage -= HandleOnPlayerChatMessage;
+		GameEvents.OnPlayerInvitedToClan -= HandleOnPlayerInvitedToClan;
 	}
 
 	public override void HandleOnPlayerDowned(Player player, Entity killer)
@@ -113,22 +115,7 @@ public class PrisonGameMode : BaseGameMode
 		if (player.CurrentState != GameModeType) return;
 
 		var enterShapeshiftEvent = eventEntity.Read<EnterShapeshiftEvent>();
-		if (enterShapeshiftEvent.Shapeshift == Prefabs.AB_Shapeshift_BloodMend_Group)
-		{
-			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
-			player.Reset(ResetOptions);
-		}
-		else if (enterShapeshiftEvent.Shapeshift == Prefabs.AB_Shapeshift_ShareBlood_ExposeVein_Group)
-		{
-			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
-			Helper.ToggleBloodOnPlayer(player);
-		}
-		else if (enterShapeshiftEvent.Shapeshift == Prefabs.AB_Shapeshift_BloodHunger_BloodSight_Group)
-		{
-			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
-			Helper.ToggleBuffsOnPlayer(player);
-		}
-		else
+		if (enterShapeshiftEvent.Shapeshift != Prefabs.AB_Shapeshift_BloodMend_Group)
 		{
 			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 			player.ReceiveMessage("You can't feel your vampire essence here...".Error());
@@ -159,6 +146,14 @@ public class PrisonGameMode : BaseGameMode
 		if (player.CurrentState != GameModeType) return;
 
 		player.Teleport(PrisonConfig.Config.CellCoordinateList[player.ImprisonInfo.PrisonCellNumber].ToFloat3());
+	}
+
+	public void HandleOnPlayerInvitedToClan(Player player, Entity eventEntity)
+	{
+		if (player.CurrentState != this.GameModeType) return;
+
+		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
+		player.ReceiveMessage("You may not invite players to your clan while in Capture the Pancake".Error());
 	}
 
 	public override void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType)

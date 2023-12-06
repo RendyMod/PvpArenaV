@@ -52,6 +52,7 @@ public static class Core
     public static SpectatingGameMode spectatingGameMode;
 	public static PrisonGameMode prisonGameMode;
 	public static DodgeballGameMode dodgeballGameMode;
+	public static PrisonBreakGameMode prisonBreakGameMode;
 	public static bool HasInitialized = false;
 	/*public static DiscordBot discordBot;*/
 	public static SQLHandler sqlHandler;
@@ -80,6 +81,7 @@ public static class Core
 		PrisonConfig.Load();
         TradersConfig.Load();
 		DodgeballConfig.Load();
+		PrisonBreakConfig.Load();
 
 		matchmaking1V1DataRepository = new PlayerMatchmaking1v1DataStorage(PvpArenaConfig.Config.ServerDatabase);
 		pointsDataRepository = new PlayerPointsStorage(PvpArenaConfig.Config.ServerDatabase);
@@ -150,6 +152,8 @@ public static class Core
 		prisonGameMode = new PrisonGameMode();
 		prisonGameMode.Initialize();
 
+		prisonBreakGameMode = new PrisonBreakGameMode();
+
 		DummyHandler.Initialize();
 		PlayerSpawnHandler.Initialize();
 
@@ -169,7 +173,7 @@ public static class Core
         matchmaking1v1GameMode.Dispose();
         if (captureThePancakeGameMode != null)
         {
-            PrisonBreakHelper.EndMatch();
+            CaptureThePancakeHelper.EndMatch();
         }
 		if (dominationGameMode != null)
 		{
@@ -178,6 +182,10 @@ public static class Core
 		if (dodgeballGameMode != null)
 		{
 			DodgeballHelper.EndMatch();
+		}
+		if (prisonBreakGameMode != null)
+		{
+			PrisonBreakHelper.EndMatch();
 		}
 		
         spectatingGameMode.Dispose();

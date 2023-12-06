@@ -55,6 +55,19 @@ public class RectangleZone
 		return x >= Left && x <= Right && z >= Bottom && z <= Top;
 	}
 
+	public bool Contains(Entity entity)
+	{
+		if (entity.Has<LocalToWorld>())
+		{
+			var localToWorld = entity.Read<LocalToWorld>();
+			var x = localToWorld.Position.x;
+			var z = localToWorld.Position.z;
+			return x >= Left && x <= Right && z >= Bottom && z <= Top;
+		}
+		return false;
+	}
+
+
 	//assumes you are facing north and that are you are standing in the bottom-left square
 	public static RectangleZone GetZoneByCurrentCoordinates(Player player, int tilesUp, int tilesRight)
 	{

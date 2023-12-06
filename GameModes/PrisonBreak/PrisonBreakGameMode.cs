@@ -32,6 +32,7 @@ using ProjectM.Shared.Systems;
 using static DamageRecorderService;
 using Cpp2IL.Core.Extensions;
 using static Il2CppSystem.Xml.XmlWellFormedWriter.AttributeValueCache;
+using PvpArena.GameModes.CaptureThePancake;
 
 namespace PvpArena.GameModes.PrisonBreak;
 
@@ -94,6 +95,11 @@ public class PrisonBreakGameMode : BaseGameMode
 		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
 		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
 
+		foreach (var player in PlayerService.OnlinePlayers.Keys)
+		{
+			PlayersAlive[player] = true;
+		}
+
 		stopwatch.Start();
 	}
 
@@ -137,6 +143,15 @@ public class PrisonBreakGameMode : BaseGameMode
 		}
 		PlayerRespawnTimers.Clear();
 		playerKills.Clear();
+
+		foreach (var timer in Timers)
+		{
+			if (timer != null)
+			{
+				timer.Dispose();
+			}
+		}
+		Timers.Clear();
 	}
 
 	public override void HandleOnPlayerDowned(Player player, Entity killer)
@@ -183,10 +198,7 @@ public class PrisonBreakGameMode : BaseGameMode
 		player.Reset(ResetOptions);
 		Helper.MakeGhostlySpectator(player);
 		PlayersAlive[player] = false;
-		if (IsMatchOver())
-		{
-			//TODO
-		}
+		CheckForWinner();
 	}
 
 	private string CreatePlayerDownedMessage(Player victim, Player killer, Player observer)
@@ -214,7 +226,7 @@ public class PrisonBreakGameMode : BaseGameMode
 		{
 			foreach (var respawnAction in respawnActions)
 			{
-				respawnAction?.Dispose();	
+				respawnAction?.Dispose();
 			}
 			respawnActions.Clear();
 		}
@@ -233,9 +245,24 @@ public class PrisonBreakGameMode : BaseGameMode
 		player.Reset(ResetOptions);
 		Helper.MakeGhostlySpectator(player);
 		PlayersAlive[player] = false;
+		CheckForWinner();
+	}
+
+	private void CheckForWinner()
+	{
 		if (IsMatchOver())
 		{
-			//TODO
+			Player winner;
+			foreach (var playerTemp in PlayersAlive.Keys)
+			{
+				if (PlayersAlive[playerTemp])
+				{
+					winner = playerTemp;
+					ServerChatUtils.SendSystemMessageToAllClients(VWorld.Server.EntityManager, $"{winner.Name.Colorify(ExtendedColor.ClanNameColor)} has won and broken out of prison!".White());
+					PrisonBreakHelper.EndMatch(winner);
+					break;
+				}
+			}
 		}
 	}
 

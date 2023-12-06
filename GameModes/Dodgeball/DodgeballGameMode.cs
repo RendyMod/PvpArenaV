@@ -322,16 +322,18 @@ public class DodgeballGameMode : BaseGameMode
 			player.Teleport(DodgeballConfig.Config.Team2StartPosition.ToFloat3());
 		}*/
 
+		bool playerAlreadyGhost = IsGhost[player];
+		IsGhost[player] = true;
 		player.Reset(ResetOptions);
 		var action = () => Helper.MakeGhostlySpectator(player);
 		var timer = ActionScheduler.RunActionOnceAfterDelay(action, .05);
 		Timers.Add(timer);
 
-		if (!IsGhost[player])
+		if (!playerAlreadyGhost)
 		{
 			TeamGhosts[player.MatchmakingTeam].Enqueue(player);
 		}
-
+		
 		foreach (var team in Teams.Values)
 		{
 			bool allGhosts = true;
@@ -344,7 +346,7 @@ public class DodgeballGameMode : BaseGameMode
 				bool isFriendly = teamPlayer.MatchmakingTeam == player.MatchmakingTeam;
 				var nameColorized = isFriendly ? player.Name.FriendlyTeam() : player.Name.EnemyTeam();
 				var resultColorized = isFriendly ? "eliminated".EnemyTeam() : "eliminated".FriendlyTeam();
-				if (!IsGhost[player])
+				if (!playerAlreadyGhost)
 				{
 					teamPlayer.ReceiveMessage($"{nameColorized} has been {resultColorized}!".White());
 				}
@@ -361,7 +363,7 @@ public class DodgeballGameMode : BaseGameMode
 				return;
 			}
 		}
-		IsGhost[player] = true;
+		
 	}
 
 	//make rendy improve this :P

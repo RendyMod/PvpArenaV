@@ -323,14 +323,14 @@ internal class TestCommands
 	[Command(name: "check-zone", description: "Does debug things", usage: ".check-zone", adminOnly: true, includeInHelp: false)]
 	public void CheckZoneCommand(Player player)
 	{
-		if (DodgeballConfig.Config.Team2Zone.ToRectangleZone().Contains(player))
+/*		if (DodgeballConfig.Config.Team2Zone.ToRectangleZone().Contains(player))
 		{
 			player.ReceiveMessage("in zone".Success());
 		}
 		else
 		{
 			player.ReceiveMessage("not in zone".Error());
-		}
+		}*/
 	}
 
 	[Command(name: "get-coordinates", description: "Logs centered coordinates of mouse position", usage: ".get-coordinates", adminOnly: true, includeInHelp: false)]

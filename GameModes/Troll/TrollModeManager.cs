@@ -58,19 +58,6 @@ public static class TrollModeManager
 					buffer2.Clear();
 				}
 
-				if (grandmaBuffEntity.Has<CreateGameplayEventsOnAbilityTrigger>())
-				{
-					var buffer3 = grandmaBuffEntity.ReadBuffer<CreateGameplayEventsOnAbilityTrigger>();
-					buffer3.Clear();
-				}
-
-				if (grandmaBuffEntity.Has<CreateGameplayEventsOnAbilityTriggerAbilityPrefabTargets>())
-				{
-					var buffer4 = grandmaBuffEntity.ReadBuffer<CreateGameplayEventsOnAbilityTriggerAbilityPrefabTargets>();
-					buffer4.Clear();
-				}
-
-				grandmaBuffEntity.LogComponentTypes();
 				grandmaBuffEntity.Remove<DestroyOnAbilityCast>();
 				Helper.FixIconForShapeshiftBuff(player, grandmaBuffEntity, Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Group);
 				player.ReceiveMessage($"You have entered {"troll".Emphasize()} mode.".White());

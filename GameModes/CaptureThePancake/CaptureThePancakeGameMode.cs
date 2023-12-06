@@ -1247,25 +1247,6 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		return scaledRespawnTime;
 	}
 
-	private static void BuffClanMembersOnConsume(Player player, InventoryBuffer item)
-	{
-		var itemToBuff = new Dictionary<PrefabGUID, PrefabGUID>
-		{
-			{ Prefabs.Item_Consumable_GlassBottle_SpellBrew_T02, Prefabs.AB_Consumable_SpellBrew_T02_Buff },
-			{ Prefabs.Item_Consumable_GlassBottle_PhysicalBrew_T02, Prefabs.AB_Consumable_PhysicalBrew_T02_Buff },
-		};
-
-		if (item.ItemType == Prefabs.Item_Consumable_GlassBottle_SpellBrew_T02 || item.ItemType == Prefabs.Item_Consumable_GlassBottle_PhysicalBrew_T02)
-		{
-			var clanMembers = player.GetClanMembers();
-			foreach (var member in clanMembers)
-			{
-				Helper.BuffEntity(member.Character, itemToBuff[item.ItemType], out Entity buffEntity);
-				buffEntity.Remove<Buff_Persists_Through_Death>();
-			}
-		}
-	}
-
 	public static new HashSet<string> GetAllowedCommands()
 	{
 		return AllowedCommands;

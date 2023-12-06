@@ -113,6 +113,25 @@ internal class GameModeCommands
 		sender.ReceiveMessage("Match ended".Success());
 	}
 
+	[Command("start-prisonbreak", description: "Starts prison break", usage: ".start-prisonbreak", aliases: new string[] { "start prisonbreak", "start prison-break", "start-prison-break" }, adminOnly: true)]
+	public void StartPrisonBreakCommand(Player sender)
+	{
+		PrisonBreakHelper.EndMatch();
+		Action action = () =>
+		{
+			PrisonBreakHelper.StartMatch();
+		};
+		ActionScheduler.RunActionOnceAfterDelay(action, 1);
+		sender.ReceiveMessage("Starting".White());
+	}
+
+	[Command("end-prisonbreak", description: "Ends prison break", usage: ".end-prisonbreak", aliases: new string[] { "end prisonbreak", "end-prison-break" }, adminOnly: true)]
+	public void EndPrisonBreakCommand(Player sender)
+	{
+		PrisonBreakHelper.EndMatch();
+		sender.ReceiveMessage("Match ended".Success());
+	}
+
 	[Command("troll", description: "Used for debugging", adminOnly: true)]
 	public void TrollCommand(Player sender, Player player = null)
 	{

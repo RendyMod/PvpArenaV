@@ -68,9 +68,9 @@ public static class PrisonBreakConfig
 
 public class PrisonBreakConfigData
 {
-	public List<CoordinateDto> CellCoordinateList { get; set; } = new List<CoordinateDto>();
-	public string DefaultBlood { get; set; } = "Warrior"; // Default valu
+	public string DefaultBlood { get; set; } = "Warrior"; // Default value
 	public RectangleZoneDto PrisonZone { get; set; } = new RectangleZoneDto();
+	public RectangleZoneDto MapCenter { get; set; } = new RectangleZoneDto();
 
 	// Additional properties...
 }

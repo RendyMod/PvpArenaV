@@ -74,8 +74,6 @@ public class DodgeballConfigData
 	public int BlocksToRevive { get; set; } = 2;
 	public CoordinateDto Team1StartPosition { get; set; } = new CoordinateDto();
 	public CoordinateDto Team2StartPosition { get; set; } = new CoordinateDto();
-	public RectangleZoneDto Team1Zone { get; set; } = new RectangleZoneDto();
-	public RectangleZoneDto Team2Zone { get; set; } = new RectangleZoneDto();
 	public RectangleZoneDto MapCenter { get; set; } = new RectangleZoneDto();
 	public List<PrefabSpawn> PrefabSpawns { get; set; } = new List<PrefabSpawn>();
 
