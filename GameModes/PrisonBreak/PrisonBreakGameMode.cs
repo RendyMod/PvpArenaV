@@ -67,7 +67,6 @@ public class PrisonBreakGameMode : BaseGameMode
 		GameEvents.OnPlayerShapeshift += HandleOnShapeshift;
 		GameEvents.OnPlayerUsedConsumable += HandleOnConsumableUse;
 		GameEvents.OnPlayerInvitedToClan += HandleOnPlayerInvitedToClan;
-		GameEvents.OnUnitDeath += HandleOnUnitDeath;
 		GameEvents.OnPlayerBuffed += HandleOnPlayerBuffed;
 
 		foreach (var player in PlayerService.OnlinePlayers.Keys)
@@ -97,7 +96,6 @@ public class PrisonBreakGameMode : BaseGameMode
 		GameEvents.OnPlayerShapeshift -= HandleOnShapeshift;
 		GameEvents.OnPlayerUsedConsumable -= HandleOnConsumableUse;
 		GameEvents.OnPlayerInvitedToClan -= HandleOnPlayerInvitedToClan;
-		GameEvents.OnUnitDeath -= HandleOnUnitDeath;
 		GameEvents.OnPlayerBuffed -= HandleOnPlayerBuffed;
 
 		PlayersAlive.Clear();
@@ -187,7 +185,7 @@ public class PrisonBreakGameMode : BaseGameMode
 			return $"{coloredVictimName} died to {"PvE".NeutralTeam()}".White();
 		}
 	}
-	public override void HandleOnPlayerDeath(Player player, OnKillCallResult killCallResult)
+	public override void HandleOnPlayerDeath(Player player, DeathEvent deathEvent)
 	{
 		if (player.CurrentState != GameModeType) return;
 

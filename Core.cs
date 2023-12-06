@@ -53,6 +53,7 @@ public static class Core
 	public static PrisonGameMode prisonGameMode;
 	public static DodgeballGameMode dodgeballGameMode;
 	public static PrisonBreakGameMode prisonBreakGameMode;
+	public static NoHealingLimitGameMode noHealingLimitGameMode;
 	public static bool HasInitialized = false;
 	/*public static DiscordBot discordBot;*/
 	public static SQLHandler sqlHandler;
@@ -154,6 +155,8 @@ public static class Core
 
 		prisonBreakGameMode = new PrisonBreakGameMode();
 
+		noHealingLimitGameMode = new NoHealingLimitGameMode();
+
 		DummyHandler.Initialize();
 		PlayerSpawnHandler.Initialize();
 
@@ -193,6 +196,7 @@ public static class Core
 		DummyHandler.Dispose();
 		PlayerSpawnHandler.Dispose();
 		TrollModeManager.Dispose();
+		noHealingLimitGameMode.Dispose();
 		LoginPointsService.DisposeTimersForOnlinePlayers();
 		Listener.Dispose();
 	}

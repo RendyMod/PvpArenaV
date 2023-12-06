@@ -16,25 +16,27 @@ public static class DeathAndSpawnPatches
 {
 	public static void Postfix(DeathEventListenerSystem __instance)
 	{
-		foreach (var killCall in __instance._OnKillCalls)
+		var entities = __instance._DeathEventQuery.ToEntityArray(Allocator.Temp);
+		foreach (var entity in entities)
 		{
+			var deathEvent = entity.Read<DeathEvent>();
 			try
 			{
-				if (killCall.Killed.Has<PlayerCharacter>())
+				if (deathEvent.Died.Has<PlayerCharacter>())
 				{
-					if (killCall.Killed.Has<ControlledBy>())
+					if (deathEvent.Died.Has<ControlledBy>())
 					{
-						var user = killCall.Killed.Read<ControlledBy>().Controller;
+						var user = deathEvent.Died.Read<ControlledBy>().Controller;
 						if (user.Exists())
 						{
-							var Player = PlayerService.GetPlayerFromCharacter(killCall.Killed);
-							GameEvents.RaisePlayerDeath(Player, killCall);
+							var player = PlayerService.GetPlayerFromCharacter(deathEvent.Died);
+							GameEvents.RaisePlayerDeath(player, deathEvent);
 						}
 					}
 				}
 				else
 				{
-					GameEvents.RaiseUnitDeath(killCall.Killed, killCall);
+					GameEvents.RaiseUnitDeath(deathEvent.Died, deathEvent);
 				}
 			}
 			catch (Exception e)

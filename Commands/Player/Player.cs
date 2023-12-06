@@ -28,7 +28,8 @@ public class Player
 		BulletHell,
 		Dodgeball,
 		Troll,
-		PrisonBreak
+		PrisonBreak,
+		NoHealingLimit
 	}
 
 	private Entity _user;

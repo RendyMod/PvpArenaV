@@ -36,11 +36,12 @@ public static class DummyHandler
 				health.Value = health.MaxHealth;
 				health.MaxRecoveryHealth = health.MaxHealth;
 				unit.Write(health);
+				Plugin.PluginLog.LogInfo("healing dummy");
 			}
 		}
 	}
 
-	private static void HandleOnUnitDeath(Entity victim, OnKillCallResult killCall)
+	private static void HandleOnUnitDeath(Entity victim, DeathEvent deathEvent)
 	{
 		if (UnitFactory.HasCategory(victim, "dummy"))
 		{
@@ -49,6 +50,7 @@ public static class DummyHandler
 			{
 				Dummy dummy = new Dummy(victim.Read<PrefabGUID>(), victim.Read<AggroConsumer>().Active.Value);
 				UnitFactory.SpawnUnit(dummy, spawnPosition);
+				Plugin.PluginLog.LogInfo("spawning dummy");
 			}
 		}
 	}

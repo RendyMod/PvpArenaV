@@ -140,7 +140,7 @@ public class DodgeballGameMode : BaseGameMode
 
 		EliminatePlayer(player);
 	}
-	public override void HandleOnPlayerDeath(Player player, OnKillCallResult killCallResult)
+	public override void HandleOnPlayerDeath(Player player, DeathEvent deathEvent)
 	{
 		if (player.CurrentState != this.GameModeType) return;
 

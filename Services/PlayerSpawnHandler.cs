@@ -56,7 +56,7 @@ public static class PlayerSpawnHandler
 		}
 	}
 
-	private static void HandleOnPlayerDeath(Player player, OnKillCallResult killCallResult)
+	private static void HandleOnPlayerDeath(Player player, DeathEvent deathEvent)
 	{
 		PlayerIsDead[player] = true;
 	}

@@ -88,7 +88,7 @@ public class Matchmaking1v1GameMode : BaseGameMode
 			}
 		}
 	}
-	public override void HandleOnPlayerDeath(Player player, OnKillCallResult killCallResult)
+	public override void HandleOnPlayerDeath(Player player, DeathEvent deathEvent)
 	{
 		if (player.CurrentState != GameModeType) return;
 

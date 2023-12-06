@@ -59,7 +59,7 @@ public class SpectatingGameMode : BaseGameMode
 		if (player.CurrentState != GameModeType) return;
 
 	}
-	public override void HandleOnPlayerDeath(Player player, OnKillCallResult killCallResult)
+	public override void HandleOnPlayerDeath(Player player, DeathEvent deathEvent)
 	{
 		if (player.CurrentState != GameModeType) return;
 

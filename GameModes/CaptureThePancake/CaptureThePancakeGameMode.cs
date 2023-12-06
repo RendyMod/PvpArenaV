@@ -325,7 +325,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 			return $"{coloredVictimName} died to {"PvE".NeutralTeam()}".White();
 		}
 	}
-	public override void HandleOnPlayerDeath(Player player, OnKillCallResult killCallResult)
+	public override void HandleOnPlayerDeath(Player player, DeathEvent deathEvent)
 	{
 		if (player.CurrentState != this.GameModeType) return;
 
@@ -831,12 +831,13 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		player.ReceiveMessage("You may not leave your clan while in Capture the Pancake".Error());
 	}
 
-	public void HandleOnUnitDeath(Entity unitEntity, OnKillCallResult killCallResult)
+	public void HandleOnUnitDeath(Entity unitEntity, DeathEvent deathEvent)
 	{
 		if (!MatchActive) return;
 
 		if (TryGetSpawnedUnitFromEntity(unitEntity, out var spawnedUnit))
 		{
+			if (spawnedUnit.Unit.Category != "pancake") return;
 			if (spawnedUnit.Unit.PrefabGuid == Prefabs.CHAR_Gloomrot_Purifier_VBlood)
 			{
 				if (spawnedUnit.Unit.Team == 1)

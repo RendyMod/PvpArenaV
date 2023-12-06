@@ -110,7 +110,6 @@ public static class AiDamageTakenEventSystemPatch
 									CritDamage = Math.Abs(critDamage),
 									DamageAbsorbed = Math.Abs(damageShielded)
 								};
-
 								GameEvents.RaisePlayerDamageReported(damageDealerPlayer, targetEntity, source.Read<PrefabGUID>(), damageInfo);
 							}
 						}

@@ -105,6 +105,7 @@ internal class SpawnCommands
 				if (!entity.Has<PhysicsCollider>()) continue;
 				if (entity.Read<PrefabGUID>() == prefab)
 				{
+					entity.Remove<CanFly>(); //make sure dummies die without being respawned
 					Helper.DestroyEntity(entity);
 					sender.ReceiveMessage($"Killed entity: {entity.Read<PrefabGUID>().LookupName()}".Success());
 				}
@@ -113,6 +114,7 @@ internal class SpawnCommands
 		else
 		{
 			Entity entity = Helper.GetHoveredEntity(sender.User);
+			entity.Remove<CanFly>(); //make sure dummies die without being respawned
 			Helper.DestroyEntity(entity);
 			sender.ReceiveMessage($"Killed entity: {entity.Read<PrefabGUID>().LookupName()}".Success());
 		}

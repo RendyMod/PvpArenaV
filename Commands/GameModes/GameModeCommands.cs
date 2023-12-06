@@ -145,4 +145,18 @@ internal class GameModeCommands
 			TrollModeManager.AddTroll(player ?? sender);
 		}
 	}
+
+
+	[Command("no-healing-limit", description: "Used for debugging", adminOnly: true)]
+	public void NoHealingLimitCommand(Player sender, Player player = null)
+	{
+		if (sender.CurrentState == Player.PlayerState.NoHealingLimit)
+		{
+			NoHealingLimitManager.RemovePlayer(player ?? sender);
+		}
+		else
+		{
+			NoHealingLimitManager.AddPlayer(player ?? sender);
+		}
+	}
 }

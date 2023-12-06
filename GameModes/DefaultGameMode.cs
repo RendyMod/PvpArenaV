@@ -145,7 +145,7 @@ public class DefaultGameMode : BaseGameMode
 			}
 		}
 	}
-	public override void HandleOnPlayerDeath(Player player, OnKillCallResult killCallResult)
+	public override void HandleOnPlayerDeath(Player player, DeathEvent deathEvent)
 	{
 		if (player.CurrentState != this.GameModeType) return;
 

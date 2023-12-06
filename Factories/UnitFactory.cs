@@ -58,7 +58,7 @@ public static class UnitFactory
 		GameEvents.OnUnitDeath += HandleOnUnitDeath;
 	}
 
-	public static void HandleOnUnitDeath(Entity unitEntity, OnKillCallResult killCallResult)
+	public static void HandleOnUnitDeath(Entity unitEntity, DeathEvent deathEvent)
 	{
 		RespawnUnitIfEligible(unitEntity);
 	}

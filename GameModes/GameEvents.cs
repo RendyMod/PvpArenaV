@@ -18,7 +18,7 @@ public static class GameEvents
 	public delegate void PlayerRespawnHandler(Player player);
 	public static event PlayerRespawnHandler OnPlayerRespawn;
 
-	public delegate void PlayerDeathHandler(Player player, OnKillCallResult killCallResult);
+	public delegate void PlayerDeathHandler(Player player, DeathEvent deathEvent);
 	public static event PlayerDeathHandler OnPlayerDeath;
 
 	public delegate void PlayerDownedHandler(Player player, Entity killer);
@@ -72,7 +72,7 @@ public static class GameEvents
 	public delegate void PlayerLeftClanHandler(Player player, Entity eventEntity);
 	public static event PlayerLeftClanHandler OnPlayerLeftClan;
 
-	public delegate void UnitDeathHandler(Entity unit, OnKillCallResult killCallResult);
+	public delegate void UnitDeathHandler(Entity unit, DeathEvent deathEvent);
 	public static event UnitDeathHandler OnUnitDeath;
 
 	public delegate void ItemWasDroppedHandler(Player player, Entity eventEntity, PrefabGUID itemType, int slotIndex);
@@ -116,9 +116,9 @@ public static class GameEvents
 		OnPlayerRespawn?.Invoke(player);
 	}
 
-	public static void RaisePlayerDeath(Player player, OnKillCallResult killCallResult)
+	public static void RaisePlayerDeath(Player player, DeathEvent deathEvent)
 	{
-		OnPlayerDeath?.Invoke(player, killCallResult);
+		OnPlayerDeath?.Invoke(player, deathEvent);
 	}
 
 	public static void RaisePlayerDowned(Player player, Entity killer)
@@ -206,9 +206,9 @@ public static class GameEvents
 		OnPlayerChatCommand?.Invoke(player, command);
 	}
 
-	public static void RaiseUnitDeath(Entity unit, OnKillCallResult killCallResult)
+	public static void RaiseUnitDeath(Entity unit, DeathEvent deathEvent)
 	{
-		OnUnitDeath?.Invoke(unit, killCallResult);
+		OnUnitDeath?.Invoke(unit, deathEvent);
 	}
 
 	public static void RaisePlayerDealtDamage(Player player, Entity eventEntity)
