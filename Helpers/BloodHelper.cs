@@ -65,6 +65,7 @@ public static partial class Helper
 
 	public static void SetDefaultBlood(Player player, string defaultBlood)
 	{
+		defaultBlood = defaultBlood.ToLower();
 		var blood = player.Character.Read<Blood>();
 		bool bloodModified = false;
 		if (blood.BloodType == Prefabs.BloodType_None || blood.BloodType == Prefabs.BloodType_Worker || blood.BloodType == Prefabs.BloodType_Mutant || blood.Quality != 100)

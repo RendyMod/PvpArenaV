@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading;
 using ProjectM;
 using PvpArena.Data;
-using PvpArena.GameModes.PrisonBreak;
+using PvpArena.GameModes.CaptureThePancake;
 using PvpArena.Helpers;
 using PvpArena.Models;
 using PvpArena.Services;
@@ -12,7 +12,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using static PvpArena.Helpers.Helper;
 
-namespace PvpArena.GameModes.CaptureThePancake;
+namespace PvpArena.GameModes.PrisonBreak;
 
 public static class PrisonBreakHelper
 {
@@ -39,7 +39,7 @@ public static class PrisonBreakHelper
 			Action action = () =>
 			{
 				foreach (var player in PrisonBreakGameMode.PlayersAlive.Keys)
-				{	
+				{
 					if (countdownNumber > 0)
 					{
 						player.ReceiveMessage($"The match will start in: {countdownNumber.ToString().Emphasize()}".White());
@@ -58,7 +58,7 @@ public static class PrisonBreakHelper
 
 	private static List<Entity> GetAllGates()
 	{
-		var allGates = Helper.GetEntitiesByComponentTypes<Door>(true);
+		var allGates = GetEntitiesByComponentTypes<Door>(true);
 		var prisonZone = PrisonBreakConfig.Config.PrisonZone.ToRectangleZone();
 		List<Entity> prisonGates = new List<Entity>();
 		foreach (var gate in allGates)
@@ -86,16 +86,16 @@ public static class PrisonBreakHelper
 		var index = 0;
 		foreach (var player in PrisonBreakGameMode.PlayersAlive.Keys)
 		{
-			Helper.RemoveFromClan(player);
+			player.RemoveFromClan();
 			player.CurrentState = Player.PlayerState.PrisonBreak;
 			player.Reset(PrisonBreakGameMode.ResetOptions);
-			Helper.SetDefaultBlood(player, PrisonBreakConfig.Config.DefaultBlood);
+			SetDefaultBlood(player, PrisonBreakConfig.Config.DefaultBlood);
 			player.Teleport(PrisonConfig.Config.CellCoordinateList[index].ToFloat3());
-			Helper.BuffPlayer(player, Prefabs.AB_Consumable_PhysicalBrew_T02_Buff, out var buffEntity, Helper.NO_DURATION);
-			Helper.BuffPlayer(player, Prefabs.AB_Consumable_SpellBrew_T02_Buff, out buffEntity, Helper.NO_DURATION);
-			if (Helper.BuffPlayer(player, Prefabs.Buff_General_Phasing, out buffEntity, 10))
+			BuffPlayer(player, Prefabs.AB_Consumable_PhysicalBrew_T02_Buff, out var buffEntity, NO_DURATION);
+			BuffPlayer(player, Prefabs.AB_Consumable_SpellBrew_T02_Buff, out buffEntity, NO_DURATION);
+			if (BuffPlayer(player, Prefabs.Buff_General_Phasing, out buffEntity, 10))
 			{
-				Helper.ModifyBuff(buffEntity, BuffModificationTypes.AbilityCastImpair);
+				ModifyBuff(buffEntity, BuffModificationTypes.AbilityCastImpair);
 			}
 
 			index++;
@@ -134,11 +134,12 @@ public static class PrisonBreakHelper
 				{
 					player.CurrentState = Player.PlayerState.Normal;
 					player.MatchmakingTeam = 0;
-					Helper.RespawnPlayer(player, player.Position);
+					RespawnPlayer(player, player.Position);
 					player.Reset(ResetOptions.FreshMatch);
 				}
 
-				var action = () => {
+				var action = () =>
+				{
 					TeleportTeamsToCenter(Teams, 1, TeamSide.East);
 					Core.prisonBreakGameMode.Dispose();
 					DisposeTimers();
@@ -153,7 +154,7 @@ public static class PrisonBreakHelper
 				{
 					player.CurrentState = Player.PlayerState.Normal;
 					player.MatchmakingTeam = 0;
-					Helper.RespawnPlayer(player, player.Position);
+					RespawnPlayer(player, player.Position);
 					player.Reset(ResetOptions.FreshMatch);
 				}
 				Core.prisonBreakGameMode.Dispose();
@@ -233,11 +234,11 @@ public static class PrisonBreakHelper
 
 		foreach (var winner in winners)
 		{
-			Helper.ApplyWinnerMatchEndBuff(winner);
+			ApplyWinnerMatchEndBuff(winner);
 		}
 		foreach (var loser in losers)
 		{
-			Helper.ApplyLoserMatchEndBuff(loser);
+			ApplyLoserMatchEndBuff(loser);
 		}
 	}
 }

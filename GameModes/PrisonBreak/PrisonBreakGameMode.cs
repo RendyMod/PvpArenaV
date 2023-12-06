@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using ProjectM;
 using PvpArena.Models;
@@ -6,33 +5,15 @@ using Unity.Entities;
 using static ProjectM.DeathEventListenerSystem;
 using ProjectM.Network;
 using PvpArena.Data;
-using Unity.Mathematics;
 using Bloodstone.API;
 using PvpArena.Helpers;
 using static PvpArena.Frameworks.CommandFramework.CommandFramework;
 using System.Threading;
 using PvpArena.Services;
 using static PvpArena.Factories.UnitFactory;
-using ProjectM.Shared;
 using ProjectM.CastleBuilding;
 using System.Linq;
-using PvpArena.Factories;
-using System.Runtime.CompilerServices;
 using System.Diagnostics;
-using PvpArena.Patches;
-using ProjectM.Gameplay.Systems;
-using static PvpArena.Configs.ConfigDtos;
-using Unity.Collections;
-using Unity.Transforms;
-using ProjectM.Gameplay.Scripting;
-using AsmResolver.PE.Exceptions;
-using Epic.OnlineServices.Stats;
-using static ProjectM.SpawnBuffsAuthoring.SpawnBuffElement_Editor;
-using ProjectM.Shared.Systems;
-using static DamageRecorderService;
-using Cpp2IL.Core.Extensions;
-using static Il2CppSystem.Xml.XmlWellFormedWriter.AttributeValueCache;
-using PvpArena.GameModes.CaptureThePancake;
 
 namespace PvpArena.GameModes.PrisonBreak;
 
@@ -50,7 +31,6 @@ public class PrisonBreakGameMode : BaseGameMode
 		ResetCooldowns = false,
 		BuffsToIgnore = new HashSet<PrefabGUID> { Prefabs.AB_Shapeshift_Mist_Buff, Prefabs.Buff_General_HideCorpse }
 	};
-	private static bool MatchActive = false;
 
 	private static Stopwatch stopwatch = new Stopwatch();
 
@@ -80,7 +60,6 @@ public class PrisonBreakGameMode : BaseGameMode
 
 	public override void Initialize()
 	{
-		MatchActive = true;
 		GameEvents.OnPlayerRespawn += HandleOnPlayerRespawn;
 		GameEvents.OnPlayerDowned += HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath += HandleOnPlayerDeath;
@@ -89,11 +68,10 @@ public class PrisonBreakGameMode : BaseGameMode
 		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
 		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
 		GameEvents.OnPlayerInvitedToClan += HandleOnPlayerInvitedToClan;
-		GameEvents.OnPlayerKickedFromClan += HandleOnPlayerKickedFromClan;
-		GameEvents.OnPlayerLeftClan += HandleOnPlayerLeftClan;
 		GameEvents.OnUnitDeath += HandleOnUnitDeath;
 		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
 		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
+		GameEvents.OnPlayerBuffed += HandleOnPlayerBuffed;
 
 		foreach (var player in PlayerService.OnlinePlayers.Keys)
 		{
@@ -115,7 +93,6 @@ public class PrisonBreakGameMode : BaseGameMode
 	}
 	public override void Dispose()
 	{
-		MatchActive = false;
 		GameEvents.OnPlayerRespawn -= HandleOnPlayerRespawn;
 		GameEvents.OnPlayerDowned -= HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath -= HandleOnPlayerDeath;
@@ -124,11 +101,10 @@ public class PrisonBreakGameMode : BaseGameMode
 		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
 		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
 		GameEvents.OnPlayerInvitedToClan -= HandleOnPlayerInvitedToClan;
-		GameEvents.OnPlayerKickedFromClan -= HandleOnPlayerKickedFromClan;
-		GameEvents.OnPlayerLeftClan -= HandleOnPlayerLeftClan;
 		GameEvents.OnUnitDeath -= HandleOnUnitDeath;
 		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
 		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
+		GameEvents.OnPlayerBuffed -= HandleOnPlayerBuffed;
 
 		PlayersAlive.Clear();
 		foreach (var kvp in PlayerRespawnTimers)
@@ -189,7 +165,7 @@ public class PrisonBreakGameMode : BaseGameMode
 			// Handle admin abuse case
 			foreach (var onlinePlayer in PlayersAlive.Keys)
 			{
-				string coloredVictimName = $"{player.Name.EnemyTeam()}";
+				string coloredVictimName = $"{player.Name.Colorify(ExtendedColor.ClanNameColor)}";
 				string message = $"{coloredVictimName} died to {"admin abuse".EnemyTeam()}".White();
 				onlinePlayer.ReceiveMessage(message);
 			}
@@ -203,13 +179,11 @@ public class PrisonBreakGameMode : BaseGameMode
 
 	private string CreatePlayerDownedMessage(Player victim, Player killer, Player observer)
 	{
-		bool isVictimTeammate = victim.MatchmakingTeam == observer.MatchmakingTeam;
-		string coloredVictimName = isVictimTeammate ? $"{victim.Name.FriendlyTeam()}" : $"{victim.Name.EnemyTeam()}".White();
+		string coloredVictimName = $"{victim.Name.Colorify(ExtendedColor.ClanNameColor)}".White();
 
 		if (killer != null)
 		{
-			bool isKillerTeammate = killer.MatchmakingTeam == observer.MatchmakingTeam;
-			string coloredKillerName = isKillerTeammate ? $"{killer.Name.FriendlyTeam()}" : $"{killer.Name.EnemyTeam()}".White();
+			string coloredKillerName = $"{killer.Name.Colorify(ExtendedColor.ClanNameColor)}".White();
 			return $"{coloredKillerName} killed {coloredVictimName}".White();
 		}
 		else
@@ -235,15 +209,14 @@ public class PrisonBreakGameMode : BaseGameMode
 		{
 			foreach (var alivePlayer in PlayersAlive.Keys)
 			{
-				string coloredVictimName = $"{player.Name.EnemyTeam()}";
+				string coloredVictimName = player.Name.Colorify(ExtendedColor.ClanNameColor);
+				
 				var message = $"{coloredVictimName} killed themselves".White();
 				alivePlayer.ReceiveMessage(message);
 			}
 		}
 
 		Helper.RevivePlayer(player);
-		player.Reset(ResetOptions);
-		Helper.MakeGhostlySpectator(player);
 		PlayersAlive[player] = false;
 		CheckForWinner();
 	}
@@ -252,10 +225,20 @@ public class PrisonBreakGameMode : BaseGameMode
 	{
 		if (IsMatchOver())
 		{
-			Player winner;
+			Player winner = null;
 			foreach (var playerTemp in PlayersAlive.Keys)
 			{
 				if (PlayersAlive[playerTemp])
+				{
+					winner = playerTemp;
+					ServerChatUtils.SendSystemMessageToAllClients(VWorld.Server.EntityManager, $"{winner.Name.Colorify(ExtendedColor.ClanNameColor)} has won and broken out of prison!".White());
+					PrisonBreakHelper.EndMatch(winner);
+					break;
+				}
+			}
+			if (winner == null)
+			{
+				foreach (var playerTemp in PlayersAlive.Keys)
 				{
 					winner = playerTemp;
 					ServerChatUtils.SendSystemMessageToAllClients(VWorld.Server.EntityManager, $"{winner.Name.Colorify(ExtendedColor.ClanNameColor)} has won and broken out of prison!".White());
@@ -280,9 +263,12 @@ public class PrisonBreakGameMode : BaseGameMode
 	{
 		if (player.CurrentState != GameModeType) return;
 
-
-		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
-		player.ReceiveMessage($"That shapeshift is disabled while in prison.".Error());
+		var enterShapeshiftEvent = eventEntity.Read<EnterShapeshiftEvent>();
+		if (enterShapeshiftEvent.Shapeshift != Prefabs.AB_Shapeshift_BloodMend_Group)
+		{
+			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
+			player.ReceiveMessage("You can't feel your vampire essence here...".Error());
+		}
 	}
 	public override void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
 	{
@@ -310,24 +296,9 @@ public class PrisonBreakGameMode : BaseGameMode
 		if (player.CurrentState != GameModeType) return;
 
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
-		player.ReceiveMessage("You may not invite players to your clan while in Capture the Pancake".Error());
+		player.ReceiveMessage("You may not invite players to your clan while in prison".Error());
 	}
 
-	public void HandleOnPlayerKickedFromClan(Player player, Entity eventEntity)
-	{
-		if (player.CurrentState != GameModeType) return;
-
-		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
-		player.ReceiveMessage("You may not kick players from your clan while in Capture the Pancake".Error());
-	}
-
-	public void HandleOnPlayerLeftClan(Player player, Entity eventEntity)
-	{
-		if (player.CurrentState != GameModeType) return;
-
-		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
-		player.ReceiveMessage("You may not leave your clan while in Capture the Pancake".Error());
-	}
 	public void HandleOnPlayerChatCommand(Player player, Entity eventEntity)
 	{
 		if (player.CurrentState != GameModeType) return;
@@ -364,7 +335,21 @@ public class PrisonBreakGameMode : BaseGameMode
 
 		var blood = player.Character.Read<Blood>();
 		Helper.SetPlayerBlood(player, blood.BloodType, blood.Quality);
-		
+		Helper.MakeGhostlySpectator(player);
+	}
+
+	public void HandleOnPlayerBuffed(Player player, Entity buffEntity)
+	{
+		if (buffEntity.Read<PrefabGUID>() == Prefabs.AB_Shapeshift_BloodMend_Buff)
+		{
+			var buffer = buffEntity.ReadBuffer<ChangeBloodOnGameplayEvent>();
+			for (var i = 0; i < buffer.Length; i++)
+			{
+				var changeBloodOnGameplayEvent = buffer[i];
+				changeBloodOnGameplayEvent.BloodValue = 10;
+				buffer[i] = changeBloodOnGameplayEvent;
+			}
+		}
 	}
 
 	public static new Dictionary<string, bool> GetAllowedCommands()

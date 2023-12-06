@@ -8,6 +8,7 @@ using PvpArena.GameModes.BulletHell;
 using PvpArena.GameModes.CaptureThePancake;
 using PvpArena.GameModes.Dodgeball;
 using PvpArena.GameModes.Domination;
+using PvpArena.GameModes.PrisonBreak;
 using PvpArena.GameModes.Troll;
 using PvpArena.Models;
 using PvpArena.Services;
