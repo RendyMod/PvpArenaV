@@ -19,6 +19,7 @@ namespace PvpArena.Services
 		public static readonly Dictionary<Entity, Player> CharacterCache = new Dictionary<Entity, Player>();
 		public static readonly Dictionary<ulong, Player> SteamIdCache = new Dictionary<ulong, Player>();
 		public static readonly Dictionary<Player, bool> OnlinePlayers = new Dictionary<Player, bool>();
+		public static Action OnOnlinePlayerAmountChanged;
 
 		public abstract class PlayerData
 		{
@@ -55,6 +56,7 @@ namespace PvpArena.Services
 
 				}
 			}
+			OnOnlinePlayerAmountChanged?.Invoke();
 		}
 
 		public static Player GetPlayerFromUser(Entity User)

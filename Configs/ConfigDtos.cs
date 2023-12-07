@@ -13,15 +13,15 @@ using Unity.Mathematics;
 using Unity.Physics.Authoring;
 
 namespace PvpArena.Configs;
+
 public class ConfigDtos
 {
-
 	public class PrefabSpawn
 	{
 		public PrefabGUID PrefabGUID { get; set; }
 		public CoordinateDto Location { get; set; } = new CoordinateDto();
 		public int Team { get; set; } = 3;
-		public int RotationMode { get; set; }  // Rotation mode (1-4)
+		public int RotationMode { get; set; } // Rotation mode (1-4)
 		public int SpawnDelay { get; set; } = -1;
 		public int RespawnTime { get; set; } = -1;
 		public int Health { get; set; } = -1;
@@ -32,13 +32,13 @@ public class ConfigDtos
 
 	public class PrefabGUIDConverter : JsonConverter<PrefabGUID>
 	{
-		public override PrefabGUID Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+		public override PrefabGUID Read (ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
 		{
 			string guidString = reader.GetString();
 			return Helper.TryGetPrefabGUIDFromString(guidString, out var prefabGUID) ? prefabGUID : PrefabGUID.Empty;
 		}
 
-		public override void Write(Utf8JsonWriter writer, PrefabGUID value, JsonSerializerOptions options)
+		public override void Write (Utf8JsonWriter writer, PrefabGUID value, JsonSerializerOptions options)
 		{
 			string guidString = value.LookupNameString();
 			writer.WriteStringValue(guidString);
@@ -70,12 +70,12 @@ public class ConfigDtos
 		public float Y { get; set; }
 		public float Z { get; set; }
 
-		public float3 ToFloat3()
+		public float3 ToFloat3 ()
 		{
 			return new float3(X, Y, Z);
 		}
 
-		public static CoordinateDto FromFloat3(float3 vec)
+		public static CoordinateDto FromFloat3 (float3 vec)
 		{
 			return new CoordinateDto { X = vec.x, Y = vec.y, Z = vec.z };
 		}
@@ -88,12 +88,12 @@ public class ConfigDtos
 		public float Right { get; set; }
 		public float Bottom { get; set; }
 
-		public RectangleZone ToRectangleZone()
+		public RectangleZone ToRectangleZone ()
 		{
 			return new RectangleZone(Left, Top, Right, Bottom);
 		}
 
-		public static RectangleZoneDto FromRectangleZone(RectangleZone zone)
+		public static RectangleZoneDto FromRectangleZone (RectangleZone zone)
 		{
 			return new RectangleZoneDto
 			{
@@ -108,16 +108,16 @@ public class ConfigDtos
 	public class CircleZoneDto
 	{
 		public float CenterX { get; set; }
-        public float CenterY { get; set; } = 0;
+		public float CenterY { get; set; } = 0;
 		public float CenterZ { get; set; }
 		public float Radius { get; set; }
 
-		public CircleZone ToCircleZone()
+		public CircleZone ToCircleZone ()
 		{
 			return new CircleZone(new float3(CenterX, CenterY, CenterZ), Radius);
 		}
 
-		public static CircleZoneDto FromCircleZone(CircleZone zone)
+		public static CircleZoneDto FromCircleZone (CircleZone zone)
 		{
 			return new CircleZoneDto
 			{
@@ -137,7 +137,7 @@ public class ConfigDtos
 
 	public class CapturePointDto
 	{
-		public RectangleZoneDto Zone {  get; set; }
+		public RectangleZoneDto Zone { get; set; }
 		public PrefabGUID BuffToApplyOnCapture { get; set; }
 		public string Description { get; set; }
 	}
@@ -194,7 +194,7 @@ public class ConfigDtos
 	public class TraderDto
 	{
 		public UnitSpawn UnitSpawn { get; set; }
-		public List<TraderItemDto> TraderItems {get;set;}
+		public List<TraderItemDto> TraderItems { get; set; }
 	}
 
 	public class TraderItemDto

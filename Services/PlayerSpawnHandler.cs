@@ -84,7 +84,8 @@ public static class PlayerSpawnHandler
 		Helper.SetPlayerBlood(player, Prefabs.BloodType_Warrior);
 
 		Helper.ApplyBuildImpairBuffToPlayer(player); //if a player connects before they have a character, some of our on-connect logic won't be able to work, so it's duplicated here
-		PlayerService.OnlinePlayers.TryAdd(player, true); //this is only needed for re-made characters
+		if(PlayerService.OnlinePlayers.TryAdd(player, true)) //this is only needed for re-made characters
+			PlayerService.OnOnlinePlayerAmountChanged?.Invoke();
 	}
 
 	private static void GiveJewelsAndScheduleEquipment(Player player)

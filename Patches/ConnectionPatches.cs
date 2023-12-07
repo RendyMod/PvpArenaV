@@ -33,7 +33,8 @@ public static class OnUserDisconnectedPatch
 					var serverClient = __instance._ApprovedUsersLookup[userIndex];
 					var User = serverClient.UserEntity;
 					var Player = PlayerService.GetPlayerFromUser(User);
-					PlayerService.OnlinePlayers.Remove(Player);
+					if (PlayerService.OnlinePlayers.Remove(Player)) ;
+					PlayerService.OnOnlinePlayerAmountChanged?.Invoke();
 					GameEvents.RaisePlayerDisconnected(Player);
 					if (Player.PlayerPointsData.OnlineTimer != null)
 					{
@@ -71,9 +72,12 @@ public static class OnUserConnectedPatch
 					if (User.Exists())
 					{
 						var player = PlayerService.GetPlayerFromUser(User);
-						PlayerService.OnlinePlayers.TryAdd(player, true);
-						Action action = () => LoginPointsService.AwardPoints(player, PvpArenaConfig.Config.PointsPerIntervalOnline);
-						player.PlayerPointsData.OnlineTimer = ActionScheduler.RunActionEveryInterval(action, 60 * PvpArenaConfig.Config.IntervalDurationInMinutes);
+						if (PlayerService.OnlinePlayers.TryAdd(player, true))
+							PlayerService.OnOnlinePlayerAmountChanged?.Invoke();
+						Action action = () =>
+							LoginPointsService.AwardPoints(player, PvpArenaConfig.Config.PointsPerIntervalOnline);
+						player.PlayerPointsData.OnlineTimer = ActionScheduler.RunActionEveryInterval(action,
+							60 * PvpArenaConfig.Config.IntervalDurationInMinutes);
 						if (player.BanInfo.IsBanned())
 						{
 							Helper.KickPlayer(player.SteamID);
@@ -85,6 +89,7 @@ public static class OnUserConnectedPatch
 							{
 								Helper.ControlOriginalCharacter(player);
 							}
+
 							GameEvents.RaisePlayerConnected(player);
 							Helper.Reset(player, new Helper.ResetOptions
 							{
@@ -113,23 +118,29 @@ public static class OnUserConnectedPatch
 	[CommandFramework.Command("welcome-message", adminOnly: true)]
 	public static void SendWelcomeMessageToPlayer (Player player)
 	{
-		player.ReceiveMessage(($"Welcome to " + "V Arena".Emphasize() + " powered by " + "Altab".Emphasize()+ ".be".Colorify(ExtendedColor.ClanNameColor)).Colorify(ExtendedColor.ServerColor));
+		player.ReceiveMessage(
+			($"Welcome to " + "V Arena".Emphasize() + " powered by " + "Altab".Emphasize() +
+			 ".be".Colorify(ExtendedColor.ClanNameColor)).Colorify(ExtendedColor.ServerColor));
 		player.ReceiveMessage(("Join us on Discord" + ": " +
-		                      $"{PvpArenaConfig.Config.DiscordLink}".Colorify(ExtendedColor.LightServerColor)).Emphasize());
-		player.ReceiveMessage(("Jewels:".Emphasize()+" Use " +
-		                      ".j spellName ?".Colorify(ExtendedColor.LightServerColor) +
-		                      " to see the " + "mods".Emphasize()).White());
-		player.ReceiveMessage(("Legendaries:".Emphasize()+" Use " + ".lw ?".Colorify(ExtendedColor.LightServerColor) +
-		                      " to see the available "+"effects".Emphasize()).White());
-		player.ReceiveMessage(("Blood:".Emphasize()+" Use " + ".bp bloodName".Colorify(ExtendedColor.LightServerColor) +
-		                      " to get "+"blood".Emphasize()).White());
-		player.ReceiveMessage(("Buffs:".Emphasize()+" Use " + ".buffs".Colorify(ExtendedColor.LightServerColor) + " or " + "Blood Hunger".Colorify(ExtendedColor.LightServerColor) +
-		                      " to toggle "+"buffs".Emphasize()).White());
-		player.ReceiveMessage(("Reset:".Emphasize()+" Use " + ".r".Colorify(ExtendedColor.LightServerColor) + " or " + "Blood Mend".Colorify(ExtendedColor.LightServerColor) +
-		                       " to reset "+ "CD".Emphasize()+" and "+"HP".Emphasize()).White());
-		player.ReceiveMessage(("TP:".Emphasize()+" Use " + ".tp-list".Colorify(ExtendedColor.LightServerColor) +
-		                      " to check the list of TPs").White());
+		                       $"{PvpArenaConfig.Config.DiscordLink}".Colorify(ExtendedColor.LightServerColor))
+			.Emphasize());
+		player.ReceiveMessage(("Jewels:".Emphasize() + " Use " +
+		                       ".j spellName ?".Colorify(ExtendedColor.LightServerColor) +
+		                       " to see the " + "mods".Emphasize()).White());
+		player.ReceiveMessage(("Legendaries:".Emphasize() + " Use " + ".lw ?".Colorify(ExtendedColor.LightServerColor) +
+		                       " to see the available " + "effects".Emphasize()).White());
+		player.ReceiveMessage(("Blood:".Emphasize() + " Use " +
+		                       ".bp bloodName".Colorify(ExtendedColor.LightServerColor) +
+		                       " to get " + "blood".Emphasize()).White());
+		player.ReceiveMessage(("Buffs:".Emphasize() + " Use " + ".buffs".Colorify(ExtendedColor.LightServerColor) +
+		                       " or " + "Blood Hunger".Colorify(ExtendedColor.LightServerColor) +
+		                       " to toggle " + "buffs".Emphasize()).White());
+		player.ReceiveMessage(("Reset:".Emphasize() + " Use " + ".r".Colorify(ExtendedColor.LightServerColor) + " or " +
+		                       "Blood Mend".Colorify(ExtendedColor.LightServerColor) +
+		                       " to reset " + "CD".Emphasize() + " and " + "HP".Emphasize()).White());
+		player.ReceiveMessage(("TP:".Emphasize() + " Use " + ".tp-list".Colorify(ExtendedColor.LightServerColor) +
+		                       " to check the list of TPs").White());
 		player.ReceiveMessage(("Type " + ".help".Colorify(ExtendedColor.LightServerColor) +
-		                      " in chat to see "+"all available commands".Emphasize()).White());
+		                       " in chat to see " + "all available commands".Emphasize()).White());
 	}
 }

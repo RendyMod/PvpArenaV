@@ -73,6 +73,8 @@ public static class Core
 		if (HasInitialized) return;
 		Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
 		
+		DiscordBotConfig.Load();
+		DiscordBot.InitializeAsync();
 		PlayerService.LoadAllPlayers();
 		PvpArenaConfig.Load();
 		PlayerJewels.Load();
@@ -97,6 +99,8 @@ public static class Core
 		defaultLegendaryWeaponStorage.LoadAllLegendaryDataAsync();
 		matchmakingArenaStorage = new MatchmakingArenasDataStorage(PvpArenaConfig.Config.MainDatabase);
 		matchmaking1v1ArenaLocations = matchmakingArenaStorage.LoadAllArenasAsync().Result;
+		
+		
 
 		EntityQueryOptions options = EntityQueryOptions.Default;
 
