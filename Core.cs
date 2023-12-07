@@ -55,7 +55,6 @@ public static class Core
 	public static PrisonBreakGameMode prisonBreakGameMode;
 	public static NoHealingLimitGameMode noHealingLimitGameMode;
 	public static bool HasInitialized = false;
-	/*public static DiscordBot discordBot;*/
 	public static SQLHandler sqlHandler;
 	public static DebugEventsSystem debugEventsSystem = VWorld.Server.GetExistingSystem<DebugEventsSystem>();
 	public static NetworkIdSystem networkIdSystem = VWorld.Server.GetExistingSystem<NetworkIdSystem>();
@@ -125,9 +124,6 @@ public static class Core
 		};
 		query = VWorld.Server.EntityManager.CreateEntityQuery(queryDesc);
 		Listener.AddListener(query, new AoeListener());
-
-		/*discordBot = new DiscordBot();
-		discordBot.InitializeAsync();*/
 
 		matchmaking1V1DataRepository.LoadDataAsync();
 		pointsDataRepository.LoadDataAsync();
@@ -203,6 +199,7 @@ public static class Core
 		noHealingLimitGameMode.Dispose();
 		LoginPointsService.DisposeTimersForOnlinePlayers();
 		Listener.Dispose();
+		DiscordBot.Dispose();
 	}
 }
 

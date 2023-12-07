@@ -11,6 +11,7 @@ using BepInEx.Logging;
 using System.Collections.Generic;
 using static PvpArena.Frameworks.CommandFramework.CommandFramework;
 using PvpArena.GameModes;
+using Bloodstone;
 
 namespace PvpArena.Patches;
 
@@ -33,7 +34,7 @@ public static class ChatMessageSystemPatch
 
 				if (CommandHandler.ExecuteCommand(player, chatEvent.MessageText.ToString()))
 				{
-					VWorld.Server.EntityManager.DestroyEntity(entity);
+					entity.Destroy();
 				}
 				if (player.MuteInfo.IsMuted())
 				{
@@ -46,11 +47,18 @@ public static class ChatMessageSystemPatch
 						player.ReceiveMessage($"You are muted for {player.MuteInfo.GetFormattedRemainingMuteTime()}. If you feel there is a mistake, you can open a ticket on discord to appeal".Error());
 					}
 
-					VWorld.Server.EntityManager.DestroyEntity(entity);
+					entity.Destroy();
 				}
-				if (VWorld.Server.EntityManager.Exists(entity))
+				if (entity.Exists())
 				{
 					GameEvents.RaisePlayerChatMessage(player, entity);
+					if (chatEvent.MessageType == ChatMessageType.Global && DiscordBotConfig.Config.GlobalChannel > 0)
+					{
+						if (chatEvent.MessageText.ToString() != "!reload")
+						{
+							DiscordBot.SendMessageAsync($"{player.Name}: {chatEvent.MessageText}", DiscordBotConfig.Config.GlobalChannel);
+						}
+					}
 				}
 			}
 			catch (Exception e)
