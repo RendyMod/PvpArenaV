@@ -18,53 +18,36 @@ public class NoHealingLimitGameMode : DefaultGameMode
 	public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
 	{
 		RemoveConsumables = true,
-		RemoveShapeshifts = false,
-		BuffsToIgnore = new HashSet<PrefabGUID> {  }
+		RemoveShapeshifts = true,
+		BuffsToIgnore = new HashSet<PrefabGUID> { Helper.CustomBuff4 }
 	};
 
-	private static List<ModifyUnitStatBuff_DOTS> TrollMods = new List<ModifyUnitStatBuff_DOTS>
+	private static List<ModifyUnitStatBuff_DOTS> NoHealingLimitMods = new List<ModifyUnitStatBuff_DOTS>
 	{
 		new ModifyUnitStatBuff_DOTS
 		{
 			Id = ModificationIdFactory.NewId(),
 			ModificationType = ModificationType.Set,
 			Priority = 100,
-			StatType = UnitStatType.SpellPower,
-			Value = -100
+			StatType = UnitStatType.SpellLifeLeech,
+			Value = .3f
 		},
 		new ModifyUnitStatBuff_DOTS
 		{
 			Id = ModificationIdFactory.NewId(),
 			ModificationType = ModificationType.Set,
 			Priority = 100,
-			StatType = UnitStatType.PhysicalPower,
-			Value = -100
+			StatType = UnitStatType.PhysicalLifeLeech,
+			Value = .3f
 		},
 		new ModifyUnitStatBuff_DOTS
 		{
 			Id = ModificationIdFactory.NewId(),
 			ModificationType = ModificationType.Set,
 			Priority = 100,
-			StatType = UnitStatType.AttackSpeed,
-			Value = 5
-		},
-		new ModifyUnitStatBuff_DOTS
-		{
-			Id = ModificationIdFactory.NewId(),
-			ModificationType = ModificationType.Set,
-			Priority = 100,
-			StatType = UnitStatType.CooldownModifier,
-			Value = 0
-		},
-		new ModifyUnitStatBuff_DOTS
-		{
-			Id = ModificationIdFactory.NewId(),
-			ModificationType = ModificationType.Set,
-			Priority = 100,
-			StatType = UnitStatType.MovementSpeed,
-			Value = 20
+			StatType = UnitStatType.PrimaryLifeLeech,
+			Value = .3f
 		}
-		
 		//
 	};
 
@@ -92,6 +75,23 @@ public class NoHealingLimitGameMode : DefaultGameMode
 	public static new HashSet<string> GetAllowedCommands()
 	{
 		return AllowedCommands;
+	}
+
+	public override void HandleOnPlayerBuffed(Player player, Entity buffEntity)
+	{
+		if (player.CurrentState != this.GameModeType) return;
+
+		base.HandleOnPlayerBuffed(player, buffEntity);
+
+		if (buffEntity.Read<PrefabGUID>() == Helper.CustomBuff4)
+		{
+			var buffer = buffEntity.AddBuffer<ModifyUnitStatBuff_DOTS>();
+			buffer.Clear();
+			foreach (var mod in NoHealingLimitMods)
+			{
+				buffer.Add(mod);
+			}
+		}
 	}
 
 	public void HandleOnGameFrameUpdate()
