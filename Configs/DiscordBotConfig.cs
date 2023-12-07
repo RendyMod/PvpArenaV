@@ -61,4 +61,5 @@ public class DiscordBotConfigData
 {
 	public string Token { get; set; } = "";
 	public ulong JailChannel { get; set; } = 0;
+	public ulong GlobalChannel { get; set; } = 0;
 }
