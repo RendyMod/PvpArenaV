@@ -69,7 +69,8 @@ internal class PrisonCommands
 			sender.ReceiveMessage(
 				$"{imprisonedPlayer.Name.Colorify(ExtendedColor.ClanNameColor)} has been unimprisoned.".White());
 
-			DiscordBot.SendEmbedAsync(DiscordBotConfig.Config.JailChannel, EmbedPrisonAnnouncement(imprisonedPlayer, false));
+			DiscordBot.SendEmbedAsync(DiscordBotConfig.Config.JailChannel,
+				EmbedPrisonAnnouncement(imprisonedPlayer, false));
 		}
 		else
 		{
@@ -82,19 +83,26 @@ internal class PrisonCommands
 	public static Embed EmbedPrisonAnnouncement (Player _player, bool imprisoned = true, int numberOfDays = -1,
 		string reason = "")
 	{
-		var embedBuilder = new EmbedBuilder	
+		var embedBuilder = new EmbedBuilder
 		{
-			Title = "\ud83d\udc6e\u2502Player " + (imprisoned ? "imprisoned!" : "released!"),
+			Title = @"👮│Player " + (imprisoned ? "imprisoned!" : "released!"),
 			Description = "**" + _player.Name + "**" +
 			              (imprisoned ? " has been imprisoned." : " has been released from prison."),
 			Color = imprisoned ? Color.Red : Color.Green,
+			Footer = !imprisoned
+				? null
+				: new EmbedFooterBuilder()
+				{
+					Text = "Note that you can appeal by sending a ticket to re-examine your case.",
+				}
 		};
 
 		// Adding fields with titles and text
 		if (imprisoned)
 		{
-			embedBuilder.AddField("SteamID", _player.SteamID);
-			embedBuilder.AddField("Duration", numberOfDays == -1 ? "Indefinitely." : numberOfDays + " days.");
+			embedBuilder.AddField("SteamID", _player.SteamID, inline: true);
+			embedBuilder.AddField("Duration", numberOfDays == -1 ? "Indefinitely." : numberOfDays + " day(s).",
+				inline: true);
 			embedBuilder.AddField("Reason", reason == "" ? "No reason given." : reason);
 		}
 

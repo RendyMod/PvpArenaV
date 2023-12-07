@@ -59,6 +59,7 @@ public static class DiscordBotConfig
 
 public class DiscordBotConfigData
 {
+	public ulong GuildID { get; set; } = 0;
 	public string Token { get; set; } = "";
 	public ulong JailChannel { get; set; } = 0;
 	public ulong RecordChannel { get; set; } = 0;

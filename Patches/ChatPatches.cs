@@ -15,12 +15,11 @@ using Bloodstone;
 
 namespace PvpArena.Patches;
 
-
 [HarmonyPatch(typeof(ChatMessageSystem), nameof(ChatMessageSystem.OnUpdate))]
 [HarmonyBefore(new string[] { "gg.deca.Bloodstone" })]
 public static class ChatMessageSystemPatch
 {
-	public static void Prefix(ChatMessageSystem __instance)
+	public static void Prefix (ChatMessageSystem __instance)
 	{
 		var entities = __instance._ChatMessageQuery.ToEntityArray(Allocator.Temp);
 		foreach (var entity in entities)
@@ -36,19 +35,25 @@ public static class ChatMessageSystemPatch
 				{
 					entity.Destroy();
 				}
+
 				if (player.MuteInfo.IsMuted())
 				{
 					if (player.MuteInfo.MuteDurationDays == -1)
 					{
-						player.ReceiveMessage($"You are muted indefinitely. If you feel there is a mistake, you can open a ticket on discord to appeal".Error());
+						player.ReceiveMessage(
+							$"You are muted indefinitely. If you feel there is a mistake, you can open a ticket on discord to appeal"
+								.Error());
 					}
 					else
 					{
-						player.ReceiveMessage($"You are muted for {player.MuteInfo.GetFormattedRemainingMuteTime()}. If you feel there is a mistake, you can open a ticket on discord to appeal".Error());
+						player.ReceiveMessage(
+							$"You are muted for {player.MuteInfo.GetFormattedRemainingMuteTime()}. If you feel there is a mistake, you can open a ticket on discord to appeal"
+								.Error());
 					}
 
 					entity.Destroy();
 				}
+
 				if (entity.Exists())
 				{
 					GameEvents.RaisePlayerChatMessage(player, entity);
@@ -56,7 +61,9 @@ public static class ChatMessageSystemPatch
 					{
 						if (chatEvent.MessageText.ToString() != "!reload")
 						{
-							DiscordBot.SendMessageAsync($"{player.Name}: {chatEvent.MessageText}", DiscordBotConfig.Config.GlobalChannel);
+							DiscordBot.SendEmbedAsync(DiscordBotConfig.Config.GlobalChannel,
+								DiscordGlobalLinkSystem.EmbedFromGlobalChat($"{player.Name}",
+									$"{chatEvent.MessageText}"));
 						}
 					}
 				}
@@ -73,7 +80,7 @@ public static class ChatMessageSystemPatch
 [HarmonyPatch(typeof(VivoxConnectionSystem), nameof(VivoxConnectionSystem._HandleClientLoginMessages_b__13_0))]
 public static class VivoxConnectionSystemPatch
 {
-	public static bool Prefix(VivoxConnectionSystem __instance, Entity entity, ref FromCharacter fromCharacter)
+	public static bool Prefix (VivoxConnectionSystem __instance, Entity entity, ref FromCharacter fromCharacter)
 	{
 		try
 		{

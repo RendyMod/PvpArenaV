@@ -292,14 +292,19 @@ public static class BulletHellManager
 	{
 		var embedBuilder = new EmbedBuilder
 		{
-			Title = @"🏆│ Bullet Hell record beaten!",
-			Description = "**" + _playerName + "**" + " has beaten **" + _oldPlayerName +
-			              "**'s **Bullet Hell** regional record!",
+			Title = @"🏆│Bullet Hell record broken!",
+			Description = "**" + _playerName + "** has beaten **" + _oldPlayerName + "**'s regional record of *" +
+			              _oldPlayerTimer + "s*",
 			Color = Discord.Color.Gold,
+
+			Footer = new EmbedFooterBuilder()
+			{
+				Text = "Try to beat it by using .start-bullet command in game!",
+			}
 		};
-		
-		embedBuilder.AddField("New Record", _playerTimer + "s");
-		embedBuilder.AddField("*Old Record*", "*"+_oldPlayerTimer + "s*");
+
+		embedBuilder.AddField("Player", _playerName, inline: true);
+		embedBuilder.AddField("New Record", _playerTimer + "s", inline: true);
 
 		return embedBuilder.Build();
 	}

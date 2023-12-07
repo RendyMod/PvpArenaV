@@ -167,6 +167,9 @@ public static class ExtendedColor
         public static readonly Color ServerColor = new Color32(217, 38, 85, 255);
         
         public static readonly Color ClanNameColor = new Color32(86, 150, 225, 255);
+        public static readonly Color GlobalColor = new Color32(137, 202, 246, 255);
+        public static readonly Color ClassicUsernameColor = new Color32(137, 113, 109, 255);
+        public static readonly Color DiscordColor = new Color32(118, 135, 250, 255);
         
         public static string ToHexString (this Color _color)
         {
