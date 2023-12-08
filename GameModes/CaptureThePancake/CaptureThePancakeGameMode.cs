@@ -914,8 +914,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		
 		if (!prefabEntity.Has<Relic>())
 		{
-			Helper.RemoveItemAtSlotFromInventory(player, itemType, slotIndex);
-			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
+			base.HandleOnItemWasDropped(player, eventEntity, itemType, slotIndex);
 		}
 	}
 
