@@ -47,9 +47,9 @@ public class Plugin : BasePlugin, IRunOnInitialized
 			Core.Dispose();
 			Harmony?.UnpatchSelf();
 		}
-		catch
+		catch (Exception e)
 		{
-			Plugin.PluginLog.LogInfo("Ran into error while unloading");
+			Plugin.PluginLog.LogInfo($"Ran into error while unloading: {e.ToString()}");
 		}
 		return true;
 	}
@@ -253,7 +253,7 @@ public class Plugin : BasePlugin, IRunOnInitialized
 		var dropInInventoryOnSpawn = VWorld.Server.GetExistingSystem<DropInInventoryOnSpawnSystem>();
 		var unitSpawnerReactSystem = VWorld.Server.GetExistingSystem<UnitSpawnerReactSystem>();
 		var pavementBonusSystem = VWorld.Server.GetExistingSystem<PavementBonusSystem>();
-		
+		var patrolMoveSystem = VWorld.Server.GetExistingSystem<PatrolMoveSystem>();
 
 		radialZoneSystem_Holy_Server.Enabled = false;
 		radialZoneSystem_Garlic_Server.Enabled = false;
@@ -261,12 +261,13 @@ public class Plugin : BasePlugin, IRunOnInitialized
 		respawnAiEventSystem.Enabled = false;
 		resetBloodOnRespawnSystem.Enabled = false; //stops you from going to frailed blood when you die
 		onDeathSystem.Enabled = false; //stops you from dropping your hat when you die
-		playerCombatBuffSystem.Enabled = true; //setting to false totally removes pve in combat buff, but also can mess up hp regen
+		playerCombatBuffSystem.Enabled = false; //setting to false totally removes pve in combat buff, but also can mess up hp regen
 		spawnRegionSpawnSystem.Enabled = false;
 		initializeNewSpawnChainSystem.Enabled = true;
 		dropInInventoryOnSpawn.Enabled = false;
 		unitSpawnerReactSystem.Enabled = true;
 		pavementBonusSystem.Enabled = false;
+		patrolMoveSystem.Enabled = false;
 		/*createGameplayEventsOnDeathSystem.Enabled = true;*/
 		if (PvpArenaConfig.Config.MatchmakingEnabled)
 		{

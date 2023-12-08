@@ -52,6 +52,8 @@ public class BulletHellGameMode : BaseGameMode
 		GameEvents.OnPlayerStartedCasting += HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerUsedConsumable += HandleOnConsumableUse;
 		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
+		GameEvents.OnUnitProjectileCreated += HandleOnUnitProjectileCreated;
+		GameEvents.OnUnitAoeCreated += HandleOnUnitAoeCreated;
 		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
 		GameEvents.OnGameFrameUpdate += HandleOnGameFrameUpdate;
 	}
@@ -64,6 +66,8 @@ public class BulletHellGameMode : BaseGameMode
 		GameEvents.OnPlayerStartedCasting -= HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerUsedConsumable -= HandleOnConsumableUse;
 		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
+		GameEvents.OnUnitProjectileCreated -= HandleOnUnitProjectileCreated;
+		GameEvents.OnUnitAoeCreated -= HandleOnUnitAoeCreated;
 		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
 		GameEvents.OnGameFrameUpdate -= HandleOnGameFrameUpdate;
 		HasStarted = false;
@@ -125,10 +129,12 @@ public class BulletHellGameMode : BaseGameMode
 		if (player.CurrentState != GameModeType) return;
 
 	}
-	public override void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
+	public void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
 	{
 		if (player.CurrentState != GameModeType) return;
 
+		eventEntity.Destroy();
+		player.ReceiveMessage("You can't drink those during a bullet hell match!".Error());
 	}
 
 	public void HandleOnPlayerStartedCasting(Player player, Entity eventEntity)
@@ -176,6 +182,40 @@ public class BulletHellGameMode : BaseGameMode
 			
 		}
 
+	}
+
+	public void HandleOnUnitProjectileCreated(Entity unit, Entity projectile)
+	{
+		if (!UnitFactory.HasCategory(unit, "bullethell")) { return; }
+
+		var prefabGuid = projectile.Read<PrefabGUID>();
+		if (prefabGuid == Prefabs.AB_Sorceress_Projectile)
+		{
+			var buffer = projectile.ReadBuffer<HitColliderCast>();
+			for (var i = 0; i < buffer.Length; i++)
+			{
+				var hitCollider = buffer[i];
+				hitCollider.IgnoreImmaterial = true;
+				buffer[i] = hitCollider;
+			}
+		}
+	}
+
+	public void HandleOnUnitAoeCreated(Entity unit, Entity aoe)
+	{
+		if (!UnitFactory.HasCategory(unit, "bullethell")) { return; }
+
+		var prefabGuid = aoe.Read<PrefabGUID>();
+		if (prefabGuid == Prefabs.AB_Sorceress_AoE_Throw)
+		{
+			var buffer = aoe.ReadBuffer<HitColliderCast>();
+			for (var i = 0; i < buffer.Length; i++)
+			{
+				var hitColliderCast = buffer[i];
+				hitColliderCast.IgnoreImmaterial = true;
+				buffer[i] = hitColliderCast;
+			}
+		}
 	}
 
 	public static new HashSet<string> GetAllowedCommands()

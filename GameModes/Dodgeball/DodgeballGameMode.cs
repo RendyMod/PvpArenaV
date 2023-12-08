@@ -167,7 +167,7 @@ public class DodgeballGameMode : BaseGameMode
 		eventEntity.Destroy();
 		player.ReceiveMessage("Cannot shapeshift during dodgeball".Error());
 	}
-	public override void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
+	public void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
 	{
 		if (player.CurrentState != this.GameModeType) return;
 

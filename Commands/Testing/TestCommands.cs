@@ -20,6 +20,8 @@ using PvpArena.Factories;
 using Unity.Collections;
 using PvpArena.GameModes.Troll;
 using PvpArena.GameModes.PrisonBreak;
+using ProjectM.Gameplay.Scripting;
+using ProjectM.Pathfinding;
 
 namespace PvpArena.Commands.Debug;
 internal class TestCommands
@@ -28,7 +30,6 @@ internal class TestCommands
 	[Command("test", description: "Used for debugging", adminOnly: true)]
 	public void TestCommand(Player sender)
 	{
-		
 	}
 
 	[Command("become", description: "Used for debugging", adminOnly: true)]
@@ -58,12 +59,9 @@ internal class TestCommands
 	[Command("test2", description: "Used for debugging", adminOnly: true)]
 	public void Test2Command(Player sender, Player player = null)
 	{
-		var target = sender;
-		if (player != null)
-		{
-			target = player;
-		}
-		Helper.ControlOriginalCharacter(target);
+		var entity = Helper.GetHoveredEntity<AggroConsumer>(sender.User);
+		var targetedPlayer = entity.Read<EntityInput>().HoveredEntity;
+		targetedPlayer.LogPrefabName();
 	}
 
 	[Command("test3", description: "Used for debugging", adminOnly: true)]

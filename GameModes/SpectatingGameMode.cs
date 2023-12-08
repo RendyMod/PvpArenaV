@@ -83,11 +83,6 @@ public class SpectatingGameMode : BaseGameMode
 		if (player.CurrentState != GameModeType) return;
 
 	}
-	public override void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
-	{
-		if (player.CurrentState != GameModeType) return;
-
-	}
 
 	public void HandleOnPlayerStartedCasting(Player player, Entity eventEntity)
 	{

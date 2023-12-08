@@ -14,6 +14,7 @@ using ProjectM.Gameplay.Scripting;
 using ProjectM.Hybrid;
 using ProjectM.Network;
 using ProjectM.Pathfinding;
+using ProjectM.Scripting;
 using ProjectM.Sequencer;
 using PvpArena.Configs;
 using PvpArena.Data;
@@ -123,11 +124,11 @@ public static class UnitFactory
 							Level = unit.Level
 						});
 					}
-					
-					/*if (unit.AggroRadius != -1)
+
+					if (unit.AggroRadius != -1)
 					{
 						ModifyAggroRadius(unit, buffEntity); //this increases the boss range, but keeps players in combat :(
-					}*/
+					}
 					AddBuffModifications(unit, buffEntity);
 					if (unit.KnockbackResistance)
 					{
@@ -541,11 +542,29 @@ public class Turret : Unit
 	public Turret(PrefabGUID prefabGuid, int team = 10, int level = -1) : base(prefabGuid, team, level)
 	{
 		isImmaterial = true;
-		aggroRadius = 15;
 		knockbackResistance = false;
 		isRooted = true;
 		drawsAggro = false;
 		isTargetable = false;
+	}
+}
+
+public class BaseTurret : Unit
+{
+	public BaseTurret(PrefabGUID prefabGuid, int team = 10, int level = -1) : base(prefabGuid, team, level)
+	{
+		isImmaterial = false;
+		knockbackResistance = true;
+		isRooted = true;
+		drawsAggro = true;
+		isTargetable = false;
+		aggroRadius = 20;
+	}
+
+	public override void Modify(Entity e)
+	{
+		base.Modify(e);
+		Helper.BuffEntity(e, Prefabs.AB_Gloomrot_SentryTurret_BunkerDown_Buff, out var buffEntity, Helper.NO_DURATION);
 	}
 }
 

@@ -124,7 +124,7 @@ public class Matchmaking1v1GameMode : BaseGameMode
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 		player.ReceiveMessage($"Shapeshifting is disabled while in a match.".Error());
 	}
-	public override void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
+	public void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
 	{
 		if (player.CurrentState != GameModeType) return;
 

@@ -78,7 +78,7 @@ public class TrollGameMode : DefaultGameMode
 	{
 		base.Initialize();
 		GameEvents.OnPlayerBuffed += HandleOnPlayerBuffed;
-		GameEvents.OnPlayerHitColliderCreated += HandleOnPlayerHitColliderCreated;
+		GameEvents.OnPlayerProjectileCreated += HandleOnPlayerHitColliderCreated;
         GameEvents.OnPlayerStartedCasting += HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerShapeshift += HandleOnShapeshift;
         GameEvents.OnPlayerBuffRemoved += HandleOnPlayerBuffRemoved;
@@ -87,7 +87,7 @@ public class TrollGameMode : DefaultGameMode
 	{
 		base.Dispose();
 		GameEvents.OnPlayerBuffed -= HandleOnPlayerBuffed;
-		GameEvents.OnPlayerHitColliderCreated -= HandleOnPlayerHitColliderCreated;
+		GameEvents.OnPlayerProjectileCreated -= HandleOnPlayerHitColliderCreated;
         GameEvents.OnPlayerStartedCasting -= HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerShapeshift -= HandleOnShapeshift;
         GameEvents.OnPlayerBuffRemoved -= HandleOnPlayerBuffRemoved;

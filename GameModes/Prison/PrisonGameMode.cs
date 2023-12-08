@@ -50,7 +50,6 @@ public class PrisonGameMode : BaseGameMode
 		GameEvents.OnPlayerDeath += HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift += HandleOnShapeshift;
 		GameEvents.OnPlayerStartedCasting += HandleOnPlayerStartedCasting;
-		GameEvents.OnPlayerUsedConsumable += HandleOnConsumableUse;
 		GameEvents.OnPlayerChatMessage += HandleOnPlayerChatMessage;
 	}
 	public override void Dispose()
@@ -60,7 +59,6 @@ public class PrisonGameMode : BaseGameMode
 		GameEvents.OnPlayerDeath -= HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift -= HandleOnShapeshift;
 		GameEvents.OnPlayerStartedCasting -= HandleOnPlayerStartedCasting;
-		GameEvents.OnPlayerUsedConsumable -= HandleOnConsumableUse;
 		GameEvents.OnPlayerChatMessage -= HandleOnPlayerChatMessage;
 	}
 
@@ -125,11 +123,6 @@ public class PrisonGameMode : BaseGameMode
 			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 			player.ReceiveMessage("You can't feel your vampire essence here...".Error());
 		}
-	}
-	public override void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
-	{
-		if (player.CurrentState != GameModeType) return;
-
 	}
 
 	public void HandleOnPlayerStartedCasting(Player player, Entity eventEntity)

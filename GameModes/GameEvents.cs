@@ -88,7 +88,22 @@ public static class GameEvents
 	public static event PlayerDamageReceivedHandler OnPlayerDamageReceived;
 
 	public delegate void PlayerProjectileCreatedHandler(Player player, Entity projectile);
-	public static event PlayerProjectileCreatedHandler OnPlayerHitColliderCreated;
+	public static event PlayerProjectileCreatedHandler OnPlayerProjectileCreated;
+
+	public delegate void UnitProjectileCreatedHandler(Entity unit, Entity projectile);
+	public static event UnitProjectileCreatedHandler OnUnitProjectileCreated;
+
+	public delegate void PlayerProjectileUpdateHandler(Player player, Entity projectile);
+	public static event PlayerProjectileUpdateHandler OnPlayerProjectileUpdate;
+
+	public delegate void UnitProjectileUpdateHandler(Entity unit, Entity projectile);
+	public static event UnitProjectileUpdateHandler OnUnitProjectileUpdate;
+
+	public delegate void PlayerAoeCreatedHandler(Player player, Entity aoe);
+	public static event PlayerAoeCreatedHandler OnPlayerAoeCreated;
+
+	public delegate void UnitAoeCreatedHandler(Entity unit, Entity aoe);
+	public static event UnitAoeCreatedHandler OnUnitAoeCreated;
 
 	public delegate void PlayerChatMessageHandler(Player player, Entity eventEntity);
 	public static event PlayerChatMessageHandler OnPlayerChatMessage;
@@ -226,9 +241,34 @@ public static class GameEvents
 		OnItemWasDropped?.Invoke(closestPlayer, eventEntity, itemType, slotIndex);
 	}
 
-	public static void RaisePlayerHitColliderCreated(Player player, Entity hitCollider)
+	public static void RaisePlayerProjectileCreated(Player player, Entity projectile)
 	{
-		OnPlayerHitColliderCreated?.Invoke(player, hitCollider);
+		OnPlayerProjectileCreated?.Invoke(player, projectile);
+	}
+
+	public static void RaiseUnitProjectileCreated(Entity unit, Entity projectile)
+	{
+		OnUnitProjectileCreated?.Invoke(unit, projectile);
+	}
+
+	public static void RaisePlayerProjectileUpdate(Player player, Entity projectile)
+	{
+		OnPlayerProjectileUpdate?.Invoke(player, projectile);
+	}
+
+	public static void RaiseUnitProjectileUpdate(Entity unit, Entity projectile)
+	{
+		OnUnitProjectileUpdate?.Invoke(unit, projectile);
+	}
+
+	public static void RaisePlayerAoeCreated(Player player, Entity aoe)
+	{
+		OnPlayerAoeCreated?.Invoke(player, aoe);
+	}
+
+	public static void RaiseUnitAoeCreated(Entity unit, Entity aoe)
+	{
+		OnUnitAoeCreated?.Invoke(unit, aoe);
 	}
 
 	public static void RaiseDelayedSpawnEvent(Unit unit, int timeUntilSpawn)

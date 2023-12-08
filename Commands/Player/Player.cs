@@ -29,7 +29,8 @@ public class Player
 		Dodgeball,
 		Troll,
 		PrisonBreak,
-		NoHealingLimit
+		NoHealingLimit,
+		Moba
 	}
 
 	private Entity _user;

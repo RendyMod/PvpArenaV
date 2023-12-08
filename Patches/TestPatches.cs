@@ -30,6 +30,7 @@ using static ProjectM.SpawnRegionSpawnSystem;
 using Unity.Physics.Authoring;
 using static ProjectM.HitColliderCast;
 using PvpArena.Helpers;
+using Discord.Audio.Streams;
 
 namespace PvpArena.Patches;
 
@@ -258,6 +259,70 @@ public static class Create_ServerControlsPositionSystemPatch
 		
 	}
 }*/
+
+
+
+[HarmonyPatch(typeof(PatrolMoveSystem), nameof(PatrolMoveSystem.OnUpdate))]
+public static class PatrolMoveSystemPatch
+{
+	public static void Prefix(PatrolMoveSystem __instance)
+	{
+		/*Plugin.PluginLog.LogInfo("global patrol");
+		__instance.__UpdateGlobalPatrol_entityQuery.LogComponentTypes();
+		Plugin.PluginLog.LogInfo("follow data");
+		__instance.__SetFollowData_entityQuery.LogComponentTypes();
+		Plugin.PluginLog.LogInfo("move patrol");
+		__instance.__MovePatrol_entityQuery.LogComponentTypes();
+		Plugin.PluginLog.LogInfo("instantiate global patrol");
+		__instance.__InstantiateGlobalPatrol_entityQuery.LogComponentTypes();
+		Plugin.PluginLog.LogInfo("update local patrol");
+		__instance.__UpdateLocalPatrol_entityQuery.LogComponentTypes();*/
+
+		var entities = __instance.__MovePatrol_entityQuery.ToEntityArray(Allocator.Temp);
+		foreach (var entity in entities)
+		{
+			var unitCompositionSpawnerDebugName = entity.Read<UnitCompositionSpawnerDebugName>().Name.ToString();
+			if (unitCompositionSpawnerDebugName == "CHAR_Militia_Heavy")
+			{
+				var movePatrolState = entity.Read<MovePatrolState>();
+				movePatrolState.FromPosition = MobaConfig.Config.Team1PlayerRespawn.ToFloat3();
+				movePatrolState.ToPosition = MobaConfig.Config.Team2PlayerRespawn.ToFloat3();
+				entity.Write(movePatrolState);
+				/*Plugin.PluginLog.LogInfo($"{movePatrolState.TargetPosition} {movePatrolState.ToPosition}");*/
+				
+				var buffer = entity.ReadBuffer<UnitCompositionActiveUnit>();
+				/*for (var i = 0; i < buffer.Length; i++)
+				{
+					var unitCompositionActiveUnit = buffer[i];
+				}*/
+				if (buffer.Length == 0)
+				{
+					var livingEntities = Helper.GetEntitiesByComponentTypes<AggroConsumer>();
+					Entity militia = Entity.Null;
+					foreach (var livingEntity in livingEntities)
+					{
+						if (livingEntity.Read<PrefabGUID>() == Prefabs.CHAR_Militia_Heavy)
+						{
+							militia = livingEntity;
+							break;
+						}
+					}
+					livingEntities.Dispose();
+
+					buffer.Add(new UnitCompositionActiveUnit
+					{
+						UnitEntity = militia,
+						UnitPrefab = Helper.GetPrefabEntityByPrefabGUID(Prefabs.CHAR_Militia_Heavy)
+					});
+
+				}
+				
+				
+			}
+			//entity.LogComponentTypes();
+		}
+	}
+}
 
 //
 //AbilitySpawnSystem

@@ -97,7 +97,6 @@ public class DefaultGameMode : BaseGameMode
 		GameEvents.OnPlayerDeath += HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift += HandleOnShapeshift;
 		GameEvents.OnPlayerStartedCasting += HandleOnPlayerStartedCasting;
-		GameEvents.OnPlayerUsedConsumable += HandleOnConsumableUse;
 		GameEvents.OnPlayerBuffed += HandleOnPlayerBuffed;
 		GameEvents.OnPlayerDamageReported += HandleOnPlayerDamageReported;
 		GameEvents.OnPlayerReset += HandleOnPlayerReset;
@@ -109,7 +108,6 @@ public class DefaultGameMode : BaseGameMode
 		GameEvents.OnPlayerDeath -= HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift -= HandleOnShapeshift;
 		GameEvents.OnPlayerStartedCasting -= HandleOnPlayerStartedCasting;
-		GameEvents.OnPlayerUsedConsumable -= HandleOnConsumableUse;
 		GameEvents.OnPlayerBuffed -= HandleOnPlayerBuffed;
 		GameEvents.OnPlayerDamageReported -= HandleOnPlayerDamageReported;
 		GameEvents.OnPlayerReset -= HandleOnPlayerReset;
@@ -206,11 +204,6 @@ public class DefaultGameMode : BaseGameMode
 			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 			player.ReceiveMessage("That form is disabled in this mode".Error());
 		}
-	}
-	public override void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
-	{
-		if (player.CurrentState != this.GameModeType) return;
-
 	}
 
 	public virtual void HandleOnPlayerStartedCasting(Player player, Entity eventEntity)

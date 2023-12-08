@@ -15,6 +15,7 @@ using PvpArena.GameModes.CaptureThePancake;
 using PvpArena.GameModes.Dodgeball;
 using PvpArena.GameModes.Domination;
 using PvpArena.GameModes.Matchmaking1v1;
+using PvpArena.GameModes.Moba;
 using PvpArena.GameModes.Prison;
 using PvpArena.GameModes.PrisonBreak;
 using PvpArena.GameModes.Troll;
@@ -54,6 +55,7 @@ public static class Core
 	public static DodgeballGameMode dodgeballGameMode;
 	public static PrisonBreakGameMode prisonBreakGameMode;
 	public static NoHealingLimitGameMode noHealingLimitGameMode;
+	public static MobaGameMode mobaGameMode;
 	public static bool HasInitialized = false;
 	public static SQLHandler sqlHandler;
 	public static DebugEventsSystem debugEventsSystem = VWorld.Server.GetExistingSystem<DebugEventsSystem>();
@@ -86,21 +88,35 @@ public static class Core
 		PrisonBreakConfig.Load();
 
 		matchmaking1V1DataRepository = new PlayerMatchmaking1v1DataStorage(PvpArenaConfig.Config.ServerDatabase);
+		matchmaking1V1DataRepository.LoadDataAsync();
+
 		pointsDataRepository = new PlayerPointsStorage(PvpArenaConfig.Config.ServerDatabase);
+		pointsDataRepository.LoadDataAsync();
+
 		banDataRepository = new PlayerBanInfoStorage(PvpArenaConfig.Config.ServerDatabase);
+		banDataRepository.LoadDataAsync();
+
 		muteDataRepository = new PlayerMuteInfoStorage(PvpArenaConfig.Config.ServerDatabase);
+		muteDataRepository.LoadDataAsync();
+
 		imprisonDataRepository = new PlayerImprisonInfoStorage(PvpArenaConfig.Config.ServerDatabase);
+		imprisonDataRepository.LoadDataAsync();
+
 		playerConfigOptionsRepository = new PlayerConfigOptionsStorage(PvpArenaConfig.Config.ServerDatabase);
+		playerConfigOptionsRepository.LoadDataAsync();
+
 		playerBulletHellDataRepository = new PlayerBulletHellDataStorage(PvpArenaConfig.Config.ServerDatabase);
-        defaultJewelStorage = new DefaultJewelDataStorage(PvpArenaConfig.Config.MainDatabase, PvpArenaConfig.Config.ServerDatabase);
-        defaultJewelStorage.LoadAllJewelDataAsync();
-        defaultLegendaryWeaponStorage = new DefaultLegendaryWeaponDataStorage(PvpArenaConfig.Config.MainDatabase, PvpArenaConfig.Config.ServerDatabase);
+		playerBulletHellDataRepository.LoadDataAsync();
+
+		defaultJewelStorage = new DefaultJewelDataStorage(PvpArenaConfig.Config.MainDatabase, PvpArenaConfig.Config.ServerDatabase);
+		defaultJewelStorage.LoadAllJewelDataAsync();
+
+		defaultLegendaryWeaponStorage = new DefaultLegendaryWeaponDataStorage(PvpArenaConfig.Config.MainDatabase, PvpArenaConfig.Config.ServerDatabase);
 		defaultLegendaryWeaponStorage.LoadAllLegendaryDataAsync();
+
 		matchmakingArenaStorage = new MatchmakingArenasDataStorage(PvpArenaConfig.Config.MainDatabase);
 		matchmaking1v1ArenaLocations = matchmakingArenaStorage.LoadAllArenasAsync().Result;
 		
-		
-
 		EntityQueryOptions options = EntityQueryOptions.Default;
 
 		EntityQueryDesc queryDesc = new EntityQueryDesc
@@ -118,20 +134,14 @@ public static class Core
 		{
 			All = new ComponentType[]
 			{
-				new ComponentType(Il2CppType.Of<HitColliderCast>(), ComponentType.AccessMode.ReadWrite)
+				new ComponentType(Il2CppType.Of<TargetAoE>(), ComponentType.AccessMode.ReadWrite)
 			},
 			Options = options
 		};
 		query = VWorld.Server.EntityManager.CreateEntityQuery(queryDesc);
-		Listener.AddListener(query, new AoeListener());
+		Listener.AddListener(query, new TargetAoeListener());
 
-		matchmaking1V1DataRepository.LoadDataAsync();
-		pointsDataRepository.LoadDataAsync();
-		banDataRepository.LoadDataAsync();
-		muteDataRepository.LoadDataAsync();
-		imprisonDataRepository.LoadDataAsync();
-		playerConfigOptionsRepository.LoadDataAsync();
-		playerBulletHellDataRepository.LoadDataAsync();
+
 
 		defaultGameMode = new DefaultGameMode();
 		defaultGameMode.Initialize();
@@ -160,6 +170,8 @@ public static class Core
 		DummyHandler.Initialize();
 		PlayerSpawnHandler.Initialize();
 
+		mobaGameMode = new MobaGameMode();
+
 		if (PvpArenaConfig.Config.PointSystemEnabled)
 		{
 			LoginPointsService.SetTimersForOnlinePlayers();
@@ -176,7 +188,7 @@ public static class Core
         matchmaking1v1GameMode.Dispose();
         if (captureThePancakeGameMode != null)
         {
-            CaptureThePancakeHelper.EndMatch();
+            MobaHelper.EndMatch();
         }
 		if (dominationGameMode != null)
 		{
@@ -189,6 +201,10 @@ public static class Core
 		if (prisonBreakGameMode != null)
 		{
 			PrisonBreakHelper.EndMatch();
+		}
+		if (mobaGameMode != null)
+		{
+			MobaHelper.EndMatch();
 		}
 		
         spectatingGameMode.Dispose();

@@ -38,13 +38,14 @@ public static class BuffDebugSystemPatch
 			{				
 				try
 				{
+					var prefabGuid = entity.Read<PrefabGUID>();
 					var Character = entity.Read<EntityOwner>().Owner;
 					if (Character.Has<PlayerCharacter>())
 					{
 						var player = PlayerService.GetPlayerFromCharacter(Character);
 						GameEvents.RaisePlayerBuffed(player, entity);
 
-						var prefabGuid = entity.Read<PrefabGUID>();
+						
 						if (prefabGuid == Prefabs.Item_EquipBuff_Shared_General)
 						{
 							var buffer = entity.ReadBuffer<ModifyUnitStatBuff_DOTS>();
@@ -54,6 +55,24 @@ public static class BuffDebugSystemPatch
 					}
 					else
 					{
+						if (prefabGuid == Helper.CustomBuff4)
+						{
+							Helper.ApplyStatModifier(entity, new ModifyUnitStatBuff_DOTS
+							{
+								Id = ModificationIdFactory.NewId(),
+								ModificationType = ModificationType.Set,
+								StatType = UnitStatType.AttackSpeed,
+								Value = 5
+							}, true);
+							Helper.ApplyStatModifier(entity, new ModifyUnitStatBuff_DOTS
+							{
+								Id = ModificationIdFactory.NewId(),
+								ModificationType = ModificationType.Set,
+								StatType = UnitStatType.CooldownModifier,
+								Value = 0
+							}, false);
+						}
+
 						GameEvents.RaiseUnitBuffed(Character, entity);
 					}
 				}

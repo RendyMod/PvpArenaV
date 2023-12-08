@@ -1,6 +1,7 @@
 
 using ProjectM;
 using ProjectM.CastleBuilding;
+using ProjectM.Gameplay.Scripting;
 using PvpArena;
 using PvpArena.Data;
 using PvpArena.Helpers;
@@ -41,7 +42,7 @@ public class LogCommands
 	[Command("log-components", description: "Logs components of hovered entity", adminOnly: true)]
 	public void LogComponentsCommand(Player sender)
 	{
-		var entity = Helper.GetHoveredEntity<PhysicsCollider>(sender.User);
+		var entity = Helper.GetHoveredEntity(sender.User);
 		if (entity != Entity.Null)
 		{
 			entity.LogComponentTypes();

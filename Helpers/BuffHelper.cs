@@ -91,10 +91,13 @@ public static partial class Helper
 	}
 
 
-	public static void ApplyStatModifier(Entity buffEntity, ModifyUnitStatBuff_DOTS statMod)
+	public static void ApplyStatModifier(Entity buffEntity, ModifyUnitStatBuff_DOTS statMod, bool clearOld = true)
 	{
 		var buffer = VWorld.Server.EntityManager.AddBuffer<ModifyUnitStatBuff_DOTS>(buffEntity);
-		buffer.Clear();
+		if (clearOld)
+		{
+			buffer.Clear();
+		}
 		buffer.Add(statMod);
 	}
 

@@ -394,7 +394,7 @@ public class DominationGameMode : BaseGameMode
 			eventEntity.Write(enterShapeshiftEvent);
 		}
 	}
-	public override void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
+	public void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
 	{
 		if (player.CurrentState != GameModeType) return;
 

@@ -264,7 +264,7 @@ public class PrisonBreakGameMode : BaseGameMode
 			player.ReceiveMessage("You can't feel your vampire essence here...".Error());
 		}
 	}
-	public override void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
+	public void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
 	{
 		if (player.CurrentState != GameModeType) return;
 		

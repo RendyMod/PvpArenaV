@@ -205,6 +205,11 @@ namespace PvpArena
 			{
 				
 			}
+
+			public void OnUpdate(Entity entity)
+			{
+
+			}
 		}
 
 	}

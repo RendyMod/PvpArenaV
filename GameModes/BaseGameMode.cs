@@ -36,9 +36,8 @@ public abstract class BaseGameMode
 	}
 	public abstract void HandleOnPlayerDowned(Player player, Entity killer);
 	public abstract void HandleOnPlayerDeath(Player player, DeathEvent deathEvent);
-	//public abstract void HandleOnPlayerRespawn(Player entity); //currently unneeded..tricky to find a way to call it only once on respawn
+	//public abstract void HandleOnPlayerRespawn(Player entity); 
 	public abstract void HandleOnShapeshift(Player player, Entity eventEntity);
-	public abstract void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item);
 	public virtual void HandleOnPlayerConnected(Player player)
 	{
 		if (player.CurrentState != this.GameModeType) return;

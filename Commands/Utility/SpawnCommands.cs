@@ -19,10 +19,11 @@ namespace PvpArena.Commands.Utility;
 internal class SpawnCommands
 {
 	[Command("spawn-turret", description: "Spawns a turret at your location", adminOnly: true)]
-	public static void SpawnTurretCommand(Player sender, PrefabGUID _prefab, int team = 10, int level = 80)
+	public static void SpawnTurretCommand(Player sender, PrefabGUID _prefab, int spawnSnapMode = 5)
 	{
-		var turret = new Turret(_prefab, team, level);
-		UnitFactory.SpawnUnit(turret, sender.Position);
+		var spawnPosition = Helper.GetSnappedHoverPosition(sender, (SnapMode)spawnSnapMode);
+		var turret = new Turret(_prefab);
+		UnitFactory.SpawnUnit(turret, spawnPosition);
 		sender.ReceiveMessage($"Spawned turret!".Success());
 	}
 
