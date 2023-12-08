@@ -114,14 +114,24 @@ public static partial class Helper
 
 	public static void ClearInventorySlot(Player player, int itemSlot)
 	{
-		InventoryUtilitiesServer.ClearSlot(VWorld.Server.EntityManager, player.Character, itemSlot);
+		ClearInventorySlot(player.Character, itemSlot);
+	}
+
+	public static void ClearInventorySlot(Entity inventoryEntity, int itemSlot)
+	{
+		InventoryUtilitiesServer.ClearSlot(VWorld.Server.EntityManager, inventoryEntity, itemSlot);
 	}
 
 	public static void RemoveItemAtSlotFromInventory(Player player, PrefabGUID itemPrefab, int itemSlot)
 	{
+		RemoveItemAtSlotFromInventory(player.Character, itemPrefab, itemSlot);
+	}
+
+	public static void RemoveItemAtSlotFromInventory(Entity inventoryEntity, PrefabGUID itemPrefab, int itemSlot)
+	{
 		if (Helper.GetPrefabEntityByPrefabGUID(itemPrefab).Has<Relic>())
 		{
-			if (InventoryUtilities.TryGetItemAtSlot(VWorld.Server.EntityManager, player.Character, itemSlot, out InventoryBuffer item))
+			if (InventoryUtilities.TryGetItemAtSlot(VWorld.Server.EntityManager, inventoryEntity, itemSlot, out InventoryBuffer item))
 			{
 				if (item.ItemEntity._Entity.Exists())
 				{
@@ -129,7 +139,7 @@ public static partial class Helper
 				}
 			}
 		}
-		ClearInventorySlot(player, itemSlot);
+		ClearInventorySlot(inventoryEntity, itemSlot);
 	}
 
 	public static void RemoveAllItemsAtSlotFromInventory(Player player, PrefabGUID itemPrefab, int itemSlot)

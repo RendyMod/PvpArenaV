@@ -61,9 +61,7 @@ public static class ChatMessageSystemPatch
 					{
 						if (chatEvent.MessageText.ToString() != "!reload")
 						{
-							DiscordBot.SendEmbedAsync(DiscordBotConfig.Config.GlobalChannel,
-								DiscordGlobalLinkSystem.EmbedFromGlobalChat($"{player.Name}",
-									$"{chatEvent.MessageText}"));
+							//DiscordBot.SendEmbedAsync(DiscordBotConfig.Config.GlobalChannel, DiscordGlobalLinkSystem.EmbedFromGlobalChat($"{player.Name}", $"{chatEvent.MessageText}"));
 						}
 					}
 				}

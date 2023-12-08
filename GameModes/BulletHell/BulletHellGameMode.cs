@@ -51,7 +51,6 @@ public class BulletHellGameMode : BaseGameMode
 		GameEvents.OnPlayerShapeshift += HandleOnShapeshift;
 		GameEvents.OnPlayerStartedCasting += HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerUsedConsumable += HandleOnConsumableUse;
-		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
 		GameEvents.OnUnitProjectileCreated += HandleOnUnitProjectileCreated;
 		GameEvents.OnUnitAoeCreated += HandleOnUnitAoeCreated;
 		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
@@ -65,7 +64,6 @@ public class BulletHellGameMode : BaseGameMode
 		GameEvents.OnPlayerShapeshift -= HandleOnShapeshift;
 		GameEvents.OnPlayerStartedCasting -= HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerUsedConsumable -= HandleOnConsumableUse;
-		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
 		GameEvents.OnUnitProjectileCreated -= HandleOnUnitProjectileCreated;
 		GameEvents.OnUnitAoeCreated -= HandleOnUnitAoeCreated;
 		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;

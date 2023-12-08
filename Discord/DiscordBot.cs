@@ -33,7 +33,7 @@ public static partial class DiscordBot
 
 			_client.Ready += () =>
 			{
-				_client.MessageReceived += DiscordGlobalLinkSystem.HandleMessageReceivedAsync;
+				//_client.MessageReceived += DiscordGlobalLinkSystem.HandleMessageReceivedAsync;
 				_socketGuild = _client.GetGuild(DiscordBotConfig.Config.GuildID);
 				return Task.CompletedTask;
 			};
@@ -53,7 +53,7 @@ public static partial class DiscordBot
 			_client.LogoutAsync();
 			_client.StopAsync();
 			_client.Dispose();
-			_client.MessageReceived -= DiscordGlobalLinkSystem.HandleMessageReceivedAsync;
+			//_client.MessageReceived -= DiscordGlobalLinkSystem.HandleMessageReceivedAsync;
 			_client = null;
 		}
 	}

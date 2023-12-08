@@ -57,8 +57,15 @@ public abstract class BaseGameMode
     {
         if (player.CurrentState != GameModeType) return;
 
-        Helper.RemoveItemAtSlotFromInventory(player, itemType, slotIndex);
-        VWorld.Server.EntityManager.DestroyEntity(eventEntity);
+		var inventoryEntity = player.Character;
+		if (eventEntity.Has<DropInventoryItemEvent>())
+		{
+			var dropInventoryItemEventData = eventEntity.Read<DropInventoryItemEvent>();
+			Core.networkIdSystem._NetworkIdToEntityMap.TryGetValue(dropInventoryItemEventData.Inventory, out inventoryEntity);
+		}
+
+        Helper.RemoveItemAtSlotFromInventory(inventoryEntity, itemType, slotIndex);
+		eventEntity.Destroy();
     }
 	public virtual void HandleOnPlayerDamageDealt(Player player, Entity eventEntity)
     {

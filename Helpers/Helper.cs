@@ -182,7 +182,7 @@ public static partial class Helper
 
 	public static void DestroyEntity(Entity entity)
 	{
-		if (entity.Has<CanFly>())
+		if (entity.Has<CanFly>() && !entity.Has<PlayerCharacter>())
 		{
 			entity.Remove<CanFly>(); //this prevents a unit from being respawned when killed this way
 		}
