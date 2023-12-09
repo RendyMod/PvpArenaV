@@ -161,9 +161,9 @@ public class Player
 
 	private float3 GetPosition()
 	{
-		if (User.Has<LocalToWorld>())
+		if (Character.Has<LocalToWorld>())
 		{
-			return User.Read<LocalToWorld>().Position;
+			return Character.Read<LocalToWorld>().Position;
 		}
 		else
 		{

@@ -189,6 +189,94 @@ public static class UnitFactory
 		}
 	}
 
+	public static void SpawnUnitWithCallback(Unit unit, float3 position, Action<Entity> postActions, Player player = null)
+	{
+		Action spawnAction = () =>
+		{
+			SpawnedUnit spawnedUnit = new SpawnedUnit(unit, position, player);
+			var hash = position.GetHashCode() / 1000;
+			HashToUnit[hash] = spawnedUnit;
+
+			PrefabSpawnerService.SpawnWithCallback(unit.PrefabGuid, position, (Action<Entity>)(e =>
+			{
+				StoreMetaDataOnUnit(unit, e, position, player);
+				SetHealth(unit, e);
+				if (Helper.BuffEntity(e, Helper.CustomBuff3, out Entity buffEntity, (float)Helper.NO_DURATION, true))
+				{
+					if (unit.Level != -1 && e.Has<UnitLevel>())
+					{
+						e.Write(new UnitLevel()
+						{
+							Level = unit.Level
+						});
+					}
+
+					if (unit.AggroRadius != -1)
+					{
+						ModifyAggroRadius(unit, buffEntity); //this increases the boss range, but keeps players in combat :(
+					}
+					AddBuffModifications(unit, buffEntity);
+					if (unit.KnockbackResistance)
+					{
+						GiveKnockbackResistance(unit, e, buffEntity);
+					}
+					if (!unit.DrawsAggro)
+					{
+						DisableAggro(buffEntity);
+					}
+					unit.Modify(e, buffEntity);
+
+					if (e.Has<BloodConsumeSource>() && !e.Has<VBloodUnit>())
+					{
+						var bloodConsumeSource = e.Read<BloodConsumeSource>();
+						bloodConsumeSource.CanBeConsumed = false;
+						e.Write(bloodConsumeSource);
+					}
+
+					if (unit.SoftSpawn && unit.SpawnDelay > 0)
+					{
+						Helper.BuffEntity(e, Prefabs.Buff_General_VampireMount_Dead, out var softSpawnBuff, unit.SpawnDelay);
+						Helper.ModifyBuff(softSpawnBuff, BuffModificationTypes.Immaterial | BuffModificationTypes.Invulnerable | BuffModificationTypes.TargetSpellImpaired | BuffModificationTypes.MovementImpair | BuffModificationTypes.RelocateImpair | BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.AbilityCastImpair | BuffModificationTypes.BehaviourImpair);
+					}
+				}
+				else
+				{
+					unit.Modify(e);
+				}
+				UnitToEntity[unit] = e;
+				postActions(e);
+			}), 0, -1, true);
+		};
+
+		if (unit.SpawnDelay >= 0)
+		{
+			var timer = ActionScheduler.RunActionOnceAfterDelay(() => GameEvents.RaiseDelayedSpawnEvent(unit, 0), unit.SpawnDelay);
+			AddTimerToCategory(timer, unit.Category);
+			if (unit.SpawnDelay > 30)
+			{
+				GameEvents.RaiseDelayedSpawnEvent(unit, unit.SpawnDelay);
+			}
+			if (unit.SpawnDelay > 60)
+			{
+				timer = ActionScheduler.RunActionOnceAfterDelay(() => GameEvents.RaiseDelayedSpawnEvent(unit, 30), unit.SpawnDelay - 30);
+				AddTimerToCategory(timer, unit.Category);
+			}
+		}
+
+		if (unit.SpawnDelay >= 0 && !unit.SoftSpawn)
+		{
+			// Schedule the spawn action after the specified delay
+			var timer = ActionScheduler.RunActionOnceAfterDelay(spawnAction, unit.SpawnDelay);
+			AddTimerToCategory(timer, unit.Category);
+		}
+		else
+		{
+			// Execute immediately if no delay is specified
+			spawnAction.Invoke();
+		}
+	}
+
+
 	private static void AddTimerToCategory(Timer timer, string category)
 	{
 		if (!timersByCategory.ContainsKey(category))
@@ -439,7 +527,7 @@ public class Boss : Unit
 	public Boss(PrefabGUID prefabGuid, int team = 10, int level = -1) : base(prefabGuid, team, level)
 	{
 		isImmaterial = false;
-		aggroRadius = 15;
+		aggroRadius = -1;
 		knockbackResistance = true;
 		isRooted = false;
 		drawsAggro = false;
@@ -551,6 +639,7 @@ public class Turret : Unit
 
 public class BaseTurret : Unit
 {
+	public static PrefabGUID PrefabGUID = Prefabs.CHAR_Gloomrot_SentryTurret;
 	public BaseTurret(PrefabGUID prefabGuid, int team = 10, int level = -1) : base(prefabGuid, team, level)
 	{
 		isImmaterial = false;
@@ -558,7 +647,7 @@ public class BaseTurret : Unit
 		isRooted = true;
 		drawsAggro = true;
 		isTargetable = false;
-		aggroRadius = 20;
+		aggroRadius = 4;
 	}
 
 	public override void Modify(Entity e)

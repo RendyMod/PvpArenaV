@@ -43,19 +43,22 @@ public static class DealDamageSystemPatch
 					if (dealDamageEvent.SpellSource.Exists())
 					{
 						var owner = dealDamageEvent.SpellSource.Read<EntityOwner>().Owner;
-						if (owner.Exists() && owner.Has<PlayerCharacter>())
+						if (owner.Exists())
 						{
-							var player = PlayerService.GetPlayerFromCharacter(owner);
-							GameEvents.RaisePlayerDealtDamage(player, entity);
-						}
-						else if (dealDamageEvent.Target.Has<PlayerCharacter>())
-						{
-							var player = PlayerService.GetPlayerFromCharacter(dealDamageEvent.Target);
-							GameEvents.RaisePlayerReceivedDamage(player, entity);
-						}
-						else if (dealDamageEvent.Target.Has<CastleHeartConnection>())
-						{
-							VWorld.Server.EntityManager.DestroyEntity(entity);
+							if (owner.Has<PlayerCharacter>())
+							{
+								var player = PlayerService.GetPlayerFromCharacter(owner);
+								GameEvents.RaisePlayerDealtDamage(player, entity);
+							}
+							else
+							{
+								if (dealDamageEvent.Target.Has<PlayerCharacter>())
+								{
+									var player = PlayerService.GetPlayerFromCharacter(dealDamageEvent.Target);
+									GameEvents.RaisePlayerReceivedDamage(player, entity);
+								}
+								GameEvents.RaiseUnitDealtDamage(owner, entity);
+							}
 						}
 					}
 				}

@@ -34,6 +34,9 @@ using Cpp2IL.Core.Extensions;
 using static UnityEngine.UI.GridLayoutGroup;
 using ProjectM.Pathfinding;
 using ProjectM.Tiles;
+using ProjectM.Behaviours;
+using UnityEngine.Jobs;
+using Epic.OnlineServices.P2P;
 
 namespace PvpArena.GameModes.Moba;
 
@@ -56,11 +59,20 @@ public class MobaGameMode : BaseGameMode
 		{2, new List<PrefabGUID>() }
 	};
 
+	public static Dictionary<int, HashSet<Entity>> TeamPatrols = new Dictionary<int, HashSet<Entity>>
+	{
+		{1, new HashSet<Entity>() },
+		{2, new HashSet<Entity>() },
+	};
+
+	public static Dictionary<int, HashSet<Entity>> TeamUnits = new Dictionary<int, HashSet<Entity>>
+	{
+		{1, new HashSet<Entity>() },
+		{2, new HashSet<Entity>() },
+	};
+
 	private static Dictionary<Player, int> playerKills = new Dictionary<Player, int>();
 	private static Dictionary<Player, int> playerDeaths = new Dictionary<Player, int>();
-
-	private static RectangleZone endZone1 = MobaConfig.Config.Team1EndZone.ToRectangleZone();
-	private static RectangleZone endZone2 = MobaConfig.Config.Team2EndZone.ToRectangleZone();
 
 	private static Dictionary<PrefabGUID, PrefabGUID> shapeshiftGroupToBuff = new Dictionary<PrefabGUID, PrefabGUID>
 	{
@@ -107,7 +119,7 @@ public class MobaGameMode : BaseGameMode
 		{ Prefabs.AB_Shapeshift_Golem_T02_Buff, HandleGolemBuff }
 	};
 
-	public static HashSet<string> AllowedCommands = new HashSet<string>
+	public static new HashSet<string> AllowedCommands = new HashSet<string>
 	{
 		"ping",
 		"help",
@@ -152,6 +164,7 @@ public class MobaGameMode : BaseGameMode
 		GameEvents.OnUnitBuffed += HandleOnUnitBuffed;
 		GameEvents.OnUnitBuffRemoved += HandleOnUnitBuffRemoved;
 		GameEvents.OnUnitDeath += HandleOnUnitDeath;
+		GameEvents.OnUnitDamageDealt += HandleOnUnitDamageDealt;
 		GameEvents.OnGameFrameUpdate += HandleOnGameFrameUpdate;
 		GameEvents.OnPlayerDamageReceived += HandleOnPlayerDamageReceived;
         GameEvents.OnDelayedSpawn += HandleOnDelayedSpawnEvent;
@@ -159,6 +172,7 @@ public class MobaGameMode : BaseGameMode
 		GameEvents.OnPlayerDamageReported += HandleOnPlayerDamageReported;
 		GameEvents.OnUnitProjectileCreated += HandleOnUnitProjectileCreated;
 		GameEvents.OnUnitProjectileUpdate += HandleOnUnitProjectileUpdate;
+		GameEvents.OnAggroPostUpdate += HandleOnAggroPostUpdate;
 
 		stopwatch.Start();
 	}
@@ -168,6 +182,10 @@ public class MobaGameMode : BaseGameMode
 		Initialize();
 		Teams[1] = team1Players;
 		Teams[2] = team2Players;
+		TeamPatrols[1] = new HashSet<Entity>();
+		TeamPatrols[2] = new HashSet<Entity>();
+		TeamUnits[1] = new HashSet<Entity>();
+		TeamUnits[2] = new HashSet<Entity>();
 		playerKills.Clear();
 		playerDeaths.Clear();
 
@@ -205,8 +223,13 @@ public class MobaGameMode : BaseGameMode
 		GameEvents.OnPlayerDamageReported -= HandleOnPlayerDamageReported;
 		GameEvents.OnUnitProjectileCreated -= HandleOnUnitProjectileCreated;
 		GameEvents.OnUnitProjectileUpdate -= HandleOnUnitProjectileUpdate;
+		GameEvents.OnAggroPostUpdate -= HandleOnAggroPostUpdate;
+		GameEvents.OnUnitDamageDealt -= HandleOnUnitDamageDealt;
 
 		Teams.Clear();
+		TeamPatrols.Clear();
+		TeamUnits.Clear();
+		
 		foreach (var shardBuffs in TeamToShardBuffsMap.Values)
 		{
 			shardBuffs.Clear();
@@ -386,7 +409,7 @@ public class MobaGameMode : BaseGameMode
 		if (!shapeshiftToShapeshift.ContainsKey(enterShapeshiftEvent.Shapeshift))
 		{
 			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
-			player.ReceiveMessage($"That shapeshift is disabled while in Capture the Pancake.".Error());
+			player.ReceiveMessage($"That shapeshift is disabled while in this game mode.".Error());
 		}
 		else
 		{
@@ -478,7 +501,6 @@ public class MobaGameMode : BaseGameMode
 	public void HandleOnPlayerBuffed(Player player, Entity buffEntity)
 	{
 		if (player.CurrentState != this.GameModeType) return;
-		Plugin.PluginLog.LogInfo("hi1");
 		var prefabGuid = buffEntity.Read<PrefabGUID>();
 		var buff = buffEntity.Read<Buff>();
 		var target = buff.Target;
@@ -547,32 +569,46 @@ public class MobaGameMode : BaseGameMode
 		var buffPrefabGUID = buffEntity.Read<PrefabGUID>();
 		if (buffPrefabGUID == Helper.CustomBuff3)
 		{
-			Helper.ApplyStatModifier(buffEntity, new ModifyUnitStatBuff_DOTS
+			if (unit.Read<PrefabGUID>() == BaseTurret.PrefabGUID)
 			{
-				Id = ModificationIdFactory.NewId(),
-				ModificationType = ModificationType.Set,
-				StatType = UnitStatType.AttackSpeed,
-				Value = 5,
-				Priority = 100
-			}, false);
+				Helper.ApplyStatModifier(buffEntity, new ModifyUnitStatBuff_DOTS
+				{
+					Id = ModificationIdFactory.NewId(),
+					ModificationType = ModificationType.Set,
+					StatType = UnitStatType.AttackSpeed,
+					Value = 5,
+					Priority = 100
+				}, false);
 
-			Helper.ApplyStatModifier(buffEntity, new ModifyUnitStatBuff_DOTS
-			{
-				Id = ModificationIdFactory.NewId(),
-				ModificationType = ModificationType.Set,
-				StatType = UnitStatType.CooldownModifier,
-				Value = 0,
-				Priority = 100
-			}, false);
+				Helper.ApplyStatModifier(buffEntity, new ModifyUnitStatBuff_DOTS
+				{
+					Id = ModificationIdFactory.NewId(),
+					ModificationType = ModificationType.Set,
+					StatType = UnitStatType.CooldownModifier,
+					Value = 0,
+					Priority = 100
+				}, false);
 
-			Helper.ApplyStatModifier(buffEntity, new ModifyUnitStatBuff_DOTS
+				Helper.ApplyStatModifier(buffEntity, new ModifyUnitStatBuff_DOTS
+				{
+					Id = ModificationIdFactory.NewId(),
+					ModificationType = ModificationType.Set,
+					StatType = UnitStatType.PhysicalPower,
+					Value = 125,
+					Priority = 100
+				}, false);
+			}
+			else
 			{
-				Id = ModificationIdFactory.NewId(),
-				ModificationType = ModificationType.Set,
-				StatType = UnitStatType.PhysicalPower,
-				Value = 100,
-				Priority = 100
-			}, false);
+				Helper.ApplyStatModifier(buffEntity, new ModifyUnitStatBuff_DOTS
+				{
+					Id = ModificationIdFactory.NewId(),
+					ModificationType = ModificationType.Set,
+					StatType = UnitStatType.MovementSpeed,
+					Value = 3.5f,
+					Priority = 100
+				}, false);
+			}
 		}
 	}
 
@@ -604,7 +640,7 @@ public class MobaGameMode : BaseGameMode
 		if (player.CurrentState != this.GameModeType) return;
 
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
-		player.ReceiveMessage("You may not invite players to your clan while in Capture the Pancake".Error());
+		player.ReceiveMessage("You may not invite players to your clan while in this game mode".Error());
 	}
 
 	public void HandleOnPlayerKickedFromClan(Player player, Entity eventEntity)
@@ -612,7 +648,7 @@ public class MobaGameMode : BaseGameMode
 		if (player.CurrentState != this.GameModeType) return;
 
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
-		player.ReceiveMessage("You may not kick players from your clan while in Capture the Pancake".Error());
+		player.ReceiveMessage("You may not kick players from your clan while in this game mode".Error());
 	}
 
 	public void HandleOnPlayerLeftClan(Player player, Entity eventEntity)
@@ -620,13 +656,23 @@ public class MobaGameMode : BaseGameMode
 		if (player.CurrentState != this.GameModeType) return;
 
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
-		player.ReceiveMessage("You may not leave your clan while in Capture the Pancake".Error());
+		player.ReceiveMessage("You may not leave your clan while in this game mode".Error());
 	}
 
 	public void HandleOnUnitDeath(Entity unitEntity, DeathEvent deathEvent)
 	{
 		if (!MatchActive) return;
 
+		if (TeamPatrols[1].Contains(unitEntity))
+		{
+			TeamPatrols[1].Remove(unitEntity);
+			TeamUnits[1].Remove(unitEntity);
+		}
+		else if (TeamPatrols[2].Contains(unitEntity))
+		{
+			TeamPatrols[2].Remove(unitEntity);
+			TeamUnits[2].Remove(unitEntity);
+		}
 		if (TryGetSpawnedUnitFromEntity(unitEntity, out var spawnedUnit))
 		{
 			if (spawnedUnit.Unit.Category != "pancake") return;
@@ -692,48 +738,43 @@ public class MobaGameMode : BaseGameMode
 	{
 		if (player.CurrentState != this.GameModeType) return;
 
-		if (!eventEntity.Exists()) return;
+	}
 
-		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
-		var targetPrefab = damageDealtEvent.Target.Read<PrefabGUID>();
+	public void HandleOnUnitDamageDealt(Entity unit, Entity eventEntity)
+	{
+		if (!UnitFactory.HasCategory(unit, "moba")) return;
 
-		bool isSpawnedByGameMode = false;
-		var isStructure = damageDealtEvent.Target.Has<CastleHeartConnection>();
-		if (UnitFactory.TryGetSpawnedUnitFromEntity(damageDealtEvent.Target, out var unit))
+		var dealDamageEvent = eventEntity.Read<DealDamageEvent>();
+		var source = dealDamageEvent.SpellSource;
+		if (source.Exists() && source.Read<PrefabGUID>() == Prefabs.AB_Gloomrot_SentryTurret_RangedAttack_Projectile)
 		{
-			if (unit.Unit.Category == "pancake")
-			{
-				isSpawnedByGameMode = true;
-			}
+			source.Add<DestroyOnSpawn>();
+			return;
 		}
-		if (isStructure)
+		if (!dealDamageEvent.Target.Has<PlayerCharacter>())
 		{
-			if (damageableStructurePrefabs.ContainsKey(targetPrefab) || isSpawnedByGameMode)
-			{
-				damageDealtEvent.MaterialModifiers.StoneStructure = 1;
-				eventEntity.Write(damageDealtEvent);
-			}
-			else
-			{
-				VWorld.Server.EntityManager.DestroyEntity(eventEntity);
-			}
+			dealDamageEvent.MaterialModifiers.Human *= 1.5f;
+			eventEntity.Write(dealDamageEvent);
 		}
 	}
 
 	public void HandleOnUnitProjectileCreated(Entity unit, Entity projectile)
 	{
 		if (!UnitFactory.HasCategory(unit, "moba")) return;
-
-		var projectileTarget = unit.Read<EntityInput>().HoveredEntity;
-		if (projectileTarget.Exists())
+		
+		if (projectile.Read<PrefabGUID>() == Prefabs.AB_Gloomrot_SentryTurret_RangedAttack_Projectile)
 		{
-			if (projectileTarget.Has<PlayerCharacter>())
+			var projectileTarget = unit.Read<EntityInput>().HoveredEntity;
+			if (projectileTarget.Exists())
 			{
-				projectile.Add<SpellTarget>();
-				projectile.Write(new SpellTarget
+				if (projectileTarget.Has<PlayerCharacter>())
 				{
-					Target = projectileTarget
-				});
+					projectile.Add<SpellTarget>();
+					projectile.Write(new SpellTarget
+					{
+						Target = projectileTarget
+					});
+				}
 			}
 		}
 	}
@@ -938,65 +979,69 @@ public class MobaGameMode : BaseGameMode
 		PlayerDamageReceived[targetPlayer] += damageInfo.TotalDamage;
 	}
 
-
+	public static int count = 0;
 	public void HandleOnGameFrameUpdate()
 	{
 		//check for shard captures
-		var units = Helper.GetEntitiesByComponentTypes<AggroConsumer>();
-		foreach (var unit in units)
+		foreach (var patrol in TeamPatrols)
 		{
-			if (!UnitFactory.HasCategory(unit, "moba"))
+			foreach (var unit in patrol.Value)
 			{
-				var buffer = unit.ReadBuffer<PathBuffer>();
-				var tileCoordinate = TileCoordinate.FromWorldPos(MobaConfig.Config.Team2PlayerRespawn.ToFloat3());
-				var pathBuffer = new PathBuffer
+				if (unit.Exists())
 				{
-					Value = tileCoordinate
-				};
-				buffer.Clear();
-				buffer.Add(pathBuffer);
+					TileCoordinate targetCoordinate;
+					if (Helper.HasBuff(unit, Prefabs.Buff_InCombat_Npc) || Helper.HasBuff(unit, Prefabs.Buff_Shared_Return_NoInvulernable))
+					{
+						targetCoordinate = TileCoordinate.FromWorldPos(unit.Read<LocalToWorld>().Position);
+					}
+					else
+					{
+						targetCoordinate = TileCoordinate.FromWorldPos(MobaConfig.Config.Team2PlayerRespawn.ToFloat3());
+						if (patrol.Key == 2)
+						{
+							targetCoordinate = TileCoordinate.FromWorldPos(MobaConfig.Config.Team1PlayerRespawn.ToFloat3());
+						}
+					}
+					
+					var buffer = unit.ReadBuffer<PathBuffer>();
+
+					var pathBuffer = new PathBuffer
+					{
+						Value = targetCoordinate
+					};
+					buffer.Clear();
+					buffer.Add(pathBuffer);
+				}
 			}
 		}
 	}
 
-	private static void CheckForShardAndUpdate(Player player, ShardData shardData)
+	public void HandleOnAggroPostUpdate(Entity entity)
 	{
-		if (Helper.PlayerHasItemInInventories(player, shardData.ItemPrefabGUID))
-		{
-            Helper.RemoveItemFromInventory(player, shardData.ItemPrefabGUID);
-			var friendlyTeam = GetFriendlyTeam(player);
-			var enemyTeam = GetOpposingTeam(player);
-			if (!TeamToShardBuffsMap[player.MatchmakingTeam].Contains(shardData.BuffPrefabGUID))
-			{
-				TeamToShardBuffsMap[player.MatchmakingTeam].Add(shardData.BuffPrefabGUID);
-			}
+		if (!(MobaGameMode.TeamUnits[1].Contains(entity) || MobaGameMode.TeamUnits[2].Contains(entity))) return;
 
-			foreach (var teamPlayer in friendlyTeam)
-			{
-				Helper.BuffPlayer(teamPlayer, shardData.BuffPrefabGUID, out Entity buffEntity, Helper.NO_DURATION, true, true);
-				string message = player != teamPlayer ? $"{player.Name} has captured the {shardData.ShardName}!" : $"You have captured the {shardData.ShardName}!";
-				teamPlayer.ReceiveMessage(message.Success());
-			}
-			foreach (var enemyTeamPlayer in enemyTeam)
-			{
-				string message = $"{player.Name} has captured the {shardData.ShardName}!";
-				enemyTeamPlayer.ReceiveMessage(message.Error());
-			}
+		var aggroConsumer = entity.Read<AggroConsumer>();
+		var aggroBuffer = entity.ReadBuffer<AggroBuffer>();
+		if (MobaGameMode.TeamPatrols[1].Contains(entity) || MobaGameMode.TeamPatrols[2].Contains(entity))
+		{
+			aggroConsumer.MaxDistanceFromPreCombatPosition = 10;
 		}
-	}
 
-	private static bool IsInFriendlyEndZone(Player player)
-	{
-		RectangleZone endZone;
-		if (player.MatchmakingTeam == 1)
+		var target = aggroConsumer.AggroTarget._Entity;
+		if (target.Exists() && target.Has<PlayerCharacter>())
 		{
-			endZone = endZone1;
+			for (var i = 0; i < aggroBuffer.Length; i++)
+			{
+				if (!aggroBuffer[i].Entity.Has<PlayerCharacter>() && aggroBuffer[i].Entity.Exists())
+				{
+					aggroConsumer.AlertTarget = NetworkedEntity.ServerEntity(aggroBuffer[i].Entity);
+					aggroConsumer.AggroTarget = NetworkedEntity.ServerEntity(aggroBuffer[i].Entity);
+					break;
+				}
+			}
 		}
-		else
-		{
-			endZone = endZone2;
-		}
-		return endZone.Contains(player);
+		
+		entity.Write(aggroConsumer);
 	}
 
 	private static List<Player> GetOpposingTeam(Player player)

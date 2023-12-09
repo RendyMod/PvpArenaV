@@ -167,17 +167,17 @@ public class DefaultGameMode : BaseGameMode
 		var enterShapeshiftEvent = eventEntity.Read<EnterShapeshiftEvent>();
 		if (enterShapeshiftEvent.Shapeshift == Prefabs.AB_Shapeshift_BloodMend_Group)
 		{
-			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
+			eventEntity.Destroy();
 			player.Reset(DefaultGameMode.ResetOptions);
 		}
 		else if (enterShapeshiftEvent.Shapeshift == Prefabs.AB_Shapeshift_ShareBlood_ExposeVein_Group)
 		{
-			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
+			eventEntity.Destroy();
 			Helper.ToggleBloodOnPlayer(player);
 		}
 		else if (enterShapeshiftEvent.Shapeshift == Prefabs.AB_Shapeshift_BloodHunger_BloodSight_Group)
 		{
-			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
+			eventEntity.Destroy();
 			Helper.ToggleBuffsOnPlayer(player);
 		}
 		else if (Shapeshifts.ContainsKey(enterShapeshiftEvent.Shapeshift))
@@ -190,7 +190,7 @@ public class DefaultGameMode : BaseGameMode
 					AbilityUtilitiesServer.TryInstantiateAbilityGroup(VWorld.Server.EntityManager, Core.prefabCollectionSystem.PrefabLookupMap, player.Character, shapeshift.Key, false, out Entity abilityGroupEntity);
 					abilityBarShared.ServerInterruptCounter++;
 					player.Character.Write(abilityBarShared);
-					VWorld.Server.EntityManager.DestroyEntity(eventEntity);
+					eventEntity.Destroy();
 					if (Helper.BuffPlayer(player, shapeshift.Value, out var buffEntity, Helper.NO_DURATION, false)) //in order to skip the slow cast / slow movement we just apply the shapeshift buff directly
 					{
 						Helper.FixIconForShapeshiftBuff(player, buffEntity, abilityGroupEntity.Read<PrefabGUID>());
@@ -201,7 +201,7 @@ public class DefaultGameMode : BaseGameMode
 		}
 		else
 		{
-			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
+			eventEntity.Destroy();
 			player.ReceiveMessage("That form is disabled in this mode".Error());
 		}
 	}

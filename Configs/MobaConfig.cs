@@ -79,6 +79,7 @@ public class MobaConfigData
 	public RectangleZoneDto MapCenter { get; set; } = new RectangleZoneDto();
 	public List<PrefabSpawn> StructureSpawns { get; set; } = new List<PrefabSpawn>();
 	public List<UnitSpawn> UnitSpawns { get; set; } = new List<UnitSpawn>();
+	public List<PatrolSpawn> PatrolSpawns { get; set; } = new List<PatrolSpawn>();
 
 	// Additional properties...
 }

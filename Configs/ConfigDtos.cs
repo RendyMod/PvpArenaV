@@ -51,6 +51,11 @@ public class ConfigDtos
 		public int Quantity { get; set; }
 	}
 
+	public class PatrolSpawn
+	{
+		public List<UnitSpawn> PatrolUnits { get; set; } = new List<UnitSpawn>();
+	}
+
 	public class UnitSpawn
 	{
 		public PrefabGUID PrefabGUID { get; set; }

@@ -84,7 +84,7 @@ public abstract class BaseGameMode
 	public abstract void HandleOnPlayerChatCommand(Player player, CommandAttribute command);
     public virtual Player.PlayerState GameModeType { get; }
 
-    private static HashSet<string> AllowedCommands = new HashSet<string>
+    protected static HashSet<string> AllowedCommands = new HashSet<string>
 	{
 		{ "all" }
 	};

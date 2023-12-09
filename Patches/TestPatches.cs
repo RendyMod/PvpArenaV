@@ -31,6 +31,11 @@ using Unity.Physics.Authoring;
 using static ProjectM.HitColliderCast;
 using PvpArena.Helpers;
 using Discord.Audio.Streams;
+using System.Linq;
+using MS.Internal.Xml.XPath;
+using UnityEngine.UIElements;
+using PvpArena.Factories;
+using PvpArena.GameModes.Moba;
 
 namespace PvpArena.Patches;
 
@@ -261,68 +266,45 @@ public static class Create_ServerControlsPositionSystemPatch
 }*/
 
 
-
-[HarmonyPatch(typeof(PatrolMoveSystem), nameof(PatrolMoveSystem.OnUpdate))]
-public static class PatrolMoveSystemPatch
+/*
+[HarmonyPatch(typeof(GatherAggroCandidatesSystem), nameof(GatherAggroCandidatesSystem.OnUpdate))]
+public static class GatherAggroCandidatesSystemPatch
 {
-	public static void Prefix(PatrolMoveSystem __instance)
+	
+	public static void Prefix(GatherAggroCandidatesSystem __instance)
 	{
-		/*Plugin.PluginLog.LogInfo("global patrol");
-		__instance.__UpdateGlobalPatrol_entityQuery.LogComponentTypes();
-		Plugin.PluginLog.LogInfo("follow data");
-		__instance.__SetFollowData_entityQuery.LogComponentTypes();
-		Plugin.PluginLog.LogInfo("move patrol");
-		__instance.__MovePatrol_entityQuery.LogComponentTypes();
-		Plugin.PluginLog.LogInfo("instantiate global patrol");
-		__instance.__InstantiateGlobalPatrol_entityQuery.LogComponentTypes();
-		Plugin.PluginLog.LogInfo("update local patrol");
-		__instance.__UpdateLocalPatrol_entityQuery.LogComponentTypes();*/
-
-		var entities = __instance.__MovePatrol_entityQuery.ToEntityArray(Allocator.Temp);
-		foreach (var entity in entities)
-		{
-			var unitCompositionSpawnerDebugName = entity.Read<UnitCompositionSpawnerDebugName>().Name.ToString();
-			if (unitCompositionSpawnerDebugName == "CHAR_Militia_Heavy")
-			{
-				var movePatrolState = entity.Read<MovePatrolState>();
-				movePatrolState.FromPosition = MobaConfig.Config.Team1PlayerRespawn.ToFloat3();
-				movePatrolState.ToPosition = MobaConfig.Config.Team2PlayerRespawn.ToFloat3();
-				entity.Write(movePatrolState);
-				/*Plugin.PluginLog.LogInfo($"{movePatrolState.TargetPosition} {movePatrolState.ToPosition}");*/
-				
-				var buffer = entity.ReadBuffer<UnitCompositionActiveUnit>();
-				/*for (var i = 0; i < buffer.Length; i++)
-				{
-					var unitCompositionActiveUnit = buffer[i];
-				}*/
-				if (buffer.Length == 0)
-				{
-					var livingEntities = Helper.GetEntitiesByComponentTypes<AggroConsumer>();
-					Entity militia = Entity.Null;
-					foreach (var livingEntity in livingEntities)
-					{
-						if (livingEntity.Read<PrefabGUID>() == Prefabs.CHAR_Militia_Heavy)
-						{
-							militia = livingEntity;
-							break;
-						}
-					}
-					livingEntities.Dispose();
-
-					buffer.Add(new UnitCompositionActiveUnit
-					{
-						UnitEntity = militia,
-						UnitPrefab = Helper.GetPrefabEntityByPrefabGUID(Prefabs.CHAR_Militia_Heavy)
-					});
-
-				}
-				
-				
-			}
-			//entity.LogComponentTypes();
-		}
+		__instance._Query.LogComponentTypes();
+		__instance.__OnUpdate_LambdaJob0_entityQuery.LogComponentTypes();
 	}
 }
+*/
+
+
+[HarmonyPatch(typeof(AggroSystem), nameof(AggroSystem.OnUpdate))]
+public static class AggroSystemPatch
+{
+	public static void Postfix(AggroSystem __instance)
+	{
+		var entities = __instance.__SortAndSetTarget_entityQuery.ToEntityArray(Allocator.Temp);
+		foreach (var entity in entities)
+		{
+			GameEvents.RaiseAggroPostUpdate(entity);
+		}
+		entities.Dispose();
+	}
+}
+
+/*[HarmonyPatch(typeof(GatherAggroCandidatesSystem), nameof(GatherAggroCandidatesSystem.OnUpdate))]
+public static class GatherAggroCandidatesSystemPatch
+{
+	public static void Prefix(GatherAggroCandidatesSystem __instance)
+	{
+		
+		//__instance.__OnUpdate_LambdaJob0_entityQuery.LogComponentTypes();
+	}
+
+}*/
+
 
 //
 //AbilitySpawnSystem

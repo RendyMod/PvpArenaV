@@ -81,6 +81,9 @@ public static class GameEvents
 	public delegate void PlayerDamageDealtHandler(Player player, Entity eventEntity);
 	public static event PlayerDamageDealtHandler OnPlayerDamageDealt;
 
+	public delegate void UnitDamageDealtHandler(Entity unit, Entity eventEntity);
+	public static event UnitDamageDealtHandler OnUnitDamageDealt;
+
 	public delegate void PlayerDamageReported(Player source, Entity target, PrefabGUID ability, DamageInfo damageInfo);
 	public static event PlayerDamageReported OnPlayerDamageReported;
 
@@ -125,6 +128,9 @@ public static class GameEvents
 
     public delegate void GameFrameUpdateHandler();
 	public static event GameFrameUpdateHandler OnGameFrameUpdate;
+
+	public delegate void AggroPostUpdateHandler(Entity entity);
+	public static event AggroPostUpdateHandler OnAggroPostUpdate;
 
 	public static void RaisePlayerRespawn(Player player)
 	{
@@ -231,6 +237,12 @@ public static class GameEvents
 		OnPlayerDamageDealt?.Invoke(player, eventEntity);
 	}
 
+	public static void RaiseUnitDealtDamage(Entity unit, Entity eventEntity)
+	{
+		OnUnitDamageDealt?.Invoke(unit, eventEntity);
+	}
+
+
 	public static void RaisePlayerReceivedDamage(Player player, Entity eventEntity)
 	{
 		OnPlayerDamageReceived?.Invoke(player, eventEntity);
@@ -309,5 +321,10 @@ public static class GameEvents
     public static void RaiseGameFrameUpdate()
 	{
 		OnGameFrameUpdate?.Invoke();
+	}
+
+	public static void RaiseAggroPostUpdate(Entity entity)
+	{
+		OnAggroPostUpdate?.Invoke(entity);
 	}
 }

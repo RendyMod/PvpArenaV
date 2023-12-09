@@ -22,14 +22,16 @@ using PvpArena.GameModes.Troll;
 using PvpArena.GameModes.PrisonBreak;
 using ProjectM.Gameplay.Scripting;
 using ProjectM.Pathfinding;
+using ProjectM.Behaviours;
 
 namespace PvpArena.Commands.Debug;
 internal class TestCommands
 {
 
 	[Command("test", description: "Used for debugging", adminOnly: true)]
-	public void TestCommand(Player sender)
+	public void TestCommand(Player sender, Player player = null)
 	{
+		var prefab = Helper.GetPrefabEntityByPrefabGUID(Prefabs.Buff_Shared_Return_NoInvulernable);
 	}
 
 	[Command("become", description: "Used for debugging", adminOnly: true)]

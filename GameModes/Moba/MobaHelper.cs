@@ -14,6 +14,7 @@ using ProjectM;
 using ProjectM.CastleBuilding;
 using ProjectM.Gameplay.Systems;
 using ProjectM.Hybrid;
+using ProjectM.Network;
 using ProjectM.Sequencer;
 using ProjectM.Shared;
 using PvpArena.Configs;
@@ -22,10 +23,12 @@ using PvpArena.Factories;
 using PvpArena.Helpers;
 using PvpArena.Models;
 using PvpArena.Services;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine.Rendering.HighDefinition;
+using static PvpArena.Configs.ConfigDtos;
 using static PvpArena.Factories.UnitFactory;
 using static RootMotion.FinalIK.Grounding;
 
@@ -76,6 +79,7 @@ public static class MobaHelper
 					}
 				}, structureSpawn.RotationMode, -1, true, "moba");
 			};
+			
 			Timer timer;
 			if (structureSpawn.SpawnDelay > 0)
 			{
@@ -257,10 +261,6 @@ public static class MobaHelper
 			unitToSpawn.Category = "moba";
 			unitToSpawn.RespawnTime = unitSettings.RespawnTime;
 			unitToSpawn.SpawnDelay = unitSettings.SpawnDelay;
-			if (unitSettings.SpawnDelay > 30)
-			{
-				unitToSpawn.AnnounceSpawn = true;
-			}
 			Player teamLeader;
 			if (unitToSpawn.Team == 1)
 			{
@@ -274,7 +274,59 @@ public static class MobaHelper
 			{
 				teamLeader = null;
 			}
-			UnitFactory.SpawnUnit(unitToSpawn, unitSettings.Location.ToFloat3(), teamLeader);
+			UnitFactory.SpawnUnitWithCallback(unitToSpawn, unitSettings.Location.ToFloat3(), (e) => { MobaGameMode.TeamUnits[unitToSpawn.Team].Add(e); }, teamLeader);
+		}
+
+		var initialAction = () =>
+		{
+			// Spawn the first patrol immediately when this action is triggered
+			SpawnPatrols(team1LeaderPlayer, team2LeaderPlayer);
+
+			// Schedule the recurring action to start after 30 seconds from now
+			var action = () => SpawnPatrols(team1LeaderPlayer, team2LeaderPlayer);
+			var timer = ActionScheduler.RunActionEveryInterval(action, 30);
+			MobaGameMode.Timers.Add(timer);
+		};
+
+		// Run the initial action after a 15-second delay
+		var timer = ActionScheduler.RunActionOnceAfterDelay(initialAction, 15);
+		MobaGameMode.Timers.Add(timer);
+	}
+
+	public static void SpawnPatrols(Player team1LeaderPlayer, Player team2LeaderPlayer)
+	{
+		foreach (var patrol in MobaConfig.Config.PatrolSpawns)
+		{
+			foreach (var unitSettings in patrol.PatrolUnits)
+			{
+				Unit unitToSpawn;
+				var unitType = unitSettings.Type.ToLower();
+				unitToSpawn = new Unit(unitSettings.PrefabGUID, unitSettings.Team, unitSettings.Level);
+				unitToSpawn.MaxHealth = unitSettings.Health;
+				unitToSpawn.Category = "moba";
+				unitToSpawn.RespawnTime = unitSettings.RespawnTime;
+				unitToSpawn.SpawnDelay = 5;
+				unitToSpawn.DynamicCollision = true;
+				unitToSpawn.SoftSpawn = true;
+				Player teamLeader;
+				if (unitToSpawn.Team == 1)
+				{
+					teamLeader = team1LeaderPlayer;
+				}
+				else if (unitToSpawn.Team == 2)
+				{
+					teamLeader = team2LeaderPlayer;
+				}
+				else
+				{
+					teamLeader = null;
+				}
+				UnitFactory.SpawnUnitWithCallback(unitToSpawn, unitSettings.Location.ToFloat3(), (e) => {
+					MobaGameMode.TeamPatrols[unitToSpawn.Team].Add(e);
+					MobaGameMode.TeamUnits[unitToSpawn.Team].Add(e);
+					e.Remove<DisableWhenNoPlayersInRange>();
+				}, teamLeader);
+			}
 		}
 	}
 
