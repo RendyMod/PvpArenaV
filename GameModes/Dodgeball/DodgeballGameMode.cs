@@ -140,16 +140,7 @@ public class DodgeballGameMode : BaseGameMode
 
 		EliminatePlayer(player);
 	}
-	public override void HandleOnPlayerDeath(Player player, DeathEvent deathEvent)
-	{
-		if (player.CurrentState != this.GameModeType) return;
 
-		var pos = player.Position;
-		Helper.RespawnPlayer(player, pos);
-        var blood = player.Character.Read<Blood>();
-		Helper.SetPlayerBlood(player, blood.BloodType, blood.Quality);
-		EliminatePlayer(player);
-	}
 	/*public override void HandleOnPlayerRespawn(Player player)
 	{
 		if (!player.IsInDefaultMode()) return;

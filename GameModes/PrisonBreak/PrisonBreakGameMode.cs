@@ -185,35 +185,6 @@ public class PrisonBreakGameMode : BaseGameMode
 			return $"{coloredVictimName} died to {"PvE".NeutralTeam()}".White();
 		}
 	}
-	public override void HandleOnPlayerDeath(Player player, DeathEvent deathEvent)
-	{
-		if (player.CurrentState != GameModeType) return;
-
-		//clear out any queued up respawn actions since we will recreate them now that the player has died (in case they killed themselves twice in a row before the initial respawn actions finished)
-		if (PlayerRespawnTimers.TryGetValue(player, out var respawnActions))
-		{
-			foreach (var respawnAction in respawnActions)
-			{
-				respawnAction?.Dispose();
-			}
-			respawnActions.Clear();
-		}
-
-		if (!BuffUtility.HasBuff(VWorld.Server.EntityManager, player.Character, Prefabs.Buff_General_Vampire_Wounded_Buff))
-		{
-			foreach (var alivePlayer in PlayersAlive.Keys)
-			{
-				string coloredVictimName = player.Name.Colorify(ExtendedColor.ClanNameColor);
-				
-				var message = $"{coloredVictimName} killed themselves".White();
-				alivePlayer.ReceiveMessage(message);
-			}
-		}
-
-		Helper.RevivePlayer(player);
-		PlayersAlive[player] = false;
-		CheckForWinner();
-	}
 
 	private void CheckForWinner()
 	{

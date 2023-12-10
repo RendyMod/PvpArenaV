@@ -100,18 +100,7 @@ public class BulletHellGameMode : BaseGameMode
 		BulletHellManager.EndMatch(this);
 		//end match and tp to training + report time and record score
 	}
-	public override void HandleOnPlayerDeath(Player player, DeathEvent deathEvent)
-	{
-		if (player.CurrentState != GameModeType) return;
 
-		var pos = player.Position;
-		Helper.RespawnPlayer(player, pos);
-        player.Reset(ResetOptions);
-        var blood = player.Character.Read<Blood>();
-		Helper.SetPlayerBlood(player, blood.BloodType, blood.Quality);
-		BulletHellManager.EndMatch(this);
-		//end match and tp to training + report time and record score
-	}
 	/*public override void HandleOnPlayerRespawn(Player player)
 	{
 		if (!player.IsInDefaultMode()) return;

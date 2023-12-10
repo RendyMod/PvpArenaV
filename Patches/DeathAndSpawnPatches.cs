@@ -141,3 +141,20 @@ public static class SpawnCharacterSystemPatch
 	}
 }
 
+
+[HarmonyPatch(typeof(KillEventSystem), nameof(KillEventSystem.OnUpdate))]
+public static class KillEventSystemPatch
+{
+	public static void Prefix(KillEventSystem __instance)
+	{
+		var entities = __instance._Query.ToEntityArray(Allocator.Temp);
+		foreach (var entity in entities)
+		{
+			var fromCharacter = entity.Read<FromCharacter>();
+			var player = PlayerService.GetPlayerFromUser(fromCharacter.User);
+			player.ReceiveMessage("Unstuck is disabled in this game mode.".Error());
+			entity.Destroy();
+		}
+		entities.Dispose();
+	}
+}

@@ -116,7 +116,7 @@ public class MobaGameMode : BaseGameMode
 		{ Prefabs.AB_Interact_HealingOrb_Buff, HandleHealingOrbBuff },
 		{ Prefabs.AB_Shapeshift_BloodMend_Buff, HandleBloodMendBuff },
 		{ Prefabs.HideCharacterBuff, HandleHideCharacterBuff },
-		{ Prefabs.AB_Shapeshift_Golem_T02_Buff, HandleGolemBuff }
+		{ Prefabs.AB_Shapeshift_Golem_T02_Buff, HandleGolemBuff },
 	};
 
 	public static new HashSet<string> AllowedCommands = new HashSet<string>
@@ -136,6 +136,13 @@ public class MobaGameMode : BaseGameMode
 	public static Dictionary<Player, float> PlayerDamageDealt = new Dictionary<Player, float>();
 	public static Dictionary<Player, float> PlayerDamageReceived = new Dictionary<Player, float>();
 
+	public static HashSet<PrefabGUID> TrackingProjectiles = new HashSet<PrefabGUID>
+	{
+		Prefabs.AB_Gloomrot_SpiderTank_Gattler_Minigun_Projectile01,
+		Prefabs.AB_Gloomrot_SpiderTank_Gattler_Minigun_Projectile02,
+		Prefabs.AB_Gloomrot_SentryTurret_RangedAttack_Projectile
+	};
+
     public static List<Entity> SpawnGates = new List<Entity>();
 
 	public static Dictionary<PrefabGUID, List<PrefabGUID>> AbilitiesToNotCauseBuffDestruction = new Dictionary<PrefabGUID, List<PrefabGUID>>
@@ -152,7 +159,6 @@ public class MobaGameMode : BaseGameMode
 	{
 		MatchActive = true;
 		BaseInitialize();
-		GameEvents.OnPlayerRespawn += HandleOnPlayerRespawn;
 		GameEvents.OnPlayerDowned += HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath += HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift += HandleOnShapeshift;
@@ -166,7 +172,6 @@ public class MobaGameMode : BaseGameMode
 		GameEvents.OnUnitDeath += HandleOnUnitDeath;
 		GameEvents.OnUnitDamageDealt += HandleOnUnitDamageDealt;
 		GameEvents.OnGameFrameUpdate += HandleOnGameFrameUpdate;
-		GameEvents.OnPlayerDamageReceived += HandleOnPlayerDamageReceived;
         GameEvents.OnDelayedSpawn += HandleOnDelayedSpawnEvent;
         GameEvents.OnPlayerStartedCasting += HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerDamageReported += HandleOnPlayerDamageReported;
@@ -205,7 +210,6 @@ public class MobaGameMode : BaseGameMode
 	{
 		MatchActive = false;
 		BaseDispose();
-		GameEvents.OnPlayerRespawn -= HandleOnPlayerRespawn;
 		GameEvents.OnPlayerDowned -= HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath -= HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift -= HandleOnShapeshift;
@@ -217,7 +221,6 @@ public class MobaGameMode : BaseGameMode
 		GameEvents.OnUnitBuffed -= HandleOnUnitBuffed;
 		GameEvents.OnUnitDeath -= HandleOnUnitDeath;
 		GameEvents.OnGameFrameUpdate -= HandleOnGameFrameUpdate;
-		GameEvents.OnPlayerDamageReceived -= HandleOnPlayerDamageReceived;
         GameEvents.OnDelayedSpawn -= HandleOnDelayedSpawnEvent;
         GameEvents.OnPlayerStartedCasting -= HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerDamageReported -= HandleOnPlayerDamageReported;
@@ -236,7 +239,7 @@ public class MobaGameMode : BaseGameMode
 		}
         foreach (var kvp in UnitFactory.UnitToEntity)
         {
-            if (kvp.Key.Category == "pancake")
+            if (kvp.Key.Category == "moba")
             {
                 UnitFactory.UnitToEntity.Remove(kvp.Key);
             }
@@ -264,6 +267,17 @@ public class MobaGameMode : BaseGameMode
 	{
 		if (player.CurrentState != this.GameModeType) return;
 
+
+		var totalCoins = InventoryUtilities.GetItemAmount(VWorld.Server.EntityManager, player.Character, Prefabs.Item_Ingredient_Coin_Copper);
+		if (totalCoins > 0)
+		{
+			InventoryUtilitiesServer.RemoveItemGetRemainder(VWorld.Server.EntityManager, player.Character, Prefabs.Item_Ingredient_Coin_Copper, MobaConfig.Config.CoinsLostPerDeath, out int remainder);
+			var newCoins = totalCoins - MobaConfig.Config.CoinsLostPerDeath;
+			if (newCoins < 0) newCoins = 0;
+			player.ReceiveMessage($"You have died and have lost {(totalCoins - newCoins).ToString().EnemyTeam()} coin(s)".White());
+		}
+		
+
 		if (killer.Exists())
 		{
 			Player killerPlayer = null;
@@ -273,6 +287,11 @@ public class MobaGameMode : BaseGameMode
 
 				if (killer != player.Character)
 				{
+					if (Helper.AddItemToInventory(killerPlayer.Character, Prefabs.Item_Ingredient_Coin_Copper, 100, out var item))
+					{
+						killerPlayer.ReceiveMessage($"You gained 100 coins for killing {player.Name.EnemyTeam()}".White());
+					}
+
 					if (playerKills.ContainsKey(killerPlayer))
 					{
 						playerKills[killerPlayer]++;
@@ -317,6 +336,51 @@ public class MobaGameMode : BaseGameMode
 		{
 			playerDeaths[player] = 1;
 		}
+
+		
+
+
+		float3 pos = default;
+		if (player.MatchmakingTeam == 1)
+		{
+			pos = MobaConfig.Config.Team1PlayerRespawn.ToFloat3();
+		}
+		else if (player.MatchmakingTeam == 2)
+		{
+			pos = MobaConfig.Config.Team2PlayerRespawn.ToFloat3();
+		}
+
+		var respawnDelay = CalculateRespawnDelay();
+
+
+
+		Action respawnPlayerActionPart2 = () =>
+		{
+			player.Reset(ResetOptions);
+			Helper.RemoveBuff(player, Prefabs.AB_Shapeshift_Mist_Buff);
+			if (Helper.BuffPlayer(player, Prefabs.Buff_General_Phasing, out var buffEntity, 3))
+			{
+				Helper.ApplyStatModifier(buffEntity, BuffModifiers.FastRespawnMoveSpeed);
+				Helper.RemoveBuffModifications(buffEntity, BuffModificationTypes.Immaterial);
+				buffEntity.Add<DestroyBuffOnDamageTaken>();
+			}
+		};
+
+		Action respawnPlayerActionPart1 = () =>
+		{
+			player.Teleport(pos);
+			Helper.RemoveBuff(player, Prefabs.AB_Scarecrow_Idle_Buff);
+			if (Helper.BuffPlayer(player, Helper.CustomBuff2, out var buffEntity, 3))
+			{
+				Helper.ModifyBuff(buffEntity, BuffModificationTypes.MovementImpair | BuffModificationTypes.Immaterial);
+			}
+			var timer = ActionScheduler.RunActionOnceAfterDelay(respawnPlayerActionPart2, 3);
+			PlayerRespawnTimers[player].Add(timer);
+		};
+
+		player.Reset(ResetOptions);
+		Helper.MakeGhostlySpectator(player, respawnDelay);
+		ActionScheduler.RunActionOnceAfterDelay(respawnPlayerActionPart1, respawnDelay - 3);
 	}
 
 	private string CreatePlayerDownedMessage(Player victim, Player killer, Player observer)
@@ -335,59 +399,7 @@ public class MobaGameMode : BaseGameMode
 			return $"{coloredVictimName} died to {"PvE".NeutralTeam()}".White();
 		}
 	}
-	public override void HandleOnPlayerDeath(Player player, DeathEvent deathEvent)
-	{
-		if (player.CurrentState != this.GameModeType) return;
-
-		//clear out any queued up respawn actions since we will recreate them now that the player has died (in case they killed themselves twice in a row before the initial respawn actions finished)
-		if (PlayerRespawnTimers.TryGetValue(player, out var respawnActions))
-		{
-			foreach (var respawnAction in respawnActions)
-			{
-				try
-				{
-					respawnAction?.Dispose();
-				}
-				catch (Exception ex)
-				{
-					Plugin.PluginLog.LogInfo($"Error disposing respawn actions in pancake: {ex.ToString()}");
-				}
-			}
-
-			respawnActions.Clear();
-		}
-
-		if (!BuffUtility.HasBuff(VWorld.Server.EntityManager, player.Character, Prefabs.Buff_General_Vampire_Wounded_Buff))
-		{
-			if (playerDeaths.ContainsKey(player))
-			{
-				playerDeaths[player]++;
-			}
-			else
-			{
-				playerDeaths[player] = 1;
-			}
-			foreach (var team in Teams.Values)
-			{
-				foreach (var teamPlayer in team)
-				{
-					bool isTeammate = player.MatchmakingTeam == teamPlayer.MatchmakingTeam;
-					string coloredVictimName = isTeammate ? $"{player.Name.FriendlyTeam()}" : $"{player.Name.EnemyTeam()}";
-					var message = $"{coloredVictimName} killed themselves".White();
-					teamPlayer.ReceiveMessage(message);
-				}
-			}
-		}
-
-		Action respawnPlayerAction = () =>
-		{
-			Helper.RespawnPlayer(player, player.Position);
-		};
-		var timer = ActionScheduler.RunActionOnceAfterDelay(respawnPlayerAction, 2.9);
-		PlayerRespawnTimers[player].Add(timer);
-		Helper.BuffPlayer(player, Prefabs.AB_Scarecrow_Idle_Buff, out var buffEntity2, Helper.NO_DURATION, true); //used to hide the player's bar over their character
-		Helper.RemoveBuff(player, Prefabs.Buff_General_VampirePvPDeathDebuff);
-	}
+	
 	public void HandleOnGameModeBegin(Player player)
 	{
 		if (player.CurrentState != this.GameModeType) return;
@@ -675,39 +687,12 @@ public class MobaGameMode : BaseGameMode
 		}
 		if (TryGetSpawnedUnitFromEntity(unitEntity, out var spawnedUnit))
 		{
-			if (spawnedUnit.Unit.Category != "pancake") return;
-			if (spawnedUnit.Unit.PrefabGuid == Prefabs.CHAR_Gloomrot_Purifier_VBlood)
+			if (!UnitFactory.HasCategory(unitEntity, "moba")) return;
+
+			var killer = deathEvent.Killer;
+			if (killer.Exists() && killer.Has<PlayerCharacter>())
 			{
-				if (spawnedUnit.Unit.Team == 1)
-				{
-					var team = Teams[2];
-					foreach (var player in team)
-					{
-						Helper.BuffPlayer(player, Prefabs.AB_Consumable_PhysicalBrew_T02_Buff, out var buffEntity, Helper.NO_DURATION, true);
-						Helper.BuffPlayer(player, Prefabs.AB_Consumable_SpellBrew_T02_Buff, out buffEntity, Helper.NO_DURATION, true);
-						player.ReceiveMessage("You have been empowered for killing an enemy boss!".Success());
-					}
-					team = Teams[1];
-					foreach (var player in team)
-					{
-						player.ReceiveMessage("The enemy team has been empowered for killing your boss!".Error());
-					}
-				}
-				else if (spawnedUnit.Unit.Team == 2)
-				{
-					var team = Teams[1];
-					foreach (var player in team)
-					{
-						Helper.BuffPlayer(player, Prefabs.AB_Consumable_PhysicalBrew_T02_Buff, out var buffEntity, Helper.NO_DURATION, true);
-						Helper.BuffPlayer(player, Prefabs.AB_Consumable_SpellBrew_T02_Buff, out buffEntity, Helper.NO_DURATION, true);
-						player.ReceiveMessage("You have been empowered for killing an enemy boss!".Success());
-					}
-					team = Teams[2];
-					foreach (var player in team)
-					{
-						player.ReceiveMessage("The enemy team has been empowered for killing your boss!".Error());
-					}
-				}
+				Helper.AddItemToInventory(killer, Prefabs.Item_Ingredient_Coin_Copper, MobaConfig.Config.CoinsGainedPerUnitKill, out var itemEntity);
 			}
 		}
 	}
@@ -721,23 +706,25 @@ public class MobaGameMode : BaseGameMode
 
 	}
 
-	public override void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType, int slotIndex)
-	{
-		if (player.CurrentState != this.GameModeType) return;
-
-		var prefabEntity = Helper.GetPrefabEntityByPrefabGUID(itemType);
-		
-		if (!prefabEntity.Has<Relic>())
-		{
-			Helper.RemoveItemAtSlotFromInventory(player, itemType, slotIndex);
-			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
-		}
-	}
-
 	public override void HandleOnPlayerDamageDealt(Player player, Entity eventEntity)
 	{
 		if (player.CurrentState != this.GameModeType) return;
 
+		HashSet<PrefabGUID> spells = new HashSet<PrefabGUID>
+		{
+			Prefabs.AB_Chaos_Volley_Projectile_First,
+			Prefabs.AB_Chaos_Volley_Projectile_Second
+		};
+		var dealDamageEvent = eventEntity.Read<DealDamageEvent>();
+		if (dealDamageEvent.Target.Exists() && dealDamageEvent.Target.Has<PlayerCharacter>()) 
+		{
+			dealDamageEvent.SpellSource.LogPrefabName();
+		}
+		if (dealDamageEvent.SpellSource.Exists() && spells.Contains(dealDamageEvent.SpellSource.Read<PrefabGUID>()))
+		{
+			var dealDamageEventNew = new DealDamageEvent(dealDamageEvent.Target, dealDamageEvent.MainType, dealDamageEvent.MainFactor, dealDamageEvent.ResourceModifier, dealDamageEvent.MaterialModifiers, dealDamageEvent.SpellSource, dealDamageEvent.RawDamage, dealDamageEvent.RawDamagePercent, dealDamageEvent.Modifier * 2, dealDamageEvent.DealDamageFlags);
+			eventEntity.Write(dealDamageEventNew);
+		}
 	}
 
 	public void HandleOnUnitDamageDealt(Entity unit, Entity eventEntity)
@@ -749,6 +736,8 @@ public class MobaGameMode : BaseGameMode
 		if (source.Exists() && source.Read<PrefabGUID>() == Prefabs.AB_Gloomrot_SentryTurret_RangedAttack_Projectile)
 		{
 			source.Add<DestroyOnSpawn>();
+			dealDamageEvent.MaterialModifiers.Human *= 2f;
+			eventEntity.Write(dealDamageEvent);
 			return;
 		}
 		if (!dealDamageEvent.Target.Has<PlayerCharacter>())
@@ -761,8 +750,9 @@ public class MobaGameMode : BaseGameMode
 	public void HandleOnUnitProjectileCreated(Entity unit, Entity projectile)
 	{
 		if (!UnitFactory.HasCategory(unit, "moba")) return;
-		
-		if (projectile.Read<PrefabGUID>() == Prefabs.AB_Gloomrot_SentryTurret_RangedAttack_Projectile)
+
+		var prefabGuid = projectile.Read<PrefabGUID>();
+		if (TrackingProjectiles.Contains(prefabGuid))
 		{
 			var projectileTarget = unit.Read<EntityInput>().HoveredEntity;
 			if (projectileTarget.Exists())
@@ -789,10 +779,8 @@ public class MobaGameMode : BaseGameMode
 			
 			if (projectileTarget.Exists())
 			{
-				
 				if (projectileTarget.Has<PlayerCharacter>())
-				{
-					
+				{		
 					var targetPlayer = PlayerService.GetPlayerFromCharacter(projectileTarget);
 					if (targetPlayer.IsAlive)
 					{
@@ -802,21 +790,6 @@ public class MobaGameMode : BaseGameMode
 					}
 				}
 			}
-		}
-	}
-
-
-	public void HandleOnPlayerDamageReceived(Player player, Entity eventEntity)
-	{
-		if (player.CurrentState != this.GameModeType) return;
-
-		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
-		var source = damageDealtEvent.SpellSource.Read<EntityOwner>().Owner;
-
-		if (source.Read<PrefabGUID>() == Prefabs.CHAR_Gloomrot_Purifier_VBlood)
-		{
-			damageDealtEvent.MaterialModifiers.PlayerVampire *= 1.5f;
-			eventEntity.Write(damageDealtEvent);
 		}
 	}
 
@@ -855,7 +828,7 @@ public class MobaGameMode : BaseGameMode
 
 	public void HandleOnDelayedSpawnEvent(Unit unit, int timeToSpawn)
     {
-        if (unit.Category != "pancake") return;
+        if (unit.Category != "moba") return;
 
 		if (timeToSpawn <= 0)
         {
@@ -889,77 +862,6 @@ public class MobaGameMode : BaseGameMode
         }
     }
 
-
-    public void HandleOnPlayerRespawn(Player player)
-	{
-        if (player.CurrentState != this.GameModeType) return;
-
-		float3 pos = default;
-		if (player.MatchmakingTeam == 1)
-		{
-			pos = MobaConfig.Config.Team1PlayerRespawn.ToFloat3();
-		}
-		else if (player.MatchmakingTeam == 2)
-		{
-			pos = MobaConfig.Config.Team2PlayerRespawn.ToFloat3();
-		}
-
-		var respawnDelay = CalculateRespawnDelay();
-
-
-
-		Action respawnPlayerActionPart2 = () =>
-		{
-			player.Reset(ResetOptions);
-			Helper.RemoveBuff(player, Prefabs.AB_Shapeshift_Mist_Buff);
-			if (Helper.BuffPlayer(player, Prefabs.Buff_General_Phasing, out var buffEntity, 3))
-			{
-				Helper.ApplyStatModifier(buffEntity, BuffModifiers.FastRespawnMoveSpeed);
-				Helper.RemoveBuffModifications(buffEntity, BuffModificationTypes.Immaterial);
-				buffEntity.Add<DestroyBuffOnDamageTaken>();
-			}
-		};
-
-		Action respawnPlayerActionPart1 = () =>
-		{
-			player.Teleport(pos);
-			Helper.RemoveBuff(player, Prefabs.AB_Scarecrow_Idle_Buff);
-			if (Helper.BuffPlayer(player, Helper.CustomBuff2, out var buffEntity, 3))
-			{
-				Helper.ModifyBuff(buffEntity, BuffModificationTypes.MovementImpair | BuffModificationTypes.Immaterial);
-			}
-			var timer = ActionScheduler.RunActionOnceAfterDelay(respawnPlayerActionPart2, 3);
-			PlayerRespawnTimers[player].Add(timer);
-		};
-
-		if (Helper.BuffPlayer(player, Prefabs.AB_Shapeshift_Mist_Buff, out var buffEntity, respawnDelay))
-		{
-			Helper.CompletelyRemoveAbilityBarFromBuff(buffEntity);
-			Helper.FixIconForShapeshiftBuff(player, buffEntity, Prefabs.AB_Shapeshift_Mist_Group);
-			Helper.ModifyBuff(buffEntity, BuffModificationTypes.Invulnerable | BuffModificationTypes.Immaterial | BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.AbilityCastImpair | BuffModificationTypes.PickupItemImpaired | BuffModificationTypes.TargetSpellImpaired, true);
-		}
-
-		if (Helper.BuffPlayer(player, Prefabs.Buff_General_HideCorpse, out var invisibleBuff, respawnDelay))
-		{
-			Helper.ModifyBuff(invisibleBuff, BuffModificationTypes.None, true);
-		}
-		
-
-		var timer = ActionScheduler.RunActionOnceAfterDelay(respawnPlayerActionPart1, respawnDelay - 3);
-		PlayerRespawnTimers[player].Add(timer);
-
-		var blood = player.Character.Read<Blood>();
-		Helper.SetPlayerBlood(player, blood.BloodType, blood.Quality);
-		foreach (var buff in TeamToShardBuffsMap[player.MatchmakingTeam])
-		{
-			if (!Helper.BuffPlayer(player, buff, out buffEntity, Helper.NO_DURATION))
-			{
-				var action = new ScheduledAction(Helper.BuffPlayer, new object[] { player, buff, buffEntity, Helper.NO_DURATION, true, true });
-				ActionScheduler.ScheduleAction(action, 2); //some buffs need delays or they won't be applied
-			}
-		}
-	}
-
 	public void HandleOnPlayerDamageReported(Player source, Entity target, PrefabGUID ability, DamageInfo damageInfo)
 	{
 		if (!target.Has<PlayerCharacter>()) return;
@@ -980,9 +882,23 @@ public class MobaGameMode : BaseGameMode
 	}
 
 	public static int count = 0;
+
+	private float3 GetLaneCenter(float3 unitPosition)
+	{
+		float3 targetPosition = unitPosition.xyz;
+		targetPosition.z = MobaConfig.Config.Team1PlayerRespawn.Z;
+
+		return targetPosition;
+	}
+
+	private bool IsAtLaneCenter(float3 unitPosition)
+	{
+		float threshold = 2.0f;
+		return math.distance(unitPosition, GetLaneCenter(unitPosition)) <= threshold;
+	}
+
 	public void HandleOnGameFrameUpdate()
 	{
-		//check for shard captures
 		foreach (var patrol in TeamPatrols)
 		{
 			foreach (var unit in patrol.Value)
@@ -990,25 +906,34 @@ public class MobaGameMode : BaseGameMode
 				if (unit.Exists())
 				{
 					TileCoordinate targetCoordinate;
+					float3 unitPosition = unit.Read<LocalToWorld>().Position;
+
 					if (Helper.HasBuff(unit, Prefabs.Buff_InCombat_Npc) || Helper.HasBuff(unit, Prefabs.Buff_Shared_Return_NoInvulernable))
 					{
 						targetCoordinate = TileCoordinate.FromWorldPos(unit.Read<LocalToWorld>().Position);
 					}
 					else
 					{
-						targetCoordinate = TileCoordinate.FromWorldPos(MobaConfig.Config.Team2PlayerRespawn.ToFloat3());
-						if (patrol.Key == 2)
+						// Check if the unit is at the center of the lane
+						if (!IsAtLaneCenter(unitPosition))
 						{
-							targetCoordinate = TileCoordinate.FromWorldPos(MobaConfig.Config.Team1PlayerRespawn.ToFloat3());
+							// If not, set the target to the lane center
+							targetCoordinate = TileCoordinate.FromWorldPos(GetLaneCenter(unitPosition));
+						}
+						else
+						{
+							targetCoordinate = TileCoordinate.FromWorldPos(MobaConfig.Config.Team2PlayerRespawn.ToFloat3());
+							if (patrol.Key == 2)
+							{
+								targetCoordinate = TileCoordinate.FromWorldPos(MobaConfig.Config.Team1PlayerRespawn.ToFloat3());
+							}
 						}
 					}
-					
-					var buffer = unit.ReadBuffer<PathBuffer>();
 
-					var pathBuffer = new PathBuffer
-					{
-						Value = targetCoordinate
-					};
+					// Set the path for the unit
+					var buffer = unit.ReadBuffer<PathBuffer>();
+					var pathBuffer = new PathBuffer { Value = targetCoordinate };
+
 					buffer.Clear();
 					buffer.Add(pathBuffer);
 				}
@@ -1028,12 +953,23 @@ public class MobaGameMode : BaseGameMode
 		}
 
 		var target = aggroConsumer.AggroTarget._Entity;
+		var aggroerPrefabGuid = entity.Read<PrefabGUID>();
+		
 		if (target.Exists() && target.Has<PlayerCharacter>())
 		{
 			for (var i = 0; i < aggroBuffer.Length; i++)
 			{
-				if (!aggroBuffer[i].Entity.Has<PlayerCharacter>() && aggroBuffer[i].Entity.Exists())
+				var aggroEntity = aggroBuffer[i].Entity;
+				if (aggroBuffer[i].Entity.Exists() && !aggroEntity.Has<PlayerCharacter>())
 				{
+					if (aggroerPrefabGuid == BaseTurret.PrefabGUID)
+					{
+						if (math.distance(aggroEntity.Read<LocalToWorld>().Position, entity.Read<LocalToWorld>().Position) > 18)
+						{
+							continue;
+						}
+					}
+					
 					aggroConsumer.AlertTarget = NetworkedEntity.ServerEntity(aggroBuffer[i].Entity);
 					aggroConsumer.AggroTarget = NetworkedEntity.ServerEntity(aggroBuffer[i].Entity);
 					break;
@@ -1087,7 +1023,7 @@ public class MobaGameMode : BaseGameMode
 
 	public static new HashSet<string> GetAllowedCommands()
 	{
-		return AllowedCommands;
+		return BaseGameMode.AllowedCommands;
 	}
 
 	public static void ReportStats()

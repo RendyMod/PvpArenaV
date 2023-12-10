@@ -35,7 +35,14 @@ public abstract class BaseGameMode
 		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
 	}
 	public abstract void HandleOnPlayerDowned(Player player, Entity killer);
-	public abstract void HandleOnPlayerDeath(Player player, DeathEvent deathEvent);
+	public virtual void HandleOnPlayerDeath(Player player, DeathEvent deathEvent)
+	{
+		player.ReceiveMessage("You died in an unexpected way. Let an admin know what happened!".Warning());
+		Plugin.PluginLog.LogInfo($"{player.Name} has died in an unexpected way. Current game mode: {player.CurrentState}");
+		player.CurrentState = Player.PlayerState.Normal;
+		Helper.RevivePlayer(player, PvpArenaConfig.Config.CustomSpawnLocation.ToFloat3());
+		player.Reset();
+	}
 	//public abstract void HandleOnPlayerRespawn(Player entity); 
 	public abstract void HandleOnShapeshift(Player player, Entity eventEntity);
 	public virtual void HandleOnPlayerConnected(Player player)
@@ -86,7 +93,17 @@ public abstract class BaseGameMode
 
     protected static HashSet<string> AllowedCommands = new HashSet<string>
 	{
-		{ "all" }
+		"ping",
+		"help",
+		"legendary",
+		"kit legendary",
+		"jewel",
+		"forfeit",
+		"points",
+		"lb ranked",
+		"lb bullet",
+		"bp",
+		"tp-list",
 	};
 	public static HashSet<string> GetAllowedCommands()
 	{

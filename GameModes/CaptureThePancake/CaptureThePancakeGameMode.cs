@@ -1263,7 +1263,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 	public static new HashSet<string> GetAllowedCommands()
 	{
-		return AllowedCommands;
+		return BaseGameMode.AllowedCommands;
 	}
 
 	public static void ReportStats()

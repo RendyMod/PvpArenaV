@@ -29,8 +29,9 @@ public static partial class Helper
 	private static PrefabGUID AbilityImpairBuff = Prefabs.Gloomrot_Voltage_VBlood_Emote_OnAggro_Buff;
 	public static PrefabGUID CustomBuff = Prefabs.Buff_InCombat_Manticore; //good blank slate for adding modifiers, but doesn't persist through death. May show mob in combat
 	public static PrefabGUID CustomBuff2 = Prefabs.Buff_Manticore_ImmaterialHomePos; //good blank slate for adding modifiers, but doesn't persist through death
-	public static PrefabGUID CustomBuff3 = Prefabs.Buff_BloodQuality_T01_OLD; //experimental blank slate
-	public static PrefabGUID CustomBuff4 = Prefabs.Buff_BloodQuality_T02_OLD; //experimental blank slate
+	public static PrefabGUID CustomBuff3 = Prefabs.Buff_BloodQuality_T01_OLD; //ideal blank slate
+	public static PrefabGUID CustomBuff4 = Prefabs.Buff_BloodQuality_T02_OLD;
+	public static PrefabGUID CustomBuff5 = Prefabs.Buff_BloodQuality_T03_OLD; 
 	public static PrefabGUID TrollBuff = CustomBuff4;
 	public static void ApplyMatchInitializationBuff(Player player)
 	{
@@ -216,14 +217,14 @@ public static partial class Helper
 		return BuffEntity(player.Character, buff, out buffEntity, duration, attemptToPersistThroughDeath, effectsOnStart);
 	}
 
-	public static void MakeGhostlySpectator(Player player)
+	public static void MakeGhostlySpectator(Player player, int duration = Helper.NO_DURATION)
 	{
-		BuffPlayer(player, Prefabs.AB_Shapeshift_Mist_Buff, out var buffEntity, NO_DURATION);
+		BuffPlayer(player, Prefabs.AB_Shapeshift_Mist_Buff, out var buffEntity, duration);
 		CompletelyRemoveAbilityBarFromBuff(buffEntity);
 		FixIconForShapeshiftBuff(player, buffEntity, Prefabs.AB_Shapeshift_Mist_Group);
 		ModifyBuff(buffEntity, BuffModificationTypes.Invulnerable | BuffModificationTypes.Immaterial | BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.AbilityCastImpair | BuffModificationTypes.PickupItemImpaired | BuffModificationTypes.TargetSpellImpaired, true);
 
-		BuffPlayer(player, Prefabs.Buff_General_HideCorpse, out var invisibleBuff, NO_DURATION);
+		BuffPlayer(player, Prefabs.Buff_General_HideCorpse, out var invisibleBuff, duration);
 		ModifyBuff(invisibleBuff, BuffModificationTypes.None, true);
 		/*var action = () =>
 		{

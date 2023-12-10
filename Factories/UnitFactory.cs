@@ -647,7 +647,7 @@ public class BaseTurret : Unit
 		isRooted = true;
 		drawsAggro = true;
 		isTargetable = false;
-		aggroRadius = 4;
+		aggroRadius = 3f;
 	}
 
 	public override void Modify(Entity e)

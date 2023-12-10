@@ -280,20 +280,6 @@ public static class GatherAggroCandidatesSystemPatch
 */
 
 
-[HarmonyPatch(typeof(AggroSystem), nameof(AggroSystem.OnUpdate))]
-public static class AggroSystemPatch
-{
-	public static void Postfix(AggroSystem __instance)
-	{
-		var entities = __instance.__SortAndSetTarget_entityQuery.ToEntityArray(Allocator.Temp);
-		foreach (var entity in entities)
-		{
-			GameEvents.RaiseAggroPostUpdate(entity);
-		}
-		entities.Dispose();
-	}
-}
-
 /*[HarmonyPatch(typeof(GatherAggroCandidatesSystem), nameof(GatherAggroCandidatesSystem.OnUpdate))]
 public static class GatherAggroCandidatesSystemPatch
 {

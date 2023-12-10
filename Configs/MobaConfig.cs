@@ -80,6 +80,9 @@ public class MobaConfigData
 	public List<PrefabSpawn> StructureSpawns { get; set; } = new List<PrefabSpawn>();
 	public List<UnitSpawn> UnitSpawns { get; set; } = new List<UnitSpawn>();
 	public List<PatrolSpawn> PatrolSpawns { get; set; } = new List<PatrolSpawn>();
+	public int CoinsLostPerDeath { get; set; } = 5;
+	public int CoinsGainedPerPlayerKill { get; set; } = 10;
+	public int CoinsGainedPerUnitKill { get; set; } = 2;
 
 	// Additional properties...
 }

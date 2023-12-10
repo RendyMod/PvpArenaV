@@ -83,15 +83,6 @@ public class PrisonGameMode : BaseGameMode
 			}
 		}
 	}
-	public override void HandleOnPlayerDeath(Player player, DeathEvent deathEvent)
-	{
-		if (player.CurrentState != GameModeType) return;
-		var pos = ImprisonService.GetPlayerCellCoordinates(player);
-		Helper.RespawnPlayer(player, pos);
-		player.Reset(ResetOptions);
-		var blood = player.Character.Read<Blood>();
-		Helper.SetPlayerBlood(player, blood.BloodType, blood.Quality);
-	}
 
 	public override void HandleOnPlayerChatCommand(Player player, CommandAttribute command)
 	{

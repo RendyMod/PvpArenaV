@@ -38,14 +38,21 @@ public static partial class Helper
 
 	public static System.Random random = new System.Random();
 
-	public static void RevivePlayer(Player player)
+	public static void RevivePlayer(Player player, float3? pos = null)
 	{
 		var sbs = VWorld.Server.GetExistingSystem<ServerBootstrapSystem>();
 		var bufferSystem = VWorld.Server.GetExistingSystem<EntityCommandBufferSystem>();
 		var buffer = bufferSystem.CreateCommandBuffer();
 
 		Nullable_Unboxed<float3> spawnLoc = new();
-		spawnLoc.value = player.Position;
+		if (pos.HasValue)
+		{
+			spawnLoc.value = pos.Value;
+		}
+		else
+		{
+			spawnLoc.value = player.Position;
+		}
 		spawnLoc.has_value = true;
 		var health = player.Character.Read<Health>();
 		if (Helper.HasBuff(player, Prefabs.Buff_General_Vampire_Wounded_Buff))

@@ -88,17 +88,7 @@ public class Matchmaking1v1GameMode : BaseGameMode
 			}
 		}
 	}
-	public override void HandleOnPlayerDeath(Player player, DeathEvent deathEvent)
-	{
-		if (player.CurrentState != GameModeType) return;
 
-		var winner = MatchmakingHelper.GetOpponentForPlayer(player);
-		MatchmakingQueue.MatchManager.EndMatch(winner, player, false);
-		player.Reset(Helper.ResetOptions.FreshMatch);
-
-		var blood = player.Character.Read<Blood>();
-		Helper.SetPlayerBlood(player, blood.BloodType, blood.Quality);
-	}
 	/*	public override void HandleOnPlayerRespawn(Player player)
 		{
 			if (player.CurrentState != GameModeType) return;

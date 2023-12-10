@@ -234,6 +234,7 @@ public static class MobaHelper
 			else if (unitType == "boss")
 			{
 				unitToSpawn = new Boss(unitSettings.PrefabGUID, unitSettings.Team, unitSettings.Level);
+				unitToSpawn.DrawsAggro = true;
 				unitToSpawn.IsRooted = true;
 			}
 			else if (unitType == "angram")
@@ -325,6 +326,11 @@ public static class MobaHelper
 					MobaGameMode.TeamPatrols[unitToSpawn.Team].Add(e);
 					MobaGameMode.TeamUnits[unitToSpawn.Team].Add(e);
 					e.Remove<DisableWhenNoPlayersInRange>();
+					var blood = e.Read<BloodConsumeSource>();
+					blood.BloodQuality = 0;
+					e.Write(blood);
+					Helper.BuffEntity(e, Helper.CustomBuff5, out var buffEntity, 10);
+					Helper.ModifyBuff(buffEntity, BuffModificationTypes.DisableDynamicCollision, true);
 				}, teamLeader);
 			}
 		}
