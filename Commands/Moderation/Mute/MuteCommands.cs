@@ -17,7 +17,6 @@ internal class MuteCommands
 		var player = foundPlayer;
 		
 		MuteService.MutePlayer(player, numberOfDays);
-		player.Character.Remove<CharacterVoiceActivity>();
 
 		/*Core.discordBot.SendMessageAsync(player.Name + " " + Moderation.BanMuteMessage(false, true, player.Name, player.SteamID.ToString(), numberOfDays, reason));*/
 		sender.ReceiveMessage(("You ".Emphasize() + Moderation.BanMuteMessage(false, true, player.Name.Emphasize(), player.SteamID.ToString().Emphasize(), numberOfDays, reason.Emphasize()).White()));
@@ -31,7 +30,6 @@ internal class MuteCommands
 	public void UnmuteCommand(Player sender, Player player)
 	{
 		MuteService.UnmutePlayer(player.SteamID);
-		player.Character.Add<CharacterVoiceActivity>();
 		
 		if (!player.MuteInfo.IsMuted())
 		{

@@ -84,7 +84,7 @@ public static class VivoxConnectionSystemPatch
 		{
 			if (PlayerService.GetPlayerFromUser(fromCharacter.User).MuteInfo.IsMuted())
 			{
-				VWorld.Server.EntityManager.DestroyEntity(entity);
+				entity.Destroy();
 				return false;
 			}
 		}

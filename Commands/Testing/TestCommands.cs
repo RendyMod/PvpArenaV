@@ -28,7 +28,13 @@ internal class TestCommands
 	[Command("test", description: "Used for debugging", adminOnly: true)]
 	public void TestCommand(Player sender)
 	{
-		
+		foreach (var player in PlayerService.UserCache.Values)
+		{
+			if (player.Character.Exists() && !player.Character.Has<CharacterVoiceActivity>())
+			{
+				player.Character.Add<CharacterVoiceActivity>();
+			}
+		}
 	}
 
 	[Command("become", description: "Used for debugging", adminOnly: true)]
