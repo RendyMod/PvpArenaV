@@ -19,6 +19,7 @@ using Il2CppSystem;
 using Unity.Physics;
 using Unity.Jobs;
 using UnityEngine.Jobs;
+using ProjectM.Behaviours;
 
 namespace PvpArena.Helpers;
 
@@ -229,6 +230,27 @@ public static partial class Helper
 			}
 
 			jewelEntity.Write(spellModSet);
+		}
+	}
+
+	public static void GiveDefaultJewels(Player player)
+	{
+		foreach (var jewel in JewelData.abilityToPrefabDictionary)
+		{
+			string mods = Core.defaultJewelStorage.GetModsForSpell(jewel.Key, player.SteamID);
+			Helper.GenerateJewelViaEvent(player, jewel.Key, mods);
+		}
+		var scheduledAction = new ScheduledAction(EquipJewels, new object[] { player });
+		ActionScheduler.ScheduleAction(scheduledAction, 2);
+	}
+
+	public static void EquipJewels(Player player)
+	{
+		int inventoryIndex = 0;
+		foreach (var jewel in JewelData.abilityToPrefabDictionary)
+		{
+			Helper.EquipJewelAtSlot(player, inventoryIndex);
+			inventoryIndex++;
 		}
 	}
 }

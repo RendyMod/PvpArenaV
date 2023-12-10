@@ -92,24 +92,9 @@ public static class PlayerSpawnHandler
 	{
 		var steamId = player.SteamID;
 		// Generate jewels for the character.
-		foreach (var jewel in JewelData.abilityToPrefabDictionary)
-		{
-			string mods = Core.defaultJewelStorage.GetModsForSpell(jewel.Key, player.SteamID);
-			Helper.GenerateJewelViaEvent(player, jewel.Key, mods);
-		}
-		ScheduleAction(EquipJewels, player, delay: 2);
+		Helper.GiveDefaultJewels(player);
 		ScheduleAction(Helper.GiveDefaultLegendaries, player, delay: 3);
 		ScheduleAction(Helper.GiveArmorAndNecks, player, delay: 4);
-	}
-
-	public static void EquipJewels(Player player)
-	{
-		int inventoryIndex = 0;
-		foreach (var jewel in JewelData.abilityToPrefabDictionary)
-		{
-			Helper.EquipJewelAtSlot(player, inventoryIndex);
-			inventoryIndex++;
-		}
 	}
 }
 
