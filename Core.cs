@@ -68,7 +68,8 @@ public static class Core
 	public static TraderSyncSystem traderSyncSystem = VWorld.Server.GetExistingSystem<TraderSyncSystem>();
 	public static ServerBootstrapSystem serverBootstrapSystem = VWorld.Server.GetExistingSystem<ServerBootstrapSystem>();
 	public static GameDataSystem gameDataSystem = VWorld.Server.GetExistingSystem<GameDataSystem>();
-	
+	public static ModificationSystem modificationSystem = VWorld.Server.GetExistingSystem<ModificationSystem>();
+
 	public static void Initialize()
 	{
 		if (HasInitialized) return;

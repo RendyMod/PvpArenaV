@@ -77,7 +77,7 @@ internal class SpawnCommands
 				SettingsEntity = ModifiableEntity.CreateFixed(Helper.GetPrefabEntityByPrefabGUID(Prefabs.BuffResistance_Golem)),
 				InitialSettingGuid = Prefabs.BuffResistance_Golem
 			});
-			Helper.BuffEntity(e, Helper.CustomBuff, out var buffEntity, (float)Helper.NO_DURATION, false, true);
+			Helper.BuffEntity(e, Helper.CustomBuff, out var buffEntity, (float)Helper.NO_DURATION, false);
 			Helper.ModifyBuff(buffEntity, BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.DisableMapCollision);
 		}), 0, -1);
 		sender.ReceiveMessage($"Spawned vampire!".Success());

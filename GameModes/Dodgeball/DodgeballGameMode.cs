@@ -58,8 +58,6 @@ public class DodgeballGameMode : BaseGameMode
 
 	public override void Initialize()
 	{
-		/*GameEvents.OnPlayerRespawn += HandleOnPlayerRespawn;*/
-		BaseInitialize();
 		GameEvents.OnPlayerDowned += HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath += HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift += HandleOnShapeshift;
@@ -70,8 +68,11 @@ public class DodgeballGameMode : BaseGameMode
         GameEvents.OnPlayerInvitedToClan += HandleOnPlayerInvitedToClan;
         GameEvents.OnPlayerLeftClan += HandleOnPlayerLeftClan;
         GameEvents.OnPlayerKickedFromClan += HandleOnPlayerKickedFromClan;
-        /*GameEvents.OnGameFrameUpdate += HandleOnGameFrameUpdate;*/
-    }
+		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
+		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
+		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
+		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
+	}
 
 	public void Initialize(List<Player> team1Players, List<Player> team2Players)
 	{
@@ -100,8 +101,6 @@ public class DodgeballGameMode : BaseGameMode
 	}
 	public override void Dispose()
 	{
-		/*GameEvents.OnPlayerRespawn -= HandleOnPlayerRespawn;*/
-		BaseDispose();
 		GameEvents.OnPlayerDowned -= HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath -= HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift -= HandleOnShapeshift;
@@ -112,8 +111,11 @@ public class DodgeballGameMode : BaseGameMode
         GameEvents.OnPlayerInvitedToClan -= HandleOnPlayerInvitedToClan;
         GameEvents.OnPlayerLeftClan -= HandleOnPlayerLeftClan;
         GameEvents.OnPlayerKickedFromClan -= HandleOnPlayerKickedFromClan;
-        /*GameEvents.OnGameFrameUpdate -= HandleOnGameFrameUpdate;*/
-        HasStarted = false;
+		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
+		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
+		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
+		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
+		HasStarted = false;
 		stopwatch.Reset();
 		foreach (var timer in Timers)
 		{
@@ -141,16 +143,6 @@ public class DodgeballGameMode : BaseGameMode
 		EliminatePlayer(player);
 	}
 
-	/*public override void HandleOnPlayerRespawn(Player player)
-	{
-		if (!player.IsInDefaultMode()) return;
-
-	}*/
-	public override void HandleOnPlayerChatCommand(Player player, CommandAttribute command)
-	{
-		if (player.CurrentState != this.GameModeType) return;
-
-	}
 	public override void HandleOnShapeshift(Player player, Entity eventEntity)
 	{
 		if (player.CurrentState != this.GameModeType) return;
@@ -314,9 +306,7 @@ public class DodgeballGameMode : BaseGameMode
 		bool playerAlreadyGhost = IsGhost[player];
 		IsGhost[player] = true;
 		player.Reset(ResetOptions);
-		var action = () => Helper.MakeGhostlySpectator(player);
-		var timer = ActionScheduler.RunActionOnceAfterDelay(action, .05);
-		Timers.Add(timer);
+		Timers.Add(Helper.MakeGhostlySpectator(player));
 
 		if (!playerAlreadyGhost)
 		{

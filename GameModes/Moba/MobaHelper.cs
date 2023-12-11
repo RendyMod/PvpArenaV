@@ -12,6 +12,7 @@ using Discord;
 using Il2CppSystem.Linq.Expressions.Interpreter;
 using ProjectM;
 using ProjectM.CastleBuilding;
+using ProjectM.Gameplay.Scripting;
 using ProjectM.Gameplay.Systems;
 using ProjectM.Hybrid;
 using ProjectM.Network;
@@ -322,6 +323,7 @@ public static class MobaHelper
 				{
 					teamLeader = null;
 				}
+
 				UnitFactory.SpawnUnitWithCallback(unitToSpawn, unitSettings.Location.ToFloat3(), (e) => {
 					MobaGameMode.TeamPatrols[unitToSpawn.Team].Add(e);
 					MobaGameMode.TeamUnits[unitToSpawn.Team].Add(e);
@@ -329,6 +331,54 @@ public static class MobaHelper
 					var blood = e.Read<BloodConsumeSource>();
 					blood.BloodQuality = 0;
 					e.Write(blood);
+					if (unitToSpawn.Team == 1)
+					{
+						if (Helper.BuffEntity(e, Prefabs.AB_Vampire_VeilOfFrost_Buff, out var colorBuffEntity, Helper.NO_DURATION))
+						{
+							colorBuffEntity.Remove<ModifyMovementSpeedBuff>();
+							var listeners = colorBuffEntity.ReadBuffer<GameplayEventListeners>();
+							listeners.Clear();
+							var scriptBuffModifyAggroFactorDataServer = colorBuffEntity.Read<Script_Buff_ModifyAggroFactor_DataServer>();
+							scriptBuffModifyAggroFactorDataServer.Factor = 1;
+							colorBuffEntity.Write(scriptBuffModifyAggroFactorDataServer);
+							Helper.ModifyBuff(colorBuffEntity, BuffModificationTypes.None, true);
+							var action = () =>
+							{
+								if (e.Exists())
+								{
+									var stealthable = e.Read<Stealthable>();
+									stealthable.IsStealthed.Value = false;
+									stealthable.ModelInvisible.Value = false;
+									e.Write(stealthable);
+								}
+							};
+							ActionScheduler.RunActionOnceAfterFrames(action, 3);
+						}
+					}
+					else
+					{
+						if (Helper.BuffEntity(e, Prefabs.AB_Vampire_VeilOfBlood_Buff, out var colorBuffEntity, Helper.NO_DURATION))
+						{
+							colorBuffEntity.Remove<ModifyMovementSpeedBuff>();
+							var listeners = colorBuffEntity.ReadBuffer<GameplayEventListeners>();
+							listeners.Clear();
+							var scriptBuffModifyAggroFactorDataServer = colorBuffEntity.Read<Script_Buff_ModifyAggroFactor_DataServer>();
+							scriptBuffModifyAggroFactorDataServer.Factor = 1;
+							colorBuffEntity.Write(scriptBuffModifyAggroFactorDataServer);
+							Helper.ModifyBuff(colorBuffEntity, BuffModificationTypes.None, true);
+							var action = () =>
+							{
+								if (e.Exists())
+								{
+									var stealthable = e.Read<Stealthable>();
+									stealthable.IsStealthed.Value = false;
+									stealthable.ModelInvisible.Value = false;
+									e.Write(stealthable);
+								}
+							};
+							ActionScheduler.RunActionOnceAfterFrames(action, 3);
+						}
+					}
 					Helper.BuffEntity(e, Helper.CustomBuff5, out var buffEntity, 10);
 					Helper.ModifyBuff(buffEntity, BuffModificationTypes.DisableDynamicCollision, true);
 				}, teamLeader);

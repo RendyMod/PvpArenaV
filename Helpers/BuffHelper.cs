@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Bloodstone.API;
 using Il2CppSystem.Runtime.Remoting;
@@ -23,8 +24,8 @@ namespace PvpArena.Helpers;
 
 public static partial class Helper
 {
-	public const int NO_DURATION = 0;
-	public const int DEFAULT_DURATION = -1;
+	public const float NO_DURATION = 0;
+	public const float DEFAULT_DURATION = -1;
 
 	private static PrefabGUID AbilityImpairBuff = Prefabs.Gloomrot_Voltage_VBlood_Emote_OnAggro_Buff;
 	public static PrefabGUID CustomBuff = Prefabs.Buff_InCombat_Manticore; //good blank slate for adding modifiers, but doesn't persist through death. May show mob in combat
@@ -212,87 +213,74 @@ public static partial class Helper
 		buffEntity.Write(abilityOwner); //shapeshift buffs forcibly applied without casting have an annoying white icon unless you set this
 	}
 
-	public static bool BuffPlayer(Player player, PrefabGUID buff, out Entity buffEntity, float duration = DEFAULT_DURATION, bool attemptToPersistThroughDeath = false, bool effectsOnStart = false)
+	public static bool BuffPlayer(Player player, PrefabGUID buff, out Entity buffEntity, float duration = DEFAULT_DURATION, bool attemptToPersistThroughDeath = false)
 	{
-		return BuffEntity(player.Character, buff, out buffEntity, duration, attemptToPersistThroughDeath, effectsOnStart);
+		return BuffEntity(player.Character, buff, out buffEntity, duration, attemptToPersistThroughDeath);
 	}
 
-	public static void MakeGhostlySpectator(Player player, int duration = Helper.NO_DURATION)
+	public static Timer MakeGhostlySpectator(Player player, float duration = Helper.NO_DURATION)
 	{
-		BuffPlayer(player, Prefabs.AB_Shapeshift_Mist_Buff, out var buffEntity, duration);
-		CompletelyRemoveAbilityBarFromBuff(buffEntity);
-		FixIconForShapeshiftBuff(player, buffEntity, Prefabs.AB_Shapeshift_Mist_Group);
-		ModifyBuff(buffEntity, BuffModificationTypes.Invulnerable | BuffModificationTypes.Immaterial | BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.AbilityCastImpair | BuffModificationTypes.PickupItemImpaired | BuffModificationTypes.TargetSpellImpaired, true);
-
-		BuffPlayer(player, Prefabs.Buff_General_HideCorpse, out var invisibleBuff, duration);
-		ModifyBuff(invisibleBuff, BuffModificationTypes.None, true);
-		/*var action = () =>
+		if (BuffPlayer(player, Prefabs.Buff_General_HideCorpse, out var invisibleBuff, duration))
 		{
-			BuffPlayer(player, Prefabs.Buff_General_HideCorpse, out var invisibleBuff, NO_DURATION);
-			ModifyBuff(invisibleBuff, BuffModificationTypes.None, true);
+			ModifyBuff(invisibleBuff, BuffModificationTypes.Invulnerable | BuffModificationTypes.Immaterial | BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.AbilityCastImpair | BuffModificationTypes.PickupItemImpaired | BuffModificationTypes.TargetSpellImpaired, true);
+		}
+
+		var action = () => 
+		{
+			if (BuffPlayer(player, Prefabs.AB_Shapeshift_Mist_Buff, out var buffEntity, duration, true))
+			{
+				CompletelyRemoveAbilityBarFromBuff(buffEntity);
+				FixIconForShapeshiftBuff(player, buffEntity, Prefabs.AB_Shapeshift_Mist_Group);
+				ModifyBuff(buffEntity, BuffModificationTypes.None, true);
+			}
 		};
-		var timer = ActionScheduler.RunActionOnceAfterDelay(action, .05f);
-		DodgeballGameMode.Timers.Add(timer);*/
+		//since this is usually called post-death, there needs to be a delay or the post-death systems will remove the mist immediately
+		return ActionScheduler.RunActionOnceAfterFrames(action, 2);
 	}
 
-	public static bool BuffEntity(Entity entity, PrefabGUID buff, out Entity buffEntity, float duration = DEFAULT_DURATION, bool attemptToPersistThroughDeath = false, bool effectsOnStart = false)
+	public static bool BuffEntity(Entity entity, PrefabGUID buff, out Entity buffEntity, float duration = DEFAULT_DURATION, bool attemptToPersistThroughDeath = false)
 	{
-		var des = VWorld.Server.GetExistingSystem<DebugEventsSystem>();
 		var buffEvent = new ApplyBuffDebugEvent()
 		{
 			BuffPrefabGUID = buff
 		};
 		var fromCharacter = new FromCharacter()
 		{
-			User = PlayerService.UserCache.Keys.ElementAt(0),
+			User = PlayerService.GetAnyPlayer().User,
 			Character = entity
 		};
 		if (!TryGetBuff(entity, buff, out buffEntity)) //don't try to buff them if they already have the buff
 		{
-			des.ApplyBuff(fromCharacter, buffEvent);
+			Core.debugEventsSystem.ApplyBuff(fromCharacter, buffEvent);
 		}
 		if (TryGetBuff(entity, buff, out buffEntity))
 		{
-			if (!effectsOnStart)
-			{
-				if (buffEntity.Has<CreateGameplayEventsOnSpawn>())
-				{
-					buffEntity.Remove<CreateGameplayEventsOnSpawn>();
-				}
-
-				if (buffEntity.Has<GameplayEventListeners>())
-				{
-					buffEntity.Remove<GameplayEventListeners>();
-				}
-			}
-
-			if (attemptToPersistThroughDeath)
+			if (attemptToPersistThroughDeath || duration == Helper.NO_DURATION)
 			{
 				buffEntity.Add<Buff_Persists_Through_Death>();
-				if (buffEntity.Has<RemoveBuffOnGameplayEvent>())
-				{
-					buffEntity.Remove<RemoveBuffOnGameplayEvent>();
-				}
+				buffEntity.Remove<Buff_Destroy_On_Owner_Death>();
 
 				if (buffEntity.Has<RemoveBuffOnGameplayEventEntry>())
 				{
-					buffEntity.Remove<RemoveBuffOnGameplayEventEntry>();
+					var buffer = buffEntity.ReadBuffer<RemoveBuffOnGameplayEventEntry>();
+					buffer.Clear();
 				}
 			}
-			else
+			else if (!attemptToPersistThroughDeath)
 			{
 				buffEntity.Remove<Buff_Persists_Through_Death>();
 				buffEntity.Add<Buff_Destroy_On_Owner_Death>();
 			}
 
-			if (duration > 0 && duration != DEFAULT_DURATION)
+			if (duration > 0)
 			{
-				if (buffEntity.Has<Age>()) //if we try to buff with a buff they already have, reset the age
+				if (!buffEntity.Has<Age>()) //if we try to buff with a buff they already have, reset the age
 				{
-					var age = buffEntity.Read<Age>();
-					age.Value = 0;
-					buffEntity.Write(age);
+					buffEntity.Add<Age>();
 				}
+				var age = buffEntity.Read<Age>();
+				age.Value = 0;
+				buffEntity.Write(age);
 				if (!buffEntity.Has<LifeTime>())
 				{
 					buffEntity.Add<LifeTime>();
@@ -308,22 +296,12 @@ public static partial class Helper
 				if (buffEntity.Has<LifeTime>())
 				{
 					var lifetime = buffEntity.Read<LifeTime>();
-					lifetime.Duration = 0; //duration must be -1 or 0 to stop timer from showing up, but -1 logs errors. 0 shows no errors and usually works, but will crash the client on some buffs like bloodrite
+					buffEntity.Remove<Age>();
+					lifetime.Duration = 0;
 					lifetime.EndAction = LifeTimeEndAction.None;
 					buffEntity.Write(lifetime);
 				}
-
-				if (buffEntity.Has<RemoveBuffOnGameplayEvent>())
-				{
-					buffEntity.Remove<RemoveBuffOnGameplayEvent>();
-				}
-
-				if (buffEntity.Has<RemoveBuffOnGameplayEventEntry>())
-				{
-					buffEntity.Remove<RemoveBuffOnGameplayEventEntry>();
-				}
 			}
-
 			return true;
 		}
 		return false;
@@ -355,6 +333,7 @@ public static partial class Helper
 			{
 				if (ShouldDestroyBuff(buff.PrefabGuid, resetOptions))
 				{
+					Plugin.PluginLog.LogInfo($"Destroying: {buff.PrefabGuid.LookupNameString()}");
 					Helper.DestroyBuff(buff.Entity);
 				}
 			}

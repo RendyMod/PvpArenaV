@@ -30,6 +30,7 @@ public static class DeathAndSpawnPatches
 						if (user.Exists())
 						{
 							var player = PlayerService.GetPlayerFromCharacter(deathEvent.Died);
+							Plugin.PluginLog.LogInfo("raising player death");
 							GameEvents.RaisePlayerDeath(player, deathEvent);
 						}
 					}

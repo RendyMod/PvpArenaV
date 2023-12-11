@@ -44,7 +44,6 @@ public static class BuffDebugSystemPatch
 					{
 						var player = PlayerService.GetPlayerFromCharacter(Character);
 						GameEvents.RaisePlayerBuffed(player, entity);
-
 						
 						if (prefabGuid == Prefabs.Item_EquipBuff_Shared_General)
 						{

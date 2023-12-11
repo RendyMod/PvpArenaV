@@ -29,22 +29,6 @@ public class TrollGameMode : DefaultGameMode
 			Id = ModificationIdFactory.NewId(),
 			ModificationType = ModificationType.Set,
 			Priority = 100,
-			StatType = UnitStatType.SpellPower,
-			Value = -100
-		},
-		new ModifyUnitStatBuff_DOTS
-		{
-			Id = ModificationIdFactory.NewId(),
-			ModificationType = ModificationType.Set,
-			Priority = 100,
-			StatType = UnitStatType.PhysicalPower,
-			Value = -100
-		},
-		new ModifyUnitStatBuff_DOTS
-		{
-			Id = ModificationIdFactory.NewId(),
-			ModificationType = ModificationType.Set,
-			Priority = 100,
 			StatType = UnitStatType.AttackSpeed,
 			Value = 5
 		},
@@ -76,22 +60,40 @@ public class TrollGameMode : DefaultGameMode
 
 	public override void Initialize()
 	{
-		base.Initialize();
-		GameEvents.OnPlayerBuffed += HandleOnPlayerBuffed;
-		GameEvents.OnPlayerProjectileCreated += HandleOnPlayerHitColliderCreated;
-        GameEvents.OnPlayerStartedCasting += HandleOnPlayerStartedCasting;
+		GameEvents.OnPlayerDowned += HandleOnPlayerDowned;
+		GameEvents.OnPlayerDeath += HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift += HandleOnShapeshift;
-        GameEvents.OnPlayerBuffRemoved += HandleOnPlayerBuffRemoved;
-    }
+		GameEvents.OnPlayerStartedCasting += HandleOnPlayerStartedCasting;
+		GameEvents.OnPlayerBuffed += HandleOnPlayerBuffed;
+		GameEvents.OnPlayerDamageReported += HandleOnPlayerDamageReported;
+		GameEvents.OnPlayerReset += HandleOnPlayerReset;
+		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
+		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
+		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
+		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
+		GameEvents.OnPlayerProjectileCreated += HandleOnPlayerProjectileCreated;
+		GameEvents.OnPlayerAoeCreated += HandleOnPlayerAoeCreated;
+		GameEvents.OnPlayerStartedCasting += HandleOnPlayerStartedCasting;
+		GameEvents.OnPlayerBuffRemoved += HandleOnPlayerBuffRemoved;
+	}
 	public override void Dispose()
 	{
-		base.Dispose();
-		GameEvents.OnPlayerBuffed -= HandleOnPlayerBuffed;
-		GameEvents.OnPlayerProjectileCreated -= HandleOnPlayerHitColliderCreated;
-        GameEvents.OnPlayerStartedCasting -= HandleOnPlayerStartedCasting;
+		GameEvents.OnPlayerDowned -= HandleOnPlayerDowned;
+		GameEvents.OnPlayerDeath -= HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift -= HandleOnShapeshift;
-        GameEvents.OnPlayerBuffRemoved -= HandleOnPlayerBuffRemoved;
-    }
+		GameEvents.OnPlayerStartedCasting -= HandleOnPlayerStartedCasting;
+		GameEvents.OnPlayerBuffed -= HandleOnPlayerBuffed;
+		GameEvents.OnPlayerDamageReported -= HandleOnPlayerDamageReported;
+		GameEvents.OnPlayerReset -= HandleOnPlayerReset;
+		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
+		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
+		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
+		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
+		GameEvents.OnPlayerProjectileCreated -= HandleOnPlayerProjectileCreated;
+		GameEvents.OnPlayerAoeCreated -= HandleOnPlayerAoeCreated;
+		GameEvents.OnPlayerStartedCasting -= HandleOnPlayerStartedCasting;
+		GameEvents.OnPlayerBuffRemoved -= HandleOnPlayerBuffRemoved;
+	}
 
 	private static HashSet<string> AllowedCommands = new HashSet<string>
 	{
@@ -135,38 +137,66 @@ public class TrollGameMode : DefaultGameMode
     public void HandleOnPlayerBuffRemoved(Player player, Entity buffEntity)
     {
         if (player.CurrentState != this.GameModeType || player != this.player) return;
-
-        if (buffEntity.Read<PrefabGUID>() == Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Buff)
+		if (buffEntity.Read<PrefabGUID>() == Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Buff)
         {
-            TrollModeManager.RemoveTroll(player);
+			var destroyData = buffEntity.Read<DestroyData>();
+			if (destroyData.DestroyReason == DestroyReason.Default)
+			{
+				buffEntity.Remove<DestroyTag>();
+				buffEntity.Write(new DestroyState
+				{
+					Value = DestroyStateEnum.NotDestroyed
+				});
+			}
+			else
+			{
+				TrollModeManager.RemoveTroll(player);
+			}
         }
     }
 
-    public void HandleOnPlayerHitColliderCreated(Player player, Entity hitColliderEntity)
+	public void HandleOnPlayerProjectileCreated(Player player, Entity projectileEntity)
 	{
-        if (player.CurrentState != this.GameModeType || player != this.player) return;
+		if (player.CurrentState != this.GameModeType || player != this.player) return;
 
-        var buffer = hitColliderEntity.ReadBuffer<HitColliderCast>();
-        for (var i = 0; i < buffer.Length; i++)
-        {
-            var hitColliderCast = buffer[i];
-            hitColliderCast.IgnoreImmaterial = true;
-            hitColliderCast.PrimaryFilterFlags = ProjectM.Physics.CollisionFilterFlags.Unit;
-            buffer[i] = hitColliderCast;
-        }
+		var projectile = projectileEntity.Read<Projectile>();
+		projectile.Range = 100;
+		projectileEntity.Write(projectile);
 
-        if (hitColliderEntity.Has<Projectile>())
-        {
-            var projectile = hitColliderEntity.Read<Projectile>();
-            projectile.Range = 100;
-            hitColliderEntity.Write(projectile);
-        }
-		else if (hitColliderEntity.Has<TargetAoE>() && hitColliderEntity.Has<LifeTime>())
+		var buffer = projectileEntity.ReadBuffer<HitColliderCast>();
+		for (var i = 0; i < buffer.Length; i++)
 		{
-			var lifeTime = hitColliderEntity.Read<LifeTime>();
-			lifeTime.Duration = 0;
-			hitColliderEntity.Write(lifeTime);
+			var hitColliderCast = buffer[i];
+			hitColliderCast.IgnoreImmaterial = true;
+			buffer[i] = hitColliderCast;
 		}
+	}
+
+	public override void HandleOnPlayerDamageDealt(Player player, Entity eventEntity)
+	{
+		if (player.CurrentState != GameModeType) return;
+
+		if (eventEntity.Exists())
+		{
+			eventEntity.Destroy();
+		}
+	}
+
+	public void HandleOnPlayerAoeCreated(Player player, Entity aoeEntity)
+	{
+		if (player.CurrentState != this.GameModeType || player != this.player) return;
+
+		var buffer = aoeEntity.ReadBuffer<HitColliderCast>();
+		for (var i = 0; i < buffer.Length; i++)
+		{
+			var hitColliderCast = buffer[i];
+			hitColliderCast.IgnoreImmaterial = true;
+			buffer[i] = hitColliderCast;
+		}
+
+		var lifeTime = aoeEntity.Read<LifeTime>();
+		lifeTime.Duration = 0;
+		aoeEntity.Write(lifeTime);
 	}
 }
 

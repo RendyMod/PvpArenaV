@@ -140,14 +140,15 @@ public static class ResetBuffPrefabs
 		Prefabs.AB_BloodBuff_Mutant_ShapeshiftMovementSpeedBurst,
 		Prefabs.AB_BloodBuff_ResetSpellCooldownOnCast,
 		Prefabs.AB_BloodBuff_Scholar_MovementSpeedOnCast,
-		Prefabs.Buff_OutOfCombat
+		Prefabs.Buff_OutOfCombat,
+		Prefabs.AB_Shapeshift_NormalForm_Buff
 	};
 
 	public static HashSet<PrefabGUID> ShapeshiftBuffs = new HashSet<PrefabGUID>
 	{
 		Prefabs.AB_Shapeshift_DominatingPresence_PsychicForm_Buff,
 		Prefabs.AB_Shapeshift_Bear_Dash,
-		Prefabs.AB_Shapeshift_NormalForm_Buff,
+		/*Prefabs.AB_Shapeshift_NormalForm_Buff,*/
 		Prefabs.AB_Shapeshift_CommandingPresence_Buff,
 		Prefabs.AB_Shapeshift_BloodHunger_BloodSight_Buff,
 		Prefabs.AB_Shapeshift_Toad_Buff,

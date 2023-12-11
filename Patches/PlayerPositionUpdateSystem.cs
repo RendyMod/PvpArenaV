@@ -1,5 +1,6 @@
 using HarmonyLib;
 using ProjectM;
+using PvpArena.Data;
 using PvpArena.GameModes;
 using PvpArena.Helpers;
 using PvpArena.Services;
@@ -27,6 +28,7 @@ public static class DetectPlayerEnteredZoneSystem
 				{
 					GameEvents.RaisePlayerHasNoControlledEntity(player);
 					Helper.ControlOriginalCharacter(player);
+					Helper.RemoveBuff(player, Prefabs.Admin_Observe_Invisible_Buff);
 				}
 			}
 		}

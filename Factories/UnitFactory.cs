@@ -808,7 +808,11 @@ public class ObjectiveHorse : Horse
 	public override void Modify(Entity e, Entity buffEntity)
 	{
 		base.Modify(e, buffEntity);
-		Helper.BuffEntity(e, Prefabs.AB_Interact_Siege_Structure_T01_PlayerBuff, out var siegeBuffEntity, Helper.NO_DURATION);
+		if (Helper.BuffEntity(e, Prefabs.AB_Interact_Siege_Structure_T01_PlayerBuff, out var siegeBuffEntity, Helper.NO_DURATION))
+		{
+			var gameplayEventListenersBuffer = siegeBuffEntity.ReadBuffer<GameplayEventListeners>();
+			gameplayEventListenersBuffer.Clear();
+		}
 		var resistanceData = e.Read<ResistanceData>();
 		var team = (int)Math.Floor(resistanceData.FireResistance_DamageReductionPerRating);
 		PrefabGUID icon;

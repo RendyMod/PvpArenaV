@@ -120,7 +120,6 @@ public class DominationGameMode : BaseGameMode
 				}
 			}
 		}
-		BaseInitialize();
 		GameEvents.OnPlayerRespawn += HandleOnPlayerRespawn;
 		GameEvents.OnPlayerDowned += HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath += HandleOnPlayerDeath;
@@ -132,6 +131,10 @@ public class DominationGameMode : BaseGameMode
 		GameEvents.OnPlayerLeftClan += HandleOnPlayerLeftClan;
 		GameEvents.OnUnitBuffed += HandleOnUnitBuffed;
 		GameEvents.OnGameFrameUpdate += HandleOnGameFrameUpdate;
+		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
+		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
+		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
+		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
 
 		foreach (var timer in Timers)
 		{
@@ -165,7 +168,6 @@ public class DominationGameMode : BaseGameMode
 	public override void Dispose()
 	{
 		MatchActive = false;
-		BaseDispose();
 		GameEvents.OnPlayerRespawn -= HandleOnPlayerRespawn;
 		GameEvents.OnPlayerDowned -= HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath -= HandleOnPlayerDeath;
@@ -177,6 +179,10 @@ public class DominationGameMode : BaseGameMode
 		GameEvents.OnPlayerLeftClan += HandleOnPlayerLeftClan;
 		GameEvents.OnUnitBuffed -= HandleOnUnitBuffed;
 		GameEvents.OnGameFrameUpdate -= HandleOnGameFrameUpdate;
+		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
+		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
+		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
+		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
 		Teams.Clear();
 		playerKills.Clear();
 		playerDeaths.Clear();
@@ -365,19 +371,6 @@ public class DominationGameMode : BaseGameMode
 
 	}
 
-	public void HandleOnGameModeBegin(Player player)
-	{
-		if (player.CurrentState != GameModeType) return;
-	}
-	public void HandleOnGameModeEnd(Player player)
-	{
-		if (player.CurrentState != GameModeType) return;
-	}
-	public override void HandleOnPlayerChatCommand(Player player, CommandAttribute command)
-	{
-		if (player.CurrentState != GameModeType) return;
-
-	}
 	public override void HandleOnShapeshift(Player player, Entity eventEntity)
 	{
 		if (player.CurrentState != GameModeType) return;
@@ -629,7 +622,7 @@ public class DominationGameMode : BaseGameMode
 		var newTeam = Teams[newTeamIndex];
 		foreach (var player in newTeam)
 		{
-			Helper.BuffPlayer(player, CapturePointIndexToBuffs[pointIndex], out var buffEntity, Helper.NO_DURATION, true, true);
+			Helper.BuffPlayer(player, CapturePointIndexToBuffs[pointIndex], out var buffEntity, Helper.NO_DURATION, true);
 		}
 
 		foreach (var team in Teams.Values)

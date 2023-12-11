@@ -46,19 +46,25 @@ public class Matchmaking1v1GameMode : BaseGameMode
 
 	public override void Initialize()
 	{
-		BaseInitialize();
 		GameEvents.OnPlayerDowned += HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath += HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift += HandleOnShapeshift;
 		GameEvents.OnPlayerUsedConsumable += HandleOnConsumableUse;
+		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
+		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
+		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
+		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
 	}
 	public override void Dispose()
 	{
-		BaseDispose();
 		GameEvents.OnPlayerDowned -= HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath -= HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift -= HandleOnShapeshift;
 		GameEvents.OnPlayerUsedConsumable -= HandleOnConsumableUse;
+		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
+		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
+		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
+		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
 	}
 	public override void HandleOnPlayerDowned(Player player, Entity killer)
 	{
@@ -89,24 +95,6 @@ public class Matchmaking1v1GameMode : BaseGameMode
 		}
 	}
 
-	/*	public override void HandleOnPlayerRespawn(Player player)
-		{
-			if (player.CurrentState != GameModeType) return;
-
-
-		}*/
-	public void HandleOnGameModeBegin(Player player)
-	{
-		if (player.CurrentState != GameModeType) return;
-	}
-	public void HandleOnGameModeEnd(Player player)
-	{
-		if (player.CurrentState != GameModeType) return;
-	}
-	public override void HandleOnPlayerChatCommand(Player player, CommandAttribute command)
-	{
-		if (player.CurrentState != GameModeType) return;
-	}
 	public override void HandleOnShapeshift(Player player, Entity eventEntity)
 	{
 		if (player.CurrentState != GameModeType) return;

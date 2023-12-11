@@ -544,4 +544,25 @@ public static partial class Helper
                 return originalPosition; // Default case to handle unexpected mode
         }
     }
+
+	public static void BecomeEntity(Player player, PrefabGUID prefabGuid)
+	{
+		Helper.BuffPlayer(player, Prefabs.Admin_Observe_Invisible_Buff, out var buffEntity, Helper.NO_DURATION);
+		PrefabSpawnerService.SpawnWithCallback(prefabGuid, player.Position, (e) =>
+		{
+			Helper.ControlUnit(player, e);
+			if (e.Has<UnitLevel>())
+			{
+				var level = e.Read<UnitLevel>();
+				level.Level = 200;
+				e.Write(level);
+				e.Write(player.Character.Read<Team>());
+				e.Write(player.Character.Read<TeamReference>());
+				Helper.BuffEntity(e, Helper.CustomBuff4, out var buffEntity1, Helper.NO_DURATION);
+				var aggroConsumer = e.Read<AggroConsumer>();
+				aggroConsumer.Active.Value = false;
+				e.Write(aggroConsumer);
+			}
+		}, 0, -1);
+	}
 }

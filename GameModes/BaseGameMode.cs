@@ -20,31 +20,20 @@ public abstract class BaseGameMode
 {
 	public abstract void Initialize();
 	public abstract void Dispose();
-	protected virtual void BaseInitialize()
-	{
-		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
-		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
-		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
-		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
-	}
-	protected virtual void BaseDispose()
-	{
-		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
-		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
-		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
-		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
-	}
-	public abstract void HandleOnPlayerDowned(Player player, Entity killer);
+	public virtual void HandleOnPlayerDowned(Player player, Entity killer) { }
 	public virtual void HandleOnPlayerDeath(Player player, DeathEvent deathEvent)
 	{
+		if (player.CurrentState != this.GameModeType) return;
 		player.ReceiveMessage("You died in an unexpected way. Let an admin know what happened!".Warning());
 		Plugin.PluginLog.LogInfo($"{player.Name} has died in an unexpected way. Current game mode: {player.CurrentState}");
 		player.CurrentState = Player.PlayerState.Normal;
 		Helper.RevivePlayer(player, PvpArenaConfig.Config.CustomSpawnLocation.ToFloat3());
 		player.Reset();
+		var blood = player.Character.Read<Blood>();
+		Helper.SetPlayerBlood(player, blood.BloodType, blood.Quality);
 	}
 	//public abstract void HandleOnPlayerRespawn(Player entity); 
-	public abstract void HandleOnShapeshift(Player player, Entity eventEntity);
+	public virtual void HandleOnShapeshift(Player player, Entity eventEntity) { }
 	public virtual void HandleOnPlayerConnected(Player player)
 	{
 		if (player.CurrentState != this.GameModeType) return;
@@ -58,6 +47,8 @@ public abstract class BaseGameMode
 	{
 		if (player.CurrentState != GameModeType) return;
 
+		player.CurrentState = Player.PlayerState.Normal;
+		player.Reset(Helper.ResetOptions.FreshMatch);
 		player.Teleport(new float3(0, 0, 0));
 	}
 	public virtual void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType, int slotIndex)
@@ -88,7 +79,6 @@ public abstract class BaseGameMode
 			eventEntity.Destroy();
 		}
 	}
-	public abstract void HandleOnPlayerChatCommand(Player player, CommandAttribute command);
     public virtual Player.PlayerState GameModeType { get; }
 
     protected static HashSet<string> AllowedCommands = new HashSet<string>

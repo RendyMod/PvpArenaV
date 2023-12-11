@@ -3,40 +3,21 @@ using System.Collections.Generic;
 using ProjectM;
 using PvpArena.Models;
 using Unity.Entities;
-using static ProjectM.DeathEventListenerSystem;
-using ProjectM.Network;
 using PvpArena.Data;
 using Unity.Mathematics;
 using Bloodstone.API;
 using PvpArena.Helpers;
-using static PvpArena.Frameworks.CommandFramework.CommandFramework;
 using System.Threading;
 using PvpArena.Services;
 using static PvpArena.Factories.UnitFactory;
-using ProjectM.Shared;
 using ProjectM.CastleBuilding;
 using System.Linq;
 using PvpArena.Factories;
-using System.Runtime.CompilerServices;
 using System.Diagnostics;
-using PvpArena.Patches;
-using ProjectM.Gameplay.Systems;
-using static PvpArena.Configs.ConfigDtos;
-using Unity.Collections;
 using Unity.Transforms;
-using ProjectM.Gameplay.Scripting;
-using AsmResolver.PE.Exceptions;
-using Epic.OnlineServices.Stats;
-using static ProjectM.SpawnBuffsAuthoring.SpawnBuffElement_Editor;
-using ProjectM.Shared.Systems;
 using static DamageRecorderService;
-using Cpp2IL.Core.Extensions;
-using static UnityEngine.UI.GridLayoutGroup;
 using ProjectM.Pathfinding;
 using ProjectM.Tiles;
-using ProjectM.Behaviours;
-using UnityEngine.Jobs;
-using Epic.OnlineServices.P2P;
 
 namespace PvpArena.GameModes.Moba;
 
@@ -158,7 +139,6 @@ public class MobaGameMode : BaseGameMode
 	public override void Initialize()
 	{
 		MatchActive = true;
-		BaseInitialize();
 		GameEvents.OnPlayerDowned += HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath += HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift += HandleOnShapeshift;
@@ -178,6 +158,10 @@ public class MobaGameMode : BaseGameMode
 		GameEvents.OnUnitProjectileCreated += HandleOnUnitProjectileCreated;
 		GameEvents.OnUnitProjectileUpdate += HandleOnUnitProjectileUpdate;
 		GameEvents.OnAggroPostUpdate += HandleOnAggroPostUpdate;
+		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
+		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
+		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
+		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
 
 		stopwatch.Start();
 	}
@@ -209,7 +193,6 @@ public class MobaGameMode : BaseGameMode
 	public override void Dispose()
 	{
 		MatchActive = false;
-		BaseDispose();
 		GameEvents.OnPlayerDowned -= HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath -= HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift -= HandleOnShapeshift;
@@ -228,6 +211,10 @@ public class MobaGameMode : BaseGameMode
 		GameEvents.OnUnitProjectileUpdate -= HandleOnUnitProjectileUpdate;
 		GameEvents.OnAggroPostUpdate -= HandleOnAggroPostUpdate;
 		GameEvents.OnUnitDamageDealt -= HandleOnUnitDamageDealt;
+		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
+		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
+		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
+		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
 
 		Teams.Clear();
 		TeamPatrols.Clear();
@@ -408,11 +395,6 @@ public class MobaGameMode : BaseGameMode
 	{
 		if (player.CurrentState != this.GameModeType) return;
 	}
-	public override void HandleOnPlayerChatCommand(Player player, CommandAttribute command)
-	{
-		if (player.CurrentState != this.GameModeType) return;
-
-	}
 	public override void HandleOnShapeshift(Player player, Entity eventEntity)
 	{
 		if (player.CurrentState != this.GameModeType) return;
@@ -494,15 +476,6 @@ public class MobaGameMode : BaseGameMode
 		buffEntity.Write(absorb);
 		buffEntity.Write(lifetime);
 
-		Helper.ApplyStatModifier(buffEntity, new ModifyUnitStatBuff_DOTS
-		{
-			Id = ModificationIdFactory.NewId(),
-			ModificationType = ModificationType.Set,
-			StatType = UnitStatType.PhysicalPower,
-			Value = 500,
-			Priority = 100
-		});
-
 		AbilityBar abilityBar = new AbilityBar
 		{
 			Weapon2 = PrefabGUID.Empty
@@ -556,6 +529,13 @@ public class MobaGameMode : BaseGameMode
 
 		var prefabGuid = buffEntity.Read<PrefabGUID>();
 		if (prefabGuid == Prefabs.AB_Gloomrot_SentryTurret_BunkerDown_Buff)
+		{
+			var destroyState = buffEntity.Read<DestroyState>();
+			buffEntity.Remove<DestroyTag>();
+			destroyState.Value = DestroyStateEnum.NotDestroyed;
+			buffEntity.Write(destroyState);
+		}
+		else if (prefabGuid == Prefabs.Buff_General_Chill)
 		{
 			var destroyState = buffEntity.Read<DestroyState>();
 			buffEntity.Remove<DestroyTag>();
@@ -710,20 +690,22 @@ public class MobaGameMode : BaseGameMode
 	{
 		if (player.CurrentState != this.GameModeType) return;
 
-		HashSet<PrefabGUID> spells = new HashSet<PrefabGUID>
-		{
-			Prefabs.AB_Chaos_Volley_Projectile_First,
-			Prefabs.AB_Chaos_Volley_Projectile_Second
-		};
+		if (!eventEntity.Exists()) return;
+
 		var dealDamageEvent = eventEntity.Read<DealDamageEvent>();
-		if (dealDamageEvent.Target.Exists() && dealDamageEvent.Target.Has<PlayerCharacter>()) 
+		var isStructure = dealDamageEvent.Target.Has<CastleHeartConnection>();
+		if (isStructure)
 		{
-			dealDamageEvent.SpellSource.LogPrefabName();
+			eventEntity.Destroy();
+			return;
 		}
-		if (dealDamageEvent.SpellSource.Exists() && spells.Contains(dealDamageEvent.SpellSource.Read<PrefabGUID>()))
+
+		if (player.HasBuff(Prefabs.AB_Interact_Siege_Structure_T02_PlayerBuff))
 		{
-			var dealDamageEventNew = new DealDamageEvent(dealDamageEvent.Target, dealDamageEvent.MainType, dealDamageEvent.MainFactor, dealDamageEvent.ResourceModifier, dealDamageEvent.MaterialModifiers, dealDamageEvent.SpellSource, dealDamageEvent.RawDamage, dealDamageEvent.RawDamagePercent, dealDamageEvent.Modifier * 2, dealDamageEvent.DealDamageFlags);
-			eventEntity.Write(dealDamageEventNew);
+			dealDamageEvent.MaterialModifiers.Mechanical *= 10;
+			dealDamageEvent.MaterialModifiers.Human *= 8;
+			dealDamageEvent.MaterialModifiers.PlayerVampire *= 2;
+			eventEntity.Write(dealDamageEvent);
 		}
 	}
 

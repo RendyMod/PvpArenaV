@@ -92,7 +92,6 @@ public class DefaultGameMode : BaseGameMode
 
 	public override void Initialize()
 	{
-		BaseInitialize();
 		GameEvents.OnPlayerDowned += HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath += HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift += HandleOnShapeshift;
@@ -100,10 +99,13 @@ public class DefaultGameMode : BaseGameMode
 		GameEvents.OnPlayerBuffed += HandleOnPlayerBuffed;
 		GameEvents.OnPlayerDamageReported += HandleOnPlayerDamageReported;
 		GameEvents.OnPlayerReset += HandleOnPlayerReset;
+		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
+		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
+		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
+		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
 	}
 	public override void Dispose()
 	{
-		BaseDispose();
 		GameEvents.OnPlayerDowned -= HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath -= HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift -= HandleOnShapeshift;
@@ -111,6 +113,10 @@ public class DefaultGameMode : BaseGameMode
 		GameEvents.OnPlayerBuffed -= HandleOnPlayerBuffed;
 		GameEvents.OnPlayerDamageReported -= HandleOnPlayerDamageReported;
 		GameEvents.OnPlayerReset -= HandleOnPlayerReset;
+		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
+		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
+		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
+		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
 	}
 
 	private static HashSet<string> AllowedCommands = new HashSet<string>
@@ -143,22 +149,7 @@ public class DefaultGameMode : BaseGameMode
 			}
 		}
 	}
-	public override void HandleOnPlayerDeath(Player player, DeathEvent deathEvent)
-	{
-		if (player.CurrentState != this.GameModeType) return;
 
-		var pos = player.Position;
-		Helper.RespawnPlayer(player, pos);
-		player.Reset(ResetOptions);
-		var blood = player.Character.Read<Blood>();
-		Helper.SetPlayerBlood(player, blood.BloodType, blood.Quality);
-	}
-
-	public override void HandleOnPlayerChatCommand(Player player, CommandAttribute command)
-	{
-		if (player.CurrentState != this.GameModeType) return;
-
-	}
 	public override void HandleOnShapeshift(Player player, Entity eventEntity)
 	{
 		if (player.CurrentState != this.GameModeType) return;

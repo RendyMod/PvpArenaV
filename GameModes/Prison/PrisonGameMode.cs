@@ -18,6 +18,7 @@ using static PvpArena.Configs.ConfigDtos;
 using PvpArena.Factories;
 using PvpArena.GameModes.BulletHell;
 using PvpArena.Services.Moderation;
+using AsmResolver;
 
 namespace PvpArena.GameModes.Prison;
 
@@ -30,6 +31,8 @@ public class PrisonGameMode : BaseGameMode
 		RemoveShapeshifts = false,
 		RemoveConsumables = false
 	};
+
+	public static List<Timer> Timers = new List<Timer>();
 
 	static HashSet<string> AllowedCommands = new HashSet<string>
 	{
@@ -45,21 +48,36 @@ public class PrisonGameMode : BaseGameMode
 
 	public override void Initialize()
 	{
-		BaseInitialize();
 		GameEvents.OnPlayerDowned += HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath += HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift += HandleOnShapeshift;
 		GameEvents.OnPlayerStartedCasting += HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerChatMessage += HandleOnPlayerChatMessage;
+		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
+		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
+		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
+		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
 	}
 	public override void Dispose()
 	{
-		BaseDispose();
 		GameEvents.OnPlayerDowned -= HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath -= HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift -= HandleOnShapeshift;
 		GameEvents.OnPlayerStartedCasting -= HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerChatMessage -= HandleOnPlayerChatMessage;
+		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
+		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
+		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
+		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
+
+		foreach (var timer in Timers)
+		{
+			if (timer != null)
+			{
+				timer.Dispose();
+			}
+		}
+		Timers.Clear();
 	}
 
 	public override void HandleOnPlayerDowned(Player player, Entity killer)
@@ -67,8 +85,8 @@ public class PrisonGameMode : BaseGameMode
 		if (player.CurrentState != GameModeType) return;
 
 		player.Reset(ResetOptions);
-		Helper.MakeGhostlySpectator(player);
-
+		var timer = Helper.MakeGhostlySpectator(player);
+		Timers.Add(timer);
 		if (killer.Has<PlayerCharacter>())
 		{
 			var KillerPlayer = PlayerService.GetPlayerFromCharacter(killer);
@@ -84,11 +102,6 @@ public class PrisonGameMode : BaseGameMode
 		}
 	}
 
-	public override void HandleOnPlayerChatCommand(Player player, CommandAttribute command)
-	{
-		if (player.CurrentState != GameModeType) return;
-
-	}
 	public override void HandleOnShapeshift(Player player, Entity eventEntity)
 	{
 		if (player.CurrentState != GameModeType) return;

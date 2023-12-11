@@ -45,7 +45,6 @@ public class BulletHellGameMode : BaseGameMode
 
 	public override void Initialize()
 	{
-		/*GameEvents.OnPlayerRespawn += HandleOnPlayerRespawn;*/
 		GameEvents.OnPlayerDowned += HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath += HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift += HandleOnShapeshift;
@@ -55,10 +54,13 @@ public class BulletHellGameMode : BaseGameMode
 		GameEvents.OnUnitAoeCreated += HandleOnUnitAoeCreated;
 		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
 		GameEvents.OnGameFrameUpdate += HandleOnGameFrameUpdate;
+		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
+		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
+		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
+		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
 	}
 	public override void Dispose()
 	{
-		/*GameEvents.OnPlayerRespawn -= HandleOnPlayerRespawn;*/
 		GameEvents.OnPlayerDowned -= HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath -= HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift -= HandleOnShapeshift;
@@ -68,6 +70,10 @@ public class BulletHellGameMode : BaseGameMode
 		GameEvents.OnUnitAoeCreated -= HandleOnUnitAoeCreated;
 		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
 		GameEvents.OnGameFrameUpdate -= HandleOnGameFrameUpdate;
+		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
+		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
+		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
+		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
 		HasStarted = false;
 		stopwatch.Reset();
 		foreach (var timer in Timers)
@@ -101,16 +107,6 @@ public class BulletHellGameMode : BaseGameMode
 		//end match and tp to training + report time and record score
 	}
 
-	/*public override void HandleOnPlayerRespawn(Player player)
-	{
-		if (!player.IsInDefaultMode()) return;
-
-	}*/
-	public override void HandleOnPlayerChatCommand(Player player, CommandAttribute command)
-	{
-		if (player.CurrentState != GameModeType) return;
-
-	}
 	public override void HandleOnShapeshift(Player player, Entity eventEntity)
 	{
 		if (player.CurrentState != GameModeType) return;
