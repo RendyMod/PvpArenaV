@@ -6,6 +6,7 @@ using Bloodstone.API;
 using Il2CppInterop.Runtime;
 using ProjectM;
 using ProjectM.CastleBuilding;
+using ProjectM.Debugging;
 using ProjectM.Gameplay.Clan;
 using ProjectM.Network;
 using PvpArena.Configs;
@@ -69,6 +70,8 @@ public static class Core
 	public static ServerBootstrapSystem serverBootstrapSystem = VWorld.Server.GetExistingSystem<ServerBootstrapSystem>();
 	public static GameDataSystem gameDataSystem = VWorld.Server.GetExistingSystem<GameDataSystem>();
 	public static ModificationSystem modificationSystem = VWorld.Server.GetExistingSystem<ModificationSystem>();
+	public static GameplayEventDebuggingSystem gameplayEventDebuggingSystem = VWorld.Server.GetExistingSystem<GameplayEventDebuggingSystem>();
+	public static GameplayEventsSystem gameplayEventsSystem = VWorld.Server.GetExistingSystem<GameplayEventsSystem>();
 
 	public static void Initialize()
 	{

@@ -36,6 +36,7 @@ using MS.Internal.Xml.XPath;
 using UnityEngine.UIElements;
 using PvpArena.Factories;
 using PvpArena.GameModes.Moba;
+using ProjectM.CastleBuilding.Teleporters;
 
 namespace PvpArena.Patches;
 
@@ -291,6 +292,41 @@ public static class GatherAggroCandidatesSystemPatch
 
 }*/
 
+
+/*[HarmonyPatch(typeof(CastleTeleporterConnectSystem), nameof(CastleTeleporterConnectSystem.OnUpdate))]
+public static class CastleTeleporterConnectSystemPatch
+{
+	public static void Prefix(CastleTeleporterConnectSystem __instance)
+	{
+
+		__instance.__OnUpdate_LambdaJob0_entityQuery.LogComponentTypes();
+	}
+
+}*/
+
+/*[HarmonyPatch(typeof(CreateGameplayEventOnSpawnSystem), nameof(CreateGameplayEventOnSpawnSystem.OnUpdate))]
+public static class CreateGameplayEventOnSpawnSystemPatch
+{
+	public static void Prefix(CreateGameplayEventOnSpawnSystem __instance)
+	{
+	}
+}
+
+[HarmonyPatch(typeof(CreateGameplayEventOnTickSystem), nameof(CreateGameplayEventOnTickSystem.OnUpdate))]
+public static class CreateGameplayEventOnTickSystemPatch
+{
+	public static void Prefix(CreateGameplayEventOnTickSystem __instance)
+	{
+		var entities = __instance.__OnUpdate_LambdaJob0_entityQuery.ToEntityArray(Allocator.Temp);
+		foreach (var entity in entities)
+		{
+			var buffer = entity.ReadBuffer<CreateGameplayEventsOnTick>();
+			buffer.Clear();
+		}
+	}
+
+}
+*/
 
 //
 //AbilitySpawnSystem

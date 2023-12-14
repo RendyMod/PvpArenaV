@@ -126,11 +126,26 @@ public static class GameEvents
     public delegate void PlayerHasNoControlledEntityHandler(Player player);
     public static event PlayerHasNoControlledEntityHandler OnPlayerHasNoControlledEntity;
 
-    public delegate void GameFrameUpdateHandler();
+	public delegate void PlayerHitColliderCastCreated(Player player, Entity hitCastCollider);
+	public static event PlayerHitColliderCastCreated OnPlayerHitColliderCastCreated;
+
+	public delegate void UnitHitCastColliderCreated(Entity unit, Entity hitCastCollider);
+	public static event UnitHitCastColliderCreated OnUnitHitCastColliderCreated;
+
+	public delegate void PlayerPlacedStructure(Player player, Entity eventEntity);
+	public static event PlayerPlacedStructure OnPlayerPlacedStructure;
+
+	public delegate void PlayerPurchasedItem(Player player, Entity eventEntity);
+	public static event PlayerPurchasedItem OnPlayerPurchasedItem;
+
+	public delegate void GameFrameUpdateHandler();
 	public static event GameFrameUpdateHandler OnGameFrameUpdate;
 
 	public delegate void AggroPostUpdateHandler(Entity entity);
 	public static event AggroPostUpdateHandler OnAggroPostUpdate;
+
+	public delegate void PlayerInteractedHandler(Player player, Interactor interactor);
+	public static event PlayerInteractedHandler OnPlayerInteracted;
 
 	public static void RaisePlayerRespawn(Player player)
 	{
@@ -326,5 +341,30 @@ public static class GameEvents
 	public static void RaiseAggroPostUpdate(Entity entity)
 	{
 		OnAggroPostUpdate?.Invoke(entity);
+	}
+
+	public static void RaisePlayerHitColliderCastCreated(Player player, Entity hitCastCollider)
+	{
+		OnPlayerHitColliderCastCreated?.Invoke(player, hitCastCollider);
+	}
+
+	public static void RaiseUnitHitColliderCastCreated(Entity unit, Entity hitCastCollider)
+	{
+		OnUnitHitCastColliderCreated?.Invoke(unit, hitCastCollider);
+	}
+
+	public static void RaisePlayerPlacedStructure(Player player, Entity eventEntity)
+	{
+		OnPlayerPlacedStructure?.Invoke(player, eventEntity);
+	}
+
+	public static void RaisePlayerPurchasedItem(Player player, Entity eventEntity)
+	{
+		OnPlayerPurchasedItem?.Invoke(player, eventEntity);
+	}
+
+	public static void RaisePlayerInteracted(Player player, Interactor interactor)
+	{
+		OnPlayerInteracted?.Invoke(player, interactor);
 	}
 }

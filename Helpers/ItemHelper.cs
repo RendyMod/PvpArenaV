@@ -19,12 +19,25 @@ using Il2CppSystem;
 using Unity.Physics;
 using Unity.Jobs;
 using UnityEngine.Jobs;
+using Il2CppSystem.Runtime.Remoting.Messaging;
+using Epic.OnlineServices;
 
 namespace PvpArena.Helpers;
 
-//this is horrible god help us all
 public static partial class Helper
 {
+	public static List<EquipmentType> EquipmentTypes = new List<EquipmentType> 
+	{
+		EquipmentType.Headgear,
+		EquipmentType.Chest,
+		EquipmentType.Weapon,
+		EquipmentType.MagicSource,
+		EquipmentType.Footgear,
+		EquipmentType.Legs,
+		EquipmentType.Cloak,
+		EquipmentType.Gloves,
+	};
+
 	//this is horribly inefficient, don't use this outside of one-off scripts
 	public static bool TryFindOwnerOfItem(Entity itemEntity, out Player itemOwner, out int slot)
 	{
@@ -135,42 +148,25 @@ public static partial class Helper
 			{
 				if (item.ItemEntity._Entity.Exists())
 				{
-					Helper.DestroyEntity(item.ItemEntity._Entity);
+					Helper.KillOrDestroyEntity(item.ItemEntity._Entity);
 				}
 			}
 		}
 		ClearInventorySlot(inventoryEntity, itemSlot);
 	}
 
-	public static void RemoveAllItemsAtSlotFromInventory(Player player, PrefabGUID itemPrefab, int itemSlot)
+	public static void CompletelyRemoveItemFromInventory(Player player, PrefabGUID itemPrefab)
 	{
-		if (Helper.GetPrefabEntityByPrefabGUID(itemPrefab).Has<Relic>())
-		{	
-			if (InventoryUtilities.TryGetItemAtSlot(VWorld.Server.EntityManager, player.Character, itemSlot, out InventoryBuffer item))
-			{
-				//InventoryUtilitiesServer.ClearSlot(VWorld.Server.EntityManager, player.Character, itemSlot);
-				if (item.ItemEntity._Entity.Exists())
-				{
-					Helper.DestroyEntity(item.ItemEntity._Entity);
-					ClearInventorySlot(player, itemSlot);
-				}
-				else
-				{
-					ClearInventorySlot(player, itemSlot);
-				}
-			}
+		while (Helper.GetPrefabEntityByPrefabGUID(itemPrefab).Has<Relic>() && InventoryUtilities.TryGetItemSlot(VWorld.Server.EntityManager, player.Character, itemPrefab, out var slot))
+		{
+			RemoveItemAtSlotFromInventory(player, itemPrefab, slot);
 		}
-		
-		InventoryUtilitiesServer.TryRemoveItemFromInventories(VWorld.Server.EntityManager, player.Character, itemPrefab, 10); //this doesn't match the method name, fix later
-		
+		InventoryUtilitiesServer.TryRemoveItemFromInventories(VWorld.Server.EntityManager, player.Character, itemPrefab, 100000);
 	}
 
-	public static void RemoveItemFromInventory(Player player, PrefabGUID itemPrefab)
+	public static void RemoveItemFromInventory(Player player, PrefabGUID itemPrefab, int quantity = 1)
 	{
-		if (InventoryUtilities.TryGetItemSlot(VWorld.Server.EntityManager, player.Character, itemPrefab, out var slot))
-		{
-			RemoveAllItemsAtSlotFromInventory(player, itemPrefab, slot);
-		}
+		InventoryUtilitiesServer.TryRemoveItemFromInventories(VWorld.Server.EntityManager, player.Character, itemPrefab, quantity);
 	}
 
 	public static bool PlayerHasItemInInventories(Player player, PrefabGUID itemPrefab)
@@ -220,11 +216,12 @@ public static partial class Helper
 
 
 	public static bool AddItemToInventory(Entity recipient, PrefabGUID guid, int amount, out Entity entity,
-		bool equip = true)
+		bool equip = true, int slot = 0)
 	{
 		var gameData = VWorld.Server.GetExistingSystem<GameDataSystem>();
 		var itemSettings = AddItemSettings.Create(VWorld.Server.EntityManager, gameData.ItemHashLookupMap);
 		itemSettings.EquipIfPossible = equip;
+		itemSettings.StartIndex = new Nullable_Unboxed<int>(slot);
 		var inventoryResponse = InventoryUtilitiesServer.TryAddItem(itemSettings, recipient, guid, amount);
 		if (inventoryResponse.Success)
 		{
@@ -334,4 +331,112 @@ public static partial class Helper
 			ToBagSlotIndex = targetBagSlot
 		});
 	}
+
+	public static void ClearAllItems(Player player)
+	{
+		var inventoryEntities = new NativeList<Entity>(Allocator.Temp);
+		InventoryUtilities.TryGetInventoryEntities(VWorld.Server.EntityManager, player.Character, ref inventoryEntities);
+		foreach (var inventoryEntity in inventoryEntities)
+		{
+			InventoryUtilitiesServer.ClearInventory(VWorld.Server.EntityManager, inventoryEntity);
+		}
+		var equipment = player.Character.Read<Equipment>();
+		foreach (var equipmentType in EquipmentTypes)
+		{
+			equipment.UnequipItem(equipmentType);
+		}
+		player.Character.Write(equipment);
+	}
+
+	public static void UnequipItem(Player player, EquipmentType equipmentType, int slot = 0)
+	{
+		var entity = Helper.CreateEntityWithComponents<FromCharacter, UnequipItemEvent>();
+		entity.Write(player.ToFromCharacter());
+		entity.Write(new UnequipItemEvent
+		{
+			EquipmentType = equipmentType,
+			ToInventory = player.Character.Read<NetworkId>(),
+			ToSlotIndex = slot
+		});
+	}
+
+	public static void UnequipAllItems(Player player)
+	{
+		for (var i = 0; i < EquipmentTypes.Count; i++)
+		{
+			Helper.UnequipItem(player, EquipmentTypes[i], i);
+		}
+	}
+
+	//this assumes that the target inventories are empty
+	public static void TransferAllPlayerItems(Player player, List<Entity> targetInventories)
+	{
+		int inventoryIndex;
+		var inventoryEntities = new NativeList<Entity>(Allocator.Temp);
+		InventoryUtilities.TryGetInventoryEntities(VWorld.Server.EntityManager, player.Character, ref inventoryEntities);
+		foreach (var inventoryEntity in inventoryEntities)
+		{
+			if (!inventoryEntity.Exists()) continue;
+
+			if (inventoryEntity.Read<PrefabGUID>() == Prefabs.External_Inventory)
+			{
+				inventoryIndex = 0;
+			}
+			else
+			{
+				inventoryIndex = 1;
+			}
+			var buffer = inventoryEntity.ReadBuffer<InventoryBuffer>();
+
+			var index = 0;
+			foreach (var item in buffer)
+			{
+				if (item.ItemEntity._Entity.Exists())
+				{
+					var result = InventoryUtilitiesServer.Internal_TryMoveItem(VWorld.Server.EntityManager, Core.gameDataSystem.ItemHashLookupMap, inventoryEntity, index, targetInventories[inventoryIndex]);
+					Plugin.PluginLog.LogInfo($"{result.Result} {inventoryIndex}");
+				}
+				index++;
+			}
+		}
+		Helper.UnequipAllItems(player);
+		var buffer2 = inventoryEntities[0].ReadBuffer<InventoryBuffer>();
+		var index2 = 0;
+		foreach (var item in buffer2)
+		{
+			if (item.ItemEntity._Entity.Exists())
+			{
+				var result = InventoryUtilitiesServer.Internal_TryMoveItem(VWorld.Server.EntityManager, Core.gameDataSystem.ItemHashLookupMap, inventoryEntities[0], index2, targetInventories[1]);
+			}
+			index2++;
+		}
+
+	}
+
+	public static void RetrieveAllItems(Player player, List<Entity> sourceInventories)
+	{
+		// Iterate over each chest and move its items to the player's inventory
+		foreach (var chestInventory in sourceInventories)
+		{
+			var chestBuffer = chestInventory.ReadBuffer<InventoryBuffer>();
+			for (int i = 0; i < chestBuffer.Length; i++)
+			{
+				var item = chestBuffer[i];
+				if (item.ItemEntity._Entity.Exists())
+				{
+					// Attempt to transfer the item directly to the player's character
+					var result = InventoryUtilitiesServer.Internal_TryMoveItem(
+						VWorld.Server.EntityManager,
+						Core.gameDataSystem.ItemHashLookupMap,
+						chestInventory,
+						i,
+						player.Character);
+
+					// Handle the result as needed (e.g., log success or failure)
+				}
+			}
+		}
+	}
+
+
 }

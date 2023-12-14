@@ -28,6 +28,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Properties.Generated;
 using Unity.Transforms;
+using UnityEngine.Jobs;
 using UnityEngine.Rendering.HighDefinition;
 using static ProjectM.DeathEventListenerSystem;
 using static ProjectM.SpawnBuffsAuthoring.SpawnBuffElement_Editor;
@@ -96,7 +97,7 @@ public static class UnitFactory
 		if (unitEntity.Has<ResistanceData>() && unitEntity.Has<CanFly>())
 		{
 			var resistanceData = unitEntity.Read<ResistanceData>();
-			var hash = (int)(resistanceData.FireResistance_RedcuedIgiteChancePerRating / 1000);
+			var hash = (int)(resistanceData.FireResistance_RedcuedIgiteChancePerRating);
 			return HashToUnit.TryGetValue(hash, out unit);
 		}
 		unit = default;
@@ -108,11 +109,11 @@ public static class UnitFactory
 		Action spawnAction = () =>
 		{
 			SpawnedUnit spawnedUnit = new SpawnedUnit(unit, position, player);
-			var hash = position.GetHashCode() / 1000;
-			HashToUnit[hash] = spawnedUnit;
 
 			PrefabSpawnerService.SpawnWithCallback(unit.PrefabGuid, position, (Action<Entity>)(e =>
 			{
+				var hash = e.GetHashCode();
+				HashToUnit[hash] = spawnedUnit;
 				StoreMetaDataOnUnit(unit, e, position, player);
 				SetHealth(unit, e);
 				if (Helper.BuffEntity(e, Helper.CustomBuff3, out Entity buffEntity, (float)Helper.NO_DURATION, true))
@@ -194,13 +195,19 @@ public static class UnitFactory
 		Action spawnAction = () =>
 		{
 			SpawnedUnit spawnedUnit = new SpawnedUnit(unit, position, player);
-			var hash = position.GetHashCode() / 1000;
-			HashToUnit[hash] = spawnedUnit;
 
 			PrefabSpawnerService.SpawnWithCallback(unit.PrefabGuid, position, (Action<Entity>)(e =>
 			{
+				var hash = e.GetHashCode();
+				HashToUnit[hash] = spawnedUnit;
 				StoreMetaDataOnUnit(unit, e, position, player);
 				SetHealth(unit, e);
+				if (unit.MaxDistanceFromPreCombatPosition != -1)
+				{
+					var aggro = e.Read<AggroConsumer>();
+					aggro.MaxDistanceFromPreCombatPosition = unit.MaxDistanceFromPreCombatPosition;
+					e.Write(aggro);
+				}
 				if (Helper.BuffEntity(e, Helper.CustomBuff3, out Entity buffEntity, (float)Helper.NO_DURATION, true))
 				{
 					if (unit.Level != -1 && e.Has<UnitLevel>())
@@ -345,7 +352,7 @@ public static class UnitFactory
 		e.Add<ResistanceData>();
 		var resistanceData = e.Read<ResistanceData>();
 		resistanceData.FireResistance_DamageReductionPerRating = unit.Team;
-		resistanceData.FireResistance_RedcuedIgiteChancePerRating = position.GetHashCode(); //going to use position to identify spawn point 
+		resistanceData.FireResistance_RedcuedIgiteChancePerRating = e.GetHashCode(); //going to use position to identify spawn point 
 		resistanceData.GarlicResistance_IncreasedExposureFactorPerRating = StringToFloatHash(unit.Category);
         resistanceData.HolyResistance_DamageAbsorbPerRating = position.x;
         resistanceData.HolyResistance_DamageReductionPerRating = position.y;
@@ -461,6 +468,7 @@ public class Unit
 	protected bool isInvisible = false;
 	protected bool isInvulnerable = false;
 	protected bool dynamicCollision = false;
+	protected float maxDistanceFromPreCombatPosition = -1;
 	protected bool worldCollision = true;
 	protected string category = "";
 	protected int spawnDelay = -1;
@@ -480,6 +488,7 @@ public class Unit
 	public float RespawnTime { get => respawnTime; set => respawnTime = value; }
 	public bool DrawsAggro { get => drawsAggro; set => drawsAggro = value; }
 	public bool DynamicCollision { get => dynamicCollision; set => dynamicCollision = value; }
+	public float MaxDistanceFromPreCombatPosition { get => maxDistanceFromPreCombatPosition; set => maxDistanceFromPreCombatPosition = value; }
 	public bool MapCollision { get => worldCollision; set => worldCollision = value; }
 	public bool IsTargetable { get => isTargetable; set => isTargetable = value; }
 	public string Category { get => category; set => category = value; }
@@ -648,12 +657,14 @@ public class BaseTurret : Unit
 		drawsAggro = true;
 		isTargetable = false;
 		aggroRadius = 3f;
+		maxDistanceFromPreCombatPosition = 20;
 	}
 
 	public override void Modify(Entity e)
 	{
 		base.Modify(e);
 		Helper.BuffEntity(e, Prefabs.AB_Gloomrot_SentryTurret_BunkerDown_Buff, out var buffEntity, Helper.NO_DURATION);
+		Helper.ModifyBuff(buffEntity, BuffModificationTypes.None, true);
 	}
 }
 

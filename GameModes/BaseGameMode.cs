@@ -8,8 +8,10 @@ using ProjectM;
 using ProjectM.CastleBuilding;
 using ProjectM.Network;
 using PvpArena.Configs;
+using PvpArena.Factories;
 using PvpArena.Helpers;
 using PvpArena.Models;
+using PvpArena.Patches;
 using Unity.Entities;
 using Unity.Mathematics;
 using static ProjectM.DeathEventListenerSystem;
@@ -79,6 +81,55 @@ public abstract class BaseGameMode
 			eventEntity.Destroy();
 		}
 	}
+
+/*	public virtual void HandleOnUnitDamageDealt(Entity unit, Entity eventEntity)
+	{
+		if (!eventEntity.Exists()) return;
+
+		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
+
+		var isStructure = damageDealtEvent.Target.Has<CastleHeartConnection>();
+		if (isStructure)
+		{
+			eventEntity.Destroy();
+		}
+	}*/
+
+
+	public virtual void HandleOnPlayerPlacedStructure(Player player, Entity eventEntity)
+	{
+		if (player.CurrentState != this.GameModeType) return;
+
+		if (!player.IsAdmin && !BuildingPermissions.AuthorizedBuilders.ContainsKey(player))
+		{
+			player.ReceiveMessage($"You do not have building permissions".Error());
+			eventEntity.Destroy();
+		}
+	}
+
+	public virtual void HandleOnPlayerPurchasedItem(Player player, Entity eventEntity)
+	{
+		if (player.CurrentState != this.GameModeType) return;
+
+		var purchaseEvent = eventEntity.Read<TraderPurchaseEvent>();
+		Entity trader = Core.networkIdSystem._NetworkIdToEntityMap[purchaseEvent.Trader];
+
+		var costBuffer = trader.ReadBuffer<TradeCost>();
+		var cost = -1 * (costBuffer[purchaseEvent.ItemIndex].Amount);
+		if (player.PlayerPointsData.TotalPoints >= cost)
+		{
+			player.PlayerPointsData.TotalPoints -= cost;
+			Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { player.PlayerPointsData });
+			player.ReceiveMessage($"Purchased for {cost.ToString().Emphasize()} {"VPoints".Warning()}. New total points: {player.PlayerPointsData.TotalPoints.ToString().Warning()}".Success());
+
+			TraderPurchaseSystemPatch.RefillStock(purchaseEvent, trader);
+		}
+		else
+		{
+			eventEntity.Destroy();
+			player.ReceiveMessage($"Not enough {"VPoints".Warning()} to purchase! {player.PlayerPointsData.TotalPoints.ToString().Warning()} / {cost}".Error());
+		}
+	}
     public virtual Player.PlayerState GameModeType { get; }
 
     protected static HashSet<string> AllowedCommands = new HashSet<string>
@@ -100,7 +151,6 @@ public abstract class BaseGameMode
 		return AllowedCommands;
 	}
 
-	//use this for joining / leaving any match, but use the actual game mode's reset for resetting from within a match itself
 	public static Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
 	{
 		RemoveConsumables = true,

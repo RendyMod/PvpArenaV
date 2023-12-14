@@ -30,7 +30,6 @@ public static class DeathAndSpawnPatches
 						if (user.Exists())
 						{
 							var player = PlayerService.GetPlayerFromCharacter(deathEvent.Died);
-							Plugin.PluginLog.LogInfo("raising player death");
 							GameEvents.RaisePlayerDeath(player, deathEvent);
 						}
 					}
@@ -157,5 +156,24 @@ public static class KillEventSystemPatch
 			entity.Destroy();
 		}
 		entities.Dispose();
+	}
+}
+
+[HarmonyPatch(typeof(OnDeathSystem), nameof(OnDeathSystem.DropInventoryOnDeath))]
+public static class OnDeathSystemPatch
+{
+	public static bool Prefix(OnDeathSystem __instance)
+	{
+		return false;
+	}
+}
+
+
+[HarmonyPatch(typeof(OnDeathSystem), nameof(OnDeathSystem.YieldEssenceOnDeath))]
+public static class OnDeathSystemPatch2
+{
+	public static bool Prefix(OnDeathSystem __instance)
+	{
+		return false;
 	}
 }

@@ -58,6 +58,7 @@ public class BulletHellGameMode : BaseGameMode
 		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
 		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
 		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
+		GameEvents.OnPlayerPlacedStructure += HandleOnPlayerPlacedStructure;
 	}
 	public override void Dispose()
 	{
@@ -74,6 +75,8 @@ public class BulletHellGameMode : BaseGameMode
 		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
 		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
 		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
+		GameEvents.OnPlayerPlacedStructure -= HandleOnPlayerPlacedStructure;
+
 		HasStarted = false;
 		stopwatch.Reset();
 		foreach (var timer in Timers)

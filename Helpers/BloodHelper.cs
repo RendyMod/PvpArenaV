@@ -63,45 +63,45 @@ public static partial class Helper
 		Helper.BuffPlayer(player, Prefabs.AB_Werewolf_Howl_Buff, out var buffEntity, 1);
 	}
 
-	public static void SetDefaultBlood(Player player, string defaultBlood)
+	public static void SetDefaultBlood(Player player, string defaultBlood, int quality = 100)
 	{
 		defaultBlood = defaultBlood.ToLower();
 		var blood = player.Character.Read<Blood>();
 		bool bloodModified = false;
-		if (blood.BloodType == Prefabs.BloodType_None || blood.BloodType == Prefabs.BloodType_Worker || blood.BloodType == Prefabs.BloodType_Mutant || blood.Quality != 100)
+		if (blood.BloodType == Prefabs.BloodType_None || blood.BloodType == Prefabs.BloodType_Worker || blood.BloodType == Prefabs.BloodType_Mutant || blood.Quality != quality)
 		{
 			if (defaultBlood != "frailed")
 			{
 				if (defaultBlood == "warrior")
 				{
-					Helper.SetPlayerBlood(player, Prefabs.BloodType_Warrior, 100);
+					Helper.SetPlayerBlood(player, Prefabs.BloodType_Warrior, quality);
 					bloodModified = true;
 				}
 				else if (defaultBlood == "scholar")
 				{
-					Helper.SetPlayerBlood(player, Prefabs.BloodType_Scholar, 100);
+					Helper.SetPlayerBlood(player, Prefabs.BloodType_Scholar, quality);
 					bloodModified = true;
 				}
 				else if (defaultBlood == "rogue")
 				{
-					Helper.SetPlayerBlood(player, Prefabs.BloodType_Rogue, 100);
+					Helper.SetPlayerBlood(player, Prefabs.BloodType_Rogue, quality);
 					bloodModified = true;
 				}
 				else if (defaultBlood == "brute")
 				{
-					Helper.SetPlayerBlood(player, Prefabs.BloodType_Brute, 100);
+					Helper.SetPlayerBlood(player, Prefabs.BloodType_Brute, quality);
 					bloodModified = true;
 				}
 				else if (defaultBlood == "creature")
 				{
-					Helper.SetPlayerBlood(player, Prefabs.BloodType_Creature, 100);
+					Helper.SetPlayerBlood(player, Prefabs.BloodType_Creature, quality);
 					bloodModified = true;
 				}
 			}
 		}
 		else if (defaultBlood == "frailed")
 		{
-			Helper.SetPlayerBlood(player, Prefabs.BloodType_None, 100);
+			Helper.SetPlayerBlood(player, Prefabs.BloodType_None, quality);
 			bloodModified = true;
 		}
 		if (bloodModified)

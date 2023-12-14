@@ -69,20 +69,31 @@ public static class MobaConfig
 public class MobaConfigData
 {
 	public int SecondsBeforeMatchScalingStops { get; set; }
-	public int PlayerStartingRespawnTime { get; set; } = 6; // Default value
-	public int PlayerMaxRespawnTime { get; set; } = 30; // Default value
-	public string DefaultBlood { get; set; } = "Warrior"; // Default value
+	public int GolemShield { get; set; } = 3750;
+	public int PlayerStartingRespawnTime { get; set; } = 6;
+	public int PlayerMaxRespawnTime { get; set; } = 30;
+	public string DefaultBloodType { get; set; } = "Warrior"; 
+	public int DefaultBloodQuality { get; set; } = 0; 
+	public CoordinateDto Team1Heart { get; set; } = new CoordinateDto();
+	public CoordinateDto Team2Heart { get; set; } = new CoordinateDto();
 	public CoordinateDto Team1PlayerRespawn { get; set; } = new CoordinateDto();
 	public CoordinateDto Team2PlayerRespawn { get; set; } = new CoordinateDto();
+	public CoordinateDto Team1MercenaryStartPosition { get; set; } = new CoordinateDto();
+	public CoordinateDto Team2MercenaryStartPosition { get; set; } = new CoordinateDto();
 	public RectangleZoneDto Team1EndZone { get; set; } = new RectangleZoneDto();
 	public RectangleZoneDto Team2EndZone { get; set; } = new RectangleZoneDto();
 	public RectangleZoneDto MapCenter { get; set; } = new RectangleZoneDto();
+	public List<TraderDto> Traders { get; set; } = new();
 	public List<PrefabSpawn> StructureSpawns { get; set; } = new List<PrefabSpawn>();
 	public List<UnitSpawn> UnitSpawns { get; set; } = new List<UnitSpawn>();
-	public List<PatrolSpawn> PatrolSpawns { get; set; } = new List<PatrolSpawn>();
+	public List<MercenaryCamp> MercenaryCamps { get; set; } = new();
+	public List<TemplateUnitSpawn> PatrolSpawns { get; set; } = new List<TemplateUnitSpawn>();
 	public int CoinsLostPerDeath { get; set; } = 5;
 	public int CoinsGainedPerPlayerKill { get; set; } = 10;
 	public int CoinsGainedPerUnitKill { get; set; } = 2;
+	public int CoinsGainedPerTowerKill { get; set; } = 10;
+	public int CoinsGainedPerFortKill { get; set; } = 15;
+	public int CoinsGainedPerKeepKill { get; set; } = 15;
 
 	// Additional properties...
 }

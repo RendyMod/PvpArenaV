@@ -170,6 +170,8 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
 		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
 		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
+		GameEvents.OnPlayerPlacedStructure += HandleOnPlayerPlacedStructure;
+		GameEvents.OnPlayerInteracted += HandleOnPlayerInteracted;
 
 		stopwatch.Start();
 	}
@@ -221,6 +223,8 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
 		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
 		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
+		GameEvents.OnPlayerPlacedStructure -= HandleOnPlayerPlacedStructure;
+		GameEvents.OnPlayerInteracted -= HandleOnPlayerInteracted;
 
 		Teams.Clear();
 		foreach (var shardBuffs in TeamToShardBuffsMap.Values)
@@ -413,18 +417,18 @@ public class CaptureThePancakeGameMode : BaseGameMode
 			if (hasManticoreShard && hasMonsterShard)
 			{
 				CaptureThePancakeHelper.DropItemsIntoBag(player, new List<PrefabGUID> { Prefabs.Item_Building_Relic_Monster, Prefabs.Item_Building_Relic_Manticore });
-				Helper.RemoveItemFromInventory(player, Prefabs.Item_Building_Relic_Monster);
-				Helper.RemoveItemFromInventory(player, Prefabs.Item_Building_Relic_Manticore);
+				Helper.CompletelyRemoveItemFromInventory(player, Prefabs.Item_Building_Relic_Monster);
+				Helper.CompletelyRemoveItemFromInventory(player, Prefabs.Item_Building_Relic_Manticore);
 			}
 			else if (hasManticoreShard)
 			{
 				CaptureThePancakeHelper.DropItemsIntoBag(player, new List<PrefabGUID> { Prefabs.Item_Building_Relic_Manticore });
-				Helper.RemoveItemFromInventory(player, Prefabs.Item_Building_Relic_Manticore);
+				Helper.CompletelyRemoveItemFromInventory(player, Prefabs.Item_Building_Relic_Manticore);
 			}
 			else if (hasMonsterShard)
 			{
 				CaptureThePancakeHelper.DropItemsIntoBag(player, new List<PrefabGUID> { Prefabs.Item_Building_Relic_Monster });
-				Helper.RemoveItemFromInventory(player, Prefabs.Item_Building_Relic_Monster);
+				Helper.CompletelyRemoveItemFromInventory(player, Prefabs.Item_Building_Relic_Monster);
 			}
 		}
 	}
@@ -765,9 +769,9 @@ public class CaptureThePancakeGameMode : BaseGameMode
 	{
 		if (player.CurrentState != this.GameModeType) return;
 
-		Helper.DestroyEntity(player.Character);
-		base.HandleOnPlayerDisconnected(player);
-	}
+		Helper.KillOrDestroyEntity(player.Character);
+        player.Teleport(new float3(0, 0, 0));
+    }
 
 	public void HandleOnPlayerWillLoseGallopBuff(Player player, Entity eventEntity)
 	{
@@ -1069,7 +1073,19 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		}
 	}
 
-	public void HandleOnGameFrameUpdate()
+	public void HandleOnPlayerInteracted(Player player, Interactor interactor)
+	{
+		if (player.CurrentState != GameModeType) return;
+
+		if (interactor.Target.Has<Mountable>() && !Team.IsAllies(interactor.Target.Read<Team>(), player.Character.Read<Team>()))
+		{
+			interactor.Target = player.Character;
+			player.Character.Write(interactor);
+		}
+	}
+
+
+public void HandleOnGameFrameUpdate()
 	{
 		//check for shard captures
 		foreach (var team in Teams.Values)
@@ -1110,7 +1126,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 	{
 		if (Helper.PlayerHasItemInInventories(player, shardData.ItemPrefabGUID))
 		{
-            Helper.RemoveItemFromInventory(player, shardData.ItemPrefabGUID);
+            Helper.CompletelyRemoveItemFromInventory(player, shardData.ItemPrefabGUID);
 			var friendlyTeam = GetFriendlyTeam(player);
 			var enemyTeam = GetOpposingTeam(player);
 			if (!TeamToShardBuffsMap[player.MatchmakingTeam].Contains(shardData.BuffPrefabGUID))

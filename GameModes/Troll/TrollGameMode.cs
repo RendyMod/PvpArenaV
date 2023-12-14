@@ -72,9 +72,11 @@ public class TrollGameMode : DefaultGameMode
 		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
 		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
 		GameEvents.OnPlayerProjectileCreated += HandleOnPlayerProjectileCreated;
+		GameEvents.OnPlayerHitColliderCastCreated += HandleOnPlayerHitColliderCastCreated;
 		GameEvents.OnPlayerAoeCreated += HandleOnPlayerAoeCreated;
 		GameEvents.OnPlayerStartedCasting += HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerBuffRemoved += HandleOnPlayerBuffRemoved;
+		GameEvents.OnPlayerPlacedStructure += HandleOnPlayerPlacedStructure;
 	}
 	public override void Dispose()
 	{
@@ -93,6 +95,7 @@ public class TrollGameMode : DefaultGameMode
 		GameEvents.OnPlayerAoeCreated -= HandleOnPlayerAoeCreated;
 		GameEvents.OnPlayerStartedCasting -= HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerBuffRemoved -= HandleOnPlayerBuffRemoved;
+		GameEvents.OnPlayerPlacedStructure -= HandleOnPlayerPlacedStructure;
 	}
 
 	private static HashSet<string> AllowedCommands = new HashSet<string>
@@ -162,8 +165,11 @@ public class TrollGameMode : DefaultGameMode
 		var projectile = projectileEntity.Read<Projectile>();
 		projectile.Range = 100;
 		projectileEntity.Write(projectile);
+	}
 
-		var buffer = projectileEntity.ReadBuffer<HitColliderCast>();
+	public void HandleOnPlayerHitColliderCastCreated(Player player, Entity hitCastCollider)
+	{
+		var buffer = hitCastCollider.ReadBuffer<HitColliderCast>();
 		for (var i = 0; i < buffer.Length; i++)
 		{
 			var hitColliderCast = buffer[i];

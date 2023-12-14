@@ -59,7 +59,6 @@ public static class DodgeballHelper
 		var team2Players = team2LeaderPlayer.GetClanMembers();
 		Core.dodgeballGameMode.Initialize(team1Players, team2Players);
 		SpawnStructures();
-		Action action;
 
 		foreach (var team1Player in team1Players)
 		{
@@ -68,8 +67,8 @@ public static class DodgeballHelper
 			team1Player.Reset(ResetOptions.FreshMatch);
 			SetPlayerAbilities(team1Player);
 			Helper.SetPlayerBlood(team1Player, Prefabs.BloodType_Worker, 69);
-			action = () => team1Player.Teleport(DodgeballConfig.Config.Team1StartPosition.ToFloat3());
-			ActionScheduler.RunActionOnceAfterDelay(action, .1);
+			var teleportPlayerAction = () => team1Player.Teleport(DodgeballConfig.Config.Team1StartPosition.ToFloat3());
+			ActionScheduler.RunActionOnceAfterDelay(teleportPlayerAction, .1);
 			team1Player.ReceiveMessage($"The match will start in {"10".Emphasize()} seconds. {"Get ready!".Emphasize()}".White());
 		}
 
@@ -80,18 +79,18 @@ public static class DodgeballHelper
 			team2Player.Reset(ResetOptions.FreshMatch);
 			SetPlayerAbilities(team2Player);
 			Helper.SetPlayerBlood(team2Player, Prefabs.BloodType_Worker, 69);
-			action = () => team2Player.Teleport(DodgeballConfig.Config.Team2StartPosition.ToFloat3());
-			ActionScheduler.RunActionOnceAfterDelay(action, .1);
+			var teleportPlayerAction = () => team2Player.Teleport(DodgeballConfig.Config.Team2StartPosition.ToFloat3());
+			ActionScheduler.RunActionOnceAfterDelay(teleportPlayerAction, .1);
 			team2Player.ReceiveMessage($"The match will start in {"10".Emphasize()} seconds. {"Get ready!".Emphasize()}".White());
 		}
 
-		action = () => { StartMatchCountdown(); };
+		var startMatchCountdownAction = () => { StartMatchCountdown(); };
 
-		Timer timer = ActionScheduler.RunActionOnceAfterDelay(action, 5);
+		Timer timer = ActionScheduler.RunActionOnceAfterDelay(startMatchCountdownAction, 5);
 		DodgeballGameMode.Timers.Add(timer);
 
-		action = () => KillPreviousEntities(false);
-		timer = ActionScheduler.RunActionOnceAfterDelay(action, 10);
+		var killPreviousEntitiesAction = () => KillPreviousEntities(false);
+		timer = ActionScheduler.RunActionOnceAfterDelay(killPreviousEntitiesAction, 10);
 		DodgeballGameMode.Timers.Add(timer);
 	}
 
@@ -302,14 +301,14 @@ public static class DodgeballHelper
 				{
 					if (spawnedUnit.Unit.Category == "dodgeball")
 					{
-						Helper.DestroyEntity(entity);
+						Helper.KillOrDestroyEntity(entity);
 					}
 				}
 				else
 				{
 					if (UnitFactory.HasCategory(entity, "dodgeball"))
 					{
-						Helper.DestroyEntity(entity);
+						Helper.KillOrDestroyEntity(entity);
 					}
 				}
 			}

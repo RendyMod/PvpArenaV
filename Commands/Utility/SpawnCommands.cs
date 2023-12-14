@@ -59,6 +59,9 @@ internal class SpawnCommands
 		}
 		
 		boss.Level = level;
+		boss.AggroRadius = 3;
+		boss.IsRooted = false;
+		boss.MaxDistanceFromPreCombatPosition = 20;
 		UnitFactory.SpawnUnit(boss, spawnPosition);
 		sender.ReceiveMessage($"Spawned boss!".Success());
 	}
@@ -106,7 +109,7 @@ internal class SpawnCommands
 				if (!entity.Has<PhysicsCollider>()) continue;
 				if (entity.Read<PrefabGUID>() == prefab)
 				{
-					Helper.DestroyEntity(entity);
+					Helper.KillOrDestroyEntity(entity);
 					sender.ReceiveMessage($"Killed entity: {entity.Read<PrefabGUID>().LookupName()}".Success());
 				}
 			}
@@ -114,7 +117,7 @@ internal class SpawnCommands
 		else
 		{
 			Entity entity = Helper.GetHoveredEntity(sender.User);
-			Helper.DestroyEntity(entity);
+			Helper.KillOrDestroyEntity(entity);
 			sender.ReceiveMessage($"Killed entity: {entity.Read<PrefabGUID>().LookupName()}".Success());
 		}
 	}

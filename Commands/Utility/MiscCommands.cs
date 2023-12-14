@@ -10,6 +10,8 @@ using PvpArena.Helpers;
 using Unity.Mathematics;
 using PvpArena.Services;
 using Discord;
+using static ProjectM.VivoxEvents;
+using Il2CppSystem;
 
 namespace PvpArena.Commands;
 
@@ -97,6 +99,20 @@ internal static class MiscellaneousCommands
 	public static void RecountCommand(Player sender)
 	{
 		DamageRecorderService.ReportDamageResults(sender);
+	}
+
+	[Command("cast", description: "Used for debugging", adminOnly: true)]
+	public static void CastCommand(Player sender, PrefabGUID prefabGuid)
+	{
+		var fromCharacter = sender.ToFromCharacter();
+		var clientEvent = new CastAbilityServerDebugEvent
+		{
+			AbilityGroup = prefabGuid,
+			AimPosition = new Nullable_Unboxed<float3>(sender.User.Read<EntityInput>().AimPosition),
+			Who = sender.Character.Read<NetworkId>()
+		};
+		Core.debugEventsSystem.CastAbilityServerDebugEvent(sender.User.Read<User>().Index, ref clientEvent, ref fromCharacter);
+		sender.ReceiveMessage($"Cast {prefabGuid.LookupNameString()}");
 	}
 
 	[Command("remake-character", description: "Used for debugging", adminOnly: true)]

@@ -53,6 +53,35 @@ public static class ProjectileSystem_Spawn_ServerPatch
 	}
 }
 
+[HarmonyPatch(typeof(HitCastColliderSystem_OnSpawn), nameof(HitCastColliderSystem_OnSpawn.OnUpdate))]
+public static class HitCastColliderSystem_OnSpawnPatch
+{
+	public static void Prefix(HitCastColliderSystem_OnSpawn __instance)
+	{
+		var entities = __instance.__OnUpdate_LambdaJob0_entityQuery.ToEntityArray(Allocator.Temp);
+		foreach (var entity in entities)
+		{
+			if (entity.Exists())
+			{
+				var owner = entity.Read<EntityOwner>().Owner;
+				if (owner.Exists())
+				{
+					if (owner.Has<PlayerCharacter>())
+					{
+						var player = PlayerService.GetPlayerFromCharacter(owner);
+						GameEvents.RaisePlayerHitColliderCastCreated(player, entity);
+					}
+					else
+					{
+						GameEvents.RaiseUnitHitColliderCastCreated(owner, entity);
+					}
+				}
+			}
+		}
+		entities.Dispose();
+	}
+}
+
 [HarmonyPatch(typeof(HitCastColliderSystem_OnUpdate), nameof(HitCastColliderSystem_OnUpdate.OnUpdate))]
 public static class HitCastColliderSystem_OnUpdatePatch
 {

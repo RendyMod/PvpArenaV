@@ -187,7 +187,7 @@ public static partial class Helper
 	}
 
 
-	public static void DestroyEntity(Entity entity)
+	public static void KillOrDestroyEntity(Entity entity)
 	{
 		if (entity.Has<CanFly>() && !entity.Has<PlayerCharacter>())
 		{
@@ -267,7 +267,8 @@ public static partial class Helper
         public bool RemoveConsumables = false;
         public bool RemoveShapeshifts = false;
         public bool ResetCooldowns = true;
-        public HashSet<PrefabGUID> BuffsToIgnore = new HashSet<PrefabGUID>();
+		public bool RemoveMinions = false;
+		public HashSet<PrefabGUID> BuffsToIgnore = new HashSet<PrefabGUID>();
 
         public static ResetOptions Default => new ResetOptions();
         public static ResetOptions FreshMatch = new ResetOptions
@@ -279,6 +280,52 @@ public static partial class Helper
         };
     }
 
+	private static void DestroyPlayerSummonsAndProjectiles(Player player)
+	{
+		var projectileEntities = Helper.GetEntitiesByComponentTypes<HitColliderCast, SpellModArithmetic>();
+		foreach (var entity in projectileEntities)
+		{
+			var owner = entity.Read<EntityOwner>().Owner;
+			if (owner == player.Character)
+			{
+				if (entity.Has<GameplayEventListeners>())
+				{
+					var buffer = entity.ReadBuffer<GameplayEventListeners>();
+					buffer.Clear();
+				}
+				if (entity.Has<CreateGameplayEventsOnDestroy>())
+				{
+					var buffer = entity.ReadBuffer<CreateGameplayEventsOnDestroy>();
+					buffer.Clear();
+				}
+				Helper.KillOrDestroyEntity(entity);
+			}
+		}
+		projectileEntities.Dispose();
+
+		var minionEntities = Helper.GetEntitiesByComponentTypes<Minion>();
+		foreach (var entity in minionEntities)
+		{
+			var owner = entity.Read<EntityOwner>().Owner;
+			if (owner == player.Character)
+			{
+				if (entity.Has<GameplayEventListeners>())
+				{
+					var buffer = entity.ReadBuffer<GameplayEventListeners>();
+					buffer.Clear();
+				}
+				if (entity.Has<CreateGameplayEventsOnDestroy>())
+				{
+					var buffer = entity.ReadBuffer<CreateGameplayEventsOnDestroy>();
+					buffer.Clear();
+				}
+				
+				Helper.KillOrDestroyEntity(entity);
+			}
+		}
+		minionEntities.Dispose();
+	}
+
 	public static void Reset(this Player player, ResetOptions resetOptions = null)
 	{
         resetOptions ??= ResetOptions.Default;
@@ -286,6 +333,10 @@ public static partial class Helper
         if (resetOptions.ResetCooldowns)
 		{
             ResetCooldown(player.Character);
+		}
+		if (resetOptions.RemoveMinions)
+		{
+			DestroyPlayerSummonsAndProjectiles(player);
 		}
         ClearExtraBuffs(player.Character, resetOptions);
         //delay so that removing gun e / heart strike doesnt dmg you
@@ -398,14 +449,14 @@ public static partial class Helper
 				{
 					if (spawnedUnit.Unit.Category == category)
 					{
-						Helper.DestroyEntity(entity);
+						Helper.KillOrDestroyEntity(entity);
 					}
 				}
 				else
 				{
 					if (entity.Has<ResistanceData>() && entity.Read<ResistanceData>().GarlicResistance_IncreasedExposureFactorPerRating == StringToFloatHash(category))
 					{
-						Helper.DestroyEntity(entity);
+						Helper.KillOrDestroyEntity(entity);
 					}
 				}
 			}
@@ -448,6 +499,11 @@ public static partial class Helper
 		}
 	}
 
+	public static void RemoveBuildImpairBuffFromPlayer(Player player)
+	{
+		Helper.RemoveBuff(player, Prefabs.Buff_Gloomrot_SentryOfficer_TurretCooldown);
+	}
+
 	public static void ControlUnit(Player player, Entity unit)
 	{
 		Helper.BuffPlayer(player, Prefabs.Admin_Observe_Invisible_Buff, out var buffEntity);
@@ -481,7 +537,7 @@ public static partial class Helper
 			{
 				position = controlledEntity.Read<LocalToWorld>().Position;
 			}
-			Helper.DestroyEntity(controlledEntity);
+			Helper.KillOrDestroyEntity(controlledEntity);
 		}
 		
 		ControlUnit(player, player.Character);

@@ -92,6 +92,12 @@ public static class BulletHellManager
 
 	public static void QueueForMatch (Player player)
 	{
+		if (playerQueue.Contains(player))
+		{
+			player.ReceiveMessage("You are already in queue".Error());
+			return;
+		}
+		
 		var foundArena = false;
 		foreach (var arena in bulletHellGameModes)
 		{
@@ -107,9 +113,9 @@ public static class BulletHellManager
 		}
 
 		if (!foundArena)
-		{
+		{	
 			playerQueue.Add(player);
-			player.ReceiveMessage("Arenas are all busy, you are now in queue.".White());
+			player.ReceiveMessage("Arenas are all busy, you are now in queue".White());
 		}
 	}
 

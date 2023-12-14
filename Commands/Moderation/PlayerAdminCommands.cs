@@ -57,7 +57,7 @@ internal static class PlayerAdminCommands
 	{
 		var Player = player ?? sender;
 
-		Helper.DestroyEntity(Player.Character);
+		Helper.KillOrDestroyEntity(Player.Character);
 
 		sender.ReceiveMessage("Killed.".Success());
 	}

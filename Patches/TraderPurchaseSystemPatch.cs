@@ -9,6 +9,7 @@ using PvpArena.Services;
 using System.Linq;
 using PvpArena.Models;
 using System;
+using PvpArena.GameModes;
 
 namespace PvpArena.Patches;
 
@@ -25,25 +26,9 @@ public static class TraderPurchaseSystemPatch
 			try
 			{
 				var fromCharacter = entity.Read<FromCharacter>();
-				var Player = PlayerService.GetPlayerFromUser(fromCharacter.User);
-				var purchaseEvent = entity.Read<TraderPurchaseEvent>();
-				Entity trader = VWorld.Server.GetExistingSystem<NetworkIdSystem>()._NetworkIdToEntityMap[purchaseEvent.Trader];
+				var player = PlayerService.GetPlayerFromUser(fromCharacter.User);
+				GameEvents.RaisePlayerPurchasedItem(player, entity);
 
-				var costBuffer = trader.ReadBuffer<TradeCost>();
-				var cost = -1 * (costBuffer[purchaseEvent.ItemIndex].Amount);
-				if (Player.PlayerPointsData.TotalPoints >= cost)
-				{
-					Player.PlayerPointsData.TotalPoints -= cost;
-					Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { Player.PlayerPointsData });
-					Player.ReceiveMessage($"Purchased for {cost.ToString().Emphasize()} {"VPoints".Warning()}. New total points: {Player.PlayerPointsData.TotalPoints.ToString().Warning()}".Success());
-
-					RefillStock(purchaseEvent, trader);
-				}
-				else
-				{
-					VWorld.Server.EntityManager.DestroyEntity(entity);
-					Player.ReceiveMessage($"Not enough {"VPoints".Warning()} to purchase! {Player.PlayerPointsData.TotalPoints.ToString().Warning()} / {cost}".Error());
-				}
 			}
 			catch (Exception e)
 			{
@@ -52,7 +37,7 @@ public static class TraderPurchaseSystemPatch
 		}
 	}
 
-	private static void RefillStock(TraderPurchaseEvent purchaseEvent, Entity trader)
+	public static void RefillStock(TraderPurchaseEvent purchaseEvent, Entity trader)
 	{
 		var _entryBuffer = trader.ReadBuffer<TraderEntry>();
 		var _inputBuffer = trader.ReadBuffer<TradeCost>();

@@ -51,8 +51,8 @@ public static class DominationHelper
 			Helper.AddItemToInventory(player.Character, Prefabs.Item_Consumable_GlassBottle_BloodRosePotion_T02, 1, out Entity entity);
 		}
 
-		Helper.RemoveItemFromInventory(player, Prefabs.Item_Consumable_Canteen_BloodRoseBrew_T01);
-		Helper.RemoveItemFromInventory(player, Prefabs.Item_Consumable_Salve_Vermin);
+		Helper.CompletelyRemoveItemFromInventory(player, Prefabs.Item_Consumable_Canteen_BloodRoseBrew_T01);
+		Helper.CompletelyRemoveItemFromInventory(player, Prefabs.Item_Consumable_Salve_Vermin);
 	}
 
 	private static void SpawnUnits(Player team1LeaderPlayer, Player team2LeaderPlayer)
@@ -123,7 +123,7 @@ public static class DominationHelper
 				{
 					if (spawnedUnit.Unit.Category == "domination")
 					{
-						Helper.DestroyEntity(entity);
+						Helper.KillOrDestroyEntity(entity);
 					}
 				}
 			}

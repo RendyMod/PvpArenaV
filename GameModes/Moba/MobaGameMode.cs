@@ -18,26 +18,61 @@ using Unity.Transforms;
 using static DamageRecorderService;
 using ProjectM.Pathfinding;
 using ProjectM.Tiles;
+using ProjectM.Debugging;
+using ProjectM.Gameplay.Scripting;
+using static ProjectM.HitColliderCast;
+using ProjectM.Behaviours;
+using UnityEngine;
+using System.Runtime.CompilerServices;
+using ProjectM.Network;
+using PvpArena.Patches;
+using static PvpArena.Configs.ConfigDtos;
+using static RootMotion.FinalIK.AimPoser;
 
 namespace PvpArena.GameModes.Moba;
 
+public class MobaStructures
+{
+	public Entity Core { get; set; } = Entity.Null;
+	public Entity Keep { get; set; } = Entity.Null;
+	public Entity Fort { get; set; } = Entity.Null;
+	public List<Entity> FortTowers { get; set; } = new();
+	public List<Entity> KeepTowers { get; set; } = new();
+}
+
+public class MercenaryCamp
+{
+	public CapturePoint Point { get; set; }
+	public HashSet<Entity> Entities { get; set; } = new();
+	public int CampIndex { get; set; } = 0;
+}
+
 public class MobaGameMode : BaseGameMode
 {
-    public override Player.PlayerState GameModeType => Player.PlayerState.Moba;
+	public override Player.PlayerState GameModeType => Player.PlayerState.Moba;
 	public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
 	{
 		RemoveConsumables = false,
 		RemoveShapeshifts = false,
-		ResetCooldowns = false
+		ResetCooldowns = false,
+		BuffsToIgnore = new()
+		{
+			Prefabs.AB_Interact_UseRelic_Behemoth_Buff,
+			Prefabs.AB_Interact_UseRelic_Manticore_Buff,
+			Prefabs.AB_Interact_UseRelic_Monster_Buff,
+			Helper.CustomBuff5 //stop them from jumping off
+		}
 	};
 	private static bool MatchActive = false;
 	private static Stopwatch stopwatch = new Stopwatch();
 
 	public static Dictionary<int, List<Player>> Teams = new Dictionary<int, List<Player>>();
-	public static Dictionary<int, List<PrefabGUID>> TeamToShardBuffsMap = new Dictionary<int, List<PrefabGUID>>
+	public static Dictionary<Player, HashSet<PrefabGUID>> PlayerToShardBuffsMap = new();
+
+	public static Dictionary<int, List<Entity>> TeamCores = new()
 	{
-		{1, new List<PrefabGUID>() },
-		{2, new List<PrefabGUID>() }
+		{ 1, new() },
+		{ 2, new() }
 	};
 
 	public static Dictionary<int, HashSet<Entity>> TeamPatrols = new Dictionary<int, HashSet<Entity>>
@@ -52,6 +87,25 @@ public class MobaGameMode : BaseGameMode
 		{2, new HashSet<Entity>() },
 	};
 
+	public static Dictionary<int, MobaStructures> TeamMobaStructures = new()
+	{
+		{ 1, new() },
+		{ 2, new() }
+	};
+
+	public static Dictionary<int, List<Entity>> CapturePointIndexToLights = new Dictionary<int, List<Entity>>();
+
+	public static Dictionary<Entity, MercenaryCamp> UnitToMercenaryCamp = new();
+	public static Dictionary<int, MercenaryCamp> MercenaryCamps = new();
+
+	private static Dictionary<PrefabGUID, PrefabGUID> VirtualItems = new()
+	{
+		{ Prefabs.Item_Building_Relic_Behemoth, Prefabs.AB_Interact_UseRelic_Behemoth_Buff},
+		{ Prefabs.Item_Building_Relic_Manticore, Prefabs.AB_Interact_UseRelic_Manticore_Buff},
+		{ Prefabs.Item_Building_Relic_Monster, Prefabs.AB_Interact_UseRelic_Monster_Buff },
+		{ Prefabs.Item_Consumable_PrisonPotion_Bloodwine, PrefabGUID.Empty }
+	};
+
 	private static Dictionary<Player, int> playerKills = new Dictionary<Player, int>();
 	private static Dictionary<Player, int> playerDeaths = new Dictionary<Player, int>();
 
@@ -63,16 +117,16 @@ public class MobaGameMode : BaseGameMode
 		{ Prefabs.AB_Shapeshift_Bear_Skin01_Group, Prefabs.AB_Shapeshift_Bear_Skin01_Buff },
 	};
 
-    private static Dictionary<PrefabGUID, PrefabGUID> shapeshiftToShapeshift = new Dictionary<PrefabGUID, PrefabGUID>
-    {
-        { Prefabs.AB_Shapeshift_Wolf_Group, Prefabs.AB_Shapeshift_Bear_Group},
-        { Prefabs.AB_Shapeshift_Wolf_Skin01_Group, Prefabs.AB_Shapeshift_Bear_Skin01_Group},
-        { Prefabs.AB_Shapeshift_Bear_Group, Prefabs.AB_Shapeshift_Bear_Group},
-        { Prefabs.AB_Shapeshift_Bear_Skin01_Group, Prefabs.AB_Shapeshift_Bear_Skin01_Group},
-        { Prefabs.AB_Shapeshift_Rat_Group, Prefabs.AB_Shapeshift_Rat_Group},
-        { Prefabs.AB_Shapeshift_CommandingPresence_Group, Prefabs.AB_Shapeshift_CommandingPresence_Group},
-        { Prefabs.AB_Shapeshift_BloodMend_Group, Prefabs.AB_Shapeshift_BloodMend_Group}
-    };
+	private static Dictionary<PrefabGUID, PrefabGUID> shapeshiftToShapeshift = new Dictionary<PrefabGUID, PrefabGUID>
+	{
+		{ Prefabs.AB_Shapeshift_Wolf_Group, Prefabs.AB_Shapeshift_Bear_Group},
+		{ Prefabs.AB_Shapeshift_Wolf_Skin01_Group, Prefabs.AB_Shapeshift_Bear_Skin01_Group},
+		{ Prefabs.AB_Shapeshift_Bear_Group, Prefabs.AB_Shapeshift_Bear_Group},
+		{ Prefabs.AB_Shapeshift_Bear_Skin01_Group, Prefabs.AB_Shapeshift_Bear_Skin01_Group},
+		{ Prefabs.AB_Shapeshift_Rat_Group, Prefabs.AB_Shapeshift_Rat_Group},
+		{ Prefabs.AB_Shapeshift_CommandingPresence_Group, Prefabs.AB_Shapeshift_CommandingPresence_Group},
+		{ Prefabs.AB_Shapeshift_BloodMend_Group, Prefabs.AB_Shapeshift_BloodMend_Group}
+	};
 
 	public Dictionary<PrefabGUID, bool> allowedShapeshifts = new Dictionary<PrefabGUID, bool>
 	{
@@ -82,13 +136,110 @@ public class MobaGameMode : BaseGameMode
 		{Prefabs.AB_Shapeshift_Bear_Group, true},
 		{Prefabs.AB_Shapeshift_Bear_Skin01_Group, true },
 		{Prefabs.AB_Shapeshift_CommandingPresence_Group, true },
-        {Prefabs.AB_Shapeshift_BloodMend_Group, true }
-    };
+		{Prefabs.AB_Shapeshift_BloodMend_Group, true }
+	};
 
 	private static Dictionary<PrefabGUID, bool> damageableStructurePrefabs = new Dictionary<PrefabGUID, bool>
 	{
 		{ Prefabs.TM_Castle_Wall_Tier01_Wood, true },
 		{ Prefabs.TM_Castle_Wall_Door_Palisade_Tier01, true}
+	};
+
+	private static ModifyUnitStatBuff_DOTS noCooldown = new()
+	{
+		Id = ModificationIdFactory.NewId(),
+		ModificationType = ModificationType.Set,
+		StatType = UnitStatType.CooldownModifier,
+		Value = 0,
+		Priority = 100
+	};
+
+	private static ModifyUnitStatBuff_DOTS maxAttackSpeed = new()
+	{
+		Id = ModificationIdFactory.NewId(),
+		ModificationType = ModificationType.Set,
+		StatType = UnitStatType.AttackSpeed,
+		Value = 5,
+		Priority = 100
+	};
+
+	private static ModifyUnitStatBuff_DOTS unitMoveSpeed = new()
+	{
+		Id = ModificationIdFactory.NewId(),
+		ModificationType = ModificationType.Set,
+		StatType = UnitStatType.MovementSpeed,
+		Value = 3.5f,
+		Priority = 100
+	};
+
+	private static ModifyUnitStatBuff_DOTS turretPhysDamage = new()
+	{
+		Id = ModificationIdFactory.NewId(),
+		ModificationType = ModificationType.Set,
+		StatType = UnitStatType.PhysicalPower,
+		Value = 125,
+		Priority = 100
+	};
+
+	private static ModifyUnitStatBuff_DOTS fortAndKeepPhysDamage = new()
+	{
+		Id = ModificationIdFactory.NewId(),
+		ModificationType = ModificationType.Set,
+		StatType = UnitStatType.PhysicalPower,
+		Value = 175,
+		Priority = 100
+	};
+
+	private static ModifyUnitStatBuff_DOTS keelyDmg = new()
+	{
+		Id = ModificationIdFactory.NewId(),
+		ModificationType = ModificationType.Set,
+		StatType = UnitStatType.PhysicalPower,
+		Value = 50,
+		Priority = 100
+	};
+
+	private static ModifyUnitStatBuff_DOTS spiderDmg = new()
+	{
+		Id = ModificationIdFactory.NewId(),
+		ModificationType = ModificationType.Set,
+		StatType = UnitStatType.PhysicalPower,
+		Value = 100,
+		Priority = 100
+	};
+
+	private static List<ModifyUnitStatBuff_DOTS> fortAndKeepStats = new()
+	{
+		maxAttackSpeed,
+		fortAndKeepPhysDamage,
+		noCooldown 
+	};
+
+	private static Dictionary<PrefabGUID, List<ModifyUnitStatBuff_DOTS>> unitStatModifiers = new()
+	{
+		{ BaseTurret.PrefabGUID, new()
+		{
+			maxAttackSpeed,
+			turretPhysDamage,
+			noCooldown
+		}},
+		{ Prefabs.CHAR_Bandit_Deadeye_Frostarrow_VBlood, new()
+		{
+			maxAttackSpeed,
+			noCooldown,
+			keelyDmg
+		}},
+		{
+			Prefabs.CHAR_Gloomrot_SpiderTank_Zapper, new()
+			{
+				maxAttackSpeed,
+				turretPhysDamage,
+				noCooldown
+			}
+		},
+		{ Prefabs.CHAR_Spider_Queen_VBlood, new() {
+			spiderDmg
+		}},
 	};
 
 	private static Dictionary<PrefabGUID, Action<Player, Entity>> playerBuffHandlers = new Dictionary<PrefabGUID, Action<Player, Entity>>
@@ -98,6 +249,16 @@ public class MobaGameMode : BaseGameMode
 		{ Prefabs.AB_Shapeshift_BloodMend_Buff, HandleBloodMendBuff },
 		{ Prefabs.HideCharacterBuff, HandleHideCharacterBuff },
 		{ Prefabs.AB_Shapeshift_Golem_T02_Buff, HandleGolemBuff },
+		{ Prefabs.AB_Interact_LocalCastleTeleport_Travel_Shared, HandleTeleportBuff },
+		{ Prefabs.Buff_General_Freeze_HighDamageTreshold, HandleFreezeBuff },
+	};
+
+
+	private static Dictionary<PrefabGUID, Action<Entity, Entity>> unitBuffHandlers = new Dictionary<PrefabGUID, Action<Entity, Entity>>
+	{
+		{ Prefabs.Buff_Building_Siege_ActivationTimer_Buff_T02, HandleGolemSummoningBuff },
+		{ Helper.CustomBuff3, HandleSpawnedUnitBuff },
+		{ Prefabs.AB_IronGolem_FallAsleep_Buff_SleepingIdle, HandleGolemAsleepBuff }
 	};
 
 	public static new HashSet<string> AllowedCommands = new HashSet<string>
@@ -109,7 +270,6 @@ public class MobaGameMode : BaseGameMode
 		"forfeit",
 		"points",
 		"lb ranked",
-		"bp",
 	};
 
 	public static List<Timer> Timers = new List<Timer>();
@@ -119,8 +279,6 @@ public class MobaGameMode : BaseGameMode
 
 	public static HashSet<PrefabGUID> TrackingProjectiles = new HashSet<PrefabGUID>
 	{
-		Prefabs.AB_Gloomrot_SpiderTank_Gattler_Minigun_Projectile01,
-		Prefabs.AB_Gloomrot_SpiderTank_Gattler_Minigun_Projectile02,
 		Prefabs.AB_Gloomrot_SentryTurret_RangedAttack_Projectile
 	};
 
@@ -162,6 +320,8 @@ public class MobaGameMode : BaseGameMode
 		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
 		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
 		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
+		GameEvents.OnPlayerPlacedStructure += HandleOnPlayerPlacedStructure;
+		GameEvents.OnPlayerPurchasedItem += HandleOnPlayerPurchasedItem;
 
 		stopwatch.Start();
 	}
@@ -187,7 +347,30 @@ public class MobaGameMode : BaseGameMode
                 PlayerRespawnTimers[player] = new List<Timer>();
 				PlayerDamageDealt[player] = 0;
 				PlayerDamageReceived[player] = 0;
+				PlayerToShardBuffsMap[player] = new();
 			}
+		}
+
+		var dyableEntities = Helper.GetEntitiesByComponentTypes<CastleHeartConnection, DyeableCastleObject>(true);
+		foreach (var dyeableEntity in dyableEntities)
+		{
+			foreach (var capturePoint in MercenaryCamps.Values)
+			{
+				if (capturePoint.Point.Zone.Contains(dyeableEntity.Read<LocalToWorld>().Position, 5))
+				{
+					if (!CapturePointIndexToLights.ContainsKey(capturePoint.Point.PointIndex))
+					{
+						CapturePointIndexToLights[capturePoint.Point.PointIndex] = new();
+					}
+					CapturePointIndexToLights[capturePoint.Point.PointIndex].Add(dyeableEntity);
+				}
+			}
+		}
+
+		foreach (var mercenaryCamp in MercenaryCamps.Values)
+		{
+			mercenaryCamp.Point.OnPointCaptured += HandlePointCapture;
+			mercenaryCamp.Point.OnCaptureProgress += HandleCaptureProgress;
 		}
 	}
 	public override void Dispose()
@@ -215,16 +398,17 @@ public class MobaGameMode : BaseGameMode
 		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
 		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
 		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
+		GameEvents.OnPlayerPlacedStructure -= HandleOnPlayerPlacedStructure;
+		GameEvents.OnPlayerPurchasedItem -= HandleOnPlayerPurchasedItem;
 
 		Teams.Clear();
 		TeamPatrols.Clear();
 		TeamUnits.Clear();
-		
-		foreach (var shardBuffs in TeamToShardBuffsMap.Values)
-		{
-			shardBuffs.Clear();
-		}
-        foreach (var kvp in UnitFactory.UnitToEntity)
+		PlayerToShardBuffsMap.Clear();
+		UnitToMercenaryCamp.Clear();
+		CapturePointIndexToLights.Clear();
+
+		foreach (var kvp in UnitFactory.UnitToEntity)
         {
             if (kvp.Key.Category == "moba")
             {
@@ -241,12 +425,23 @@ public class MobaGameMode : BaseGameMode
                 }
             }
         }
-        PlayerRespawnTimers.Clear();
+		foreach (var mercenaryCamp in MercenaryCamps.Values)
+		{
+			mercenaryCamp.Point.OnPointCaptured -= HandlePointCapture;
+			mercenaryCamp.Point.OnCaptureProgress -= HandleCaptureProgress;
+		}
+		MercenaryCamps.Clear();
+
+		PlayerRespawnTimers.Clear();
 
 		playerKills.Clear();
 		playerDeaths.Clear();
 		PlayerDamageDealt.Clear();
 		PlayerDamageReceived.Clear();
+		foreach (var kvp in TeamMobaStructures)
+		{
+			TeamMobaStructures[kvp.Key] = new();
+		}
 		stopwatch.Reset();
 	}
 
@@ -274,9 +469,10 @@ public class MobaGameMode : BaseGameMode
 
 				if (killer != player.Character)
 				{
-					if (Helper.AddItemToInventory(killerPlayer.Character, Prefabs.Item_Ingredient_Coin_Copper, 100, out var item))
+					if (Helper.AddItemToInventory(killerPlayer.Character, Prefabs.Item_Ingredient_Coin_Copper, MobaConfig.Config.CoinsGainedPerPlayerKill, out var item))
 					{
-						killerPlayer.ReceiveMessage($"You gained 100 coins for killing {player.Name.EnemyTeam()}".White());
+						killerPlayer.ReceiveMessage($"You gained {MobaConfig.Config.CoinsGainedPerPlayerKill} coins for killing {player.Name.EnemyTeam()}".White());
+						DisplayCoins(player, MobaConfig.Config.CoinsGainedPerPlayerKill);
 					}
 
 					if (playerKills.ContainsKey(killerPlayer))
@@ -350,6 +546,13 @@ public class MobaGameMode : BaseGameMode
 				Helper.ApplyStatModifier(buffEntity, BuffModifiers.FastRespawnMoveSpeed);
 				Helper.RemoveBuffModifications(buffEntity, BuffModificationTypes.Immaterial);
 				buffEntity.Add<DestroyBuffOnDamageTaken>();
+			}
+			if (PlayerToShardBuffsMap.TryGetValue(player, out var shardList))
+			{
+				foreach (var buff in shardList)
+				{
+					Helper.BuffPlayer(player, buff, out var buffEntity1, Helper.NO_DURATION);
+				}
 			}
 		};
 
@@ -469,7 +672,7 @@ public class MobaGameMode : BaseGameMode
 	public static void HandleGolemBuff(Player player, Entity buffEntity)
 	{
 		var absorb = buffEntity.Read<AbsorbBuff>();
-		absorb.AbsorbValue = 5000;
+		absorb.AbsorbValue = MobaConfig.Config.GolemShield;
 		var lifetime = buffEntity.Read<LifeTime>();
 		lifetime.Duration = 60;
 		lifetime.EndAction = LifeTimeEndAction.Destroy;
@@ -481,6 +684,62 @@ public class MobaGameMode : BaseGameMode
 			Weapon2 = PrefabGUID.Empty
 		};
 		abilityBar.ApplyChangesSoft(buffEntity);
+	}
+
+	public static void HandleGolemSummoningBuff(Entity unit, Entity buffEntity)
+	{
+		var age = buffEntity.Read<Age>();
+		age.Value = float.MaxValue;
+		buffEntity.Write(age);
+	}
+
+	public static void HandleSpawnedUnitBuff(Entity unit, Entity buffEntity)
+	{
+		var unitPrefabGuid = unit.Read<PrefabGUID>();
+
+		if (unitStatModifiers.TryGetValue(unitPrefabGuid, out var mods))
+		{
+			foreach (var mobaStructures in TeamMobaStructures)
+			{
+				if (unit == mobaStructures.Value.Fort || unit == mobaStructures.Value.Keep)
+				{
+					foreach (var mod in fortAndKeepStats)
+					{
+						Helper.ApplyStatModifier(buffEntity, mod, false);
+					}
+					return;
+				}
+			}
+			foreach (var mod in mods)
+			{
+				Helper.ApplyStatModifier(buffEntity, mod, false);
+			}
+		}
+
+		Helper.ApplyStatModifier(buffEntity, unitMoveSpeed, false);
+	}
+
+	public static void HandleGolemAsleepBuff(Entity unit, Entity buffEntity)
+	{
+		Helper.DestroyBuff(buffEntity);
+	}
+
+	public static void HandleTeleportBuff(Player player, Entity buffEntity)
+	{
+		/*player.Teleport(newPosition);
+		Helper.DestroyBuff(buffEntity);*/
+		return;
+	}
+
+	public static void HandleFreezeBuff(Player player, Entity buffEntity)
+	{
+		if (buffEntity.Has<AbsorbBuff>())
+		{
+			var absorbBuff = buffEntity.Read<AbsorbBuff>();
+			absorbBuff.AbsorbValue = 10;
+			buffEntity.Write(absorbBuff);
+		}
+		return;
 	}
 
 	public void HandleOnPlayerBuffed(Player player, Entity buffEntity)
@@ -535,72 +794,41 @@ public class MobaGameMode : BaseGameMode
 			destroyState.Value = DestroyStateEnum.NotDestroyed;
 			buffEntity.Write(destroyState);
 		}
-		else if (prefabGuid == Prefabs.Buff_General_Chill)
-		{
-			var destroyState = buffEntity.Read<DestroyState>();
-			buffEntity.Remove<DestroyTag>();
-			destroyState.Value = DestroyStateEnum.NotDestroyed;
-			buffEntity.Write(destroyState);
-		}
 	}
 
 	public void HandleOnUnitBuffed(Entity unit, Entity buffEntity)
 	{
-		if (TryGetSpawnedUnitFromEntity(unit, out SpawnedUnit spawnedUnit))
+		if (unit.Has<EntityOwner>())
 		{
-			if (spawnedUnit.Unit.Category != "moba")
+			var owner = unit.Read<EntityOwner>().Owner;
+			if (owner.Exists())
 			{
-				return;
+				if (owner.Has<PlayerCharacter>())
+				{
+					var player = PlayerService.GetPlayerFromCharacter(owner);
+					if (player.CurrentState != this.GameModeType) return;
+				}
 			}
 		}
 		else
 		{
-			return;
-		}
-
-		var buffPrefabGUID = buffEntity.Read<PrefabGUID>();
-		if (buffPrefabGUID == Helper.CustomBuff3)
-		{
-			if (unit.Read<PrefabGUID>() == BaseTurret.PrefabGUID)
+			if (TryGetSpawnedUnitFromEntity(unit, out SpawnedUnit spawnedUnit))
 			{
-				Helper.ApplyStatModifier(buffEntity, new ModifyUnitStatBuff_DOTS
+				if (spawnedUnit.Unit.Category != "moba")
 				{
-					Id = ModificationIdFactory.NewId(),
-					ModificationType = ModificationType.Set,
-					StatType = UnitStatType.AttackSpeed,
-					Value = 5,
-					Priority = 100
-				}, false);
-
-				Helper.ApplyStatModifier(buffEntity, new ModifyUnitStatBuff_DOTS
-				{
-					Id = ModificationIdFactory.NewId(),
-					ModificationType = ModificationType.Set,
-					StatType = UnitStatType.CooldownModifier,
-					Value = 0,
-					Priority = 100
-				}, false);
-
-				Helper.ApplyStatModifier(buffEntity, new ModifyUnitStatBuff_DOTS
-				{
-					Id = ModificationIdFactory.NewId(),
-					ModificationType = ModificationType.Set,
-					StatType = UnitStatType.PhysicalPower,
-					Value = 125,
-					Priority = 100
-				}, false);
+					return;
+				}
 			}
 			else
 			{
-				Helper.ApplyStatModifier(buffEntity, new ModifyUnitStatBuff_DOTS
-				{
-					Id = ModificationIdFactory.NewId(),
-					ModificationType = ModificationType.Set,
-					StatType = UnitStatType.MovementSpeed,
-					Value = 3.5f,
-					Priority = 100
-				}, false);
+				return;
 			}
+		}
+
+		var buffPrefabGUID = buffEntity.Read<PrefabGUID>();
+		if (unitBuffHandlers.TryGetValue(buffPrefabGUID, out var handler))
+		{
+			handler(unit, buffEntity);
 		}
 	}
 
@@ -623,15 +851,15 @@ public class MobaGameMode : BaseGameMode
 	{
 		if (player.CurrentState != this.GameModeType) return;
 
-		Helper.DestroyEntity(player.Character);
-		base.HandleOnPlayerDisconnected(player);
+		Helper.KillOrDestroyEntity(player.Character);
+		player.Teleport(new float3(0, 0, 0));
 	}
 
 	public void HandleOnPlayerInvitedToClan(Player player, Entity eventEntity)
 	{
 		if (player.CurrentState != this.GameModeType) return;
 
-		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
+		eventEntity.Destroy();
 		player.ReceiveMessage("You may not invite players to your clan while in this game mode".Error());
 	}
 
@@ -639,7 +867,7 @@ public class MobaGameMode : BaseGameMode
 	{
 		if (player.CurrentState != this.GameModeType) return;
 
-		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
+		eventEntity.Destroy();
 		player.ReceiveMessage("You may not kick players from your clan while in this game mode".Error());
 	}
 
@@ -647,7 +875,7 @@ public class MobaGameMode : BaseGameMode
 	{
 		if (player.CurrentState != this.GameModeType) return;
 
-		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
+		eventEntity.Destroy();
 		player.ReceiveMessage("You may not leave your clan while in this game mode".Error());
 	}
 
@@ -670,9 +898,119 @@ public class MobaGameMode : BaseGameMode
 			if (!UnitFactory.HasCategory(unitEntity, "moba")) return;
 
 			var killer = deathEvent.Killer;
-			if (killer.Exists() && killer.Has<PlayerCharacter>())
+			if (killer.Exists())
 			{
-				Helper.AddItemToInventory(killer, Prefabs.Item_Ingredient_Coin_Copper, MobaConfig.Config.CoinsGainedPerUnitKill, out var itemEntity);
+				if (killer.Has<PlayerCharacter>())
+				{
+					var player = PlayerService.GetPlayerFromCharacter(killer);
+					Helper.AddItemToInventory(killer, Prefabs.Item_Ingredient_Coin_Copper, MobaConfig.Config.CoinsGainedPerUnitKill, out var itemEntity);
+					DisplayCoins(player, MobaConfig.Config.CoinsGainedPerUnitKill);
+				}
+			}
+
+			if (spawnedUnit.Unit.Team < 3)
+			{
+				if (unitEntity == TeamMobaStructures[spawnedUnit.Unit.Team].Core)
+				{
+					var winner = 1;
+					if (spawnedUnit.Unit.Team == 1)
+					{
+						winner = 2;
+					}
+					MobaHelper.EndMatch(winner);
+				}
+				else if (unitEntity == TeamMobaStructures[spawnedUnit.Unit.Team].Fort || unitEntity == TeamMobaStructures[spawnedUnit.Unit.Team].Keep)
+				{
+					if (unitEntity == TeamMobaStructures[spawnedUnit.Unit.Team].Fort)
+					{
+						TeamMobaStructures[spawnedUnit.Unit.Team].Fort = Entity.Null;
+						var team = 1;
+						if (spawnedUnit.Unit.Team == 1)
+						{
+							team = 2;
+						}
+						foreach (var player in Teams[team])
+						{
+							Helper.AddItemToInventory(player.Character, Prefabs.Item_Ingredient_Coin_Copper, MobaConfig.Config.CoinsGainedPerFortKill, out var itemEntity);
+							DisplayCoins(player, MobaConfig.Config.CoinsGainedPerFortKill);
+							player.ReceiveMessage($"You have been given {MobaConfig.Config.CoinsGainedPerFortKill.ToString().Emphasize()} coins for killing an enemy fort".White());
+						}
+					}
+					if (unitEntity == TeamMobaStructures[spawnedUnit.Unit.Team].Keep)
+					{
+						TeamMobaStructures[spawnedUnit.Unit.Team].Keep = Entity.Null;
+						var team = 1;
+						if (spawnedUnit.Unit.Team == 1)
+						{
+							team = 2;
+						}
+						foreach (var player in Teams[team])
+						{
+							Helper.AddItemToInventory(player.Character, Prefabs.Item_Ingredient_Coin_Copper, MobaConfig.Config.CoinsGainedPerKeepKill, out var itemEntity);
+							DisplayCoins(player, MobaConfig.Config.CoinsGainedPerKeepKill);
+							player.ReceiveMessage($"You have been given {MobaConfig.Config.CoinsGainedPerKeepKill.ToString().Emphasize()} coins for killing an enemy keep".White());
+						}
+					}
+
+					//remove core invulnerability
+					if (TeamMobaStructures[spawnedUnit.Unit.Team].Fort == Entity.Null && TeamMobaStructures[spawnedUnit.Unit.Team].Keep == Entity.Null)
+					{
+						Helper.RemoveBuff(TeamMobaStructures[spawnedUnit.Unit.Team].Core, Prefabs.InvulnerabilityBuff);
+						//notify players that the core is now vulnerable
+					}
+				}
+				else
+				{
+					for (var i = 0; i < TeamMobaStructures[spawnedUnit.Unit.Team].FortTowers.Count; i++)
+					{
+						var tower = TeamMobaStructures[spawnedUnit.Unit.Team].FortTowers[i];
+						if (unitEntity == tower)
+						{
+							TeamMobaStructures[spawnedUnit.Unit.Team].FortTowers[i] = Entity.Null;
+							var team = 1;
+							if (spawnedUnit.Unit.Team == 1)
+							{
+								team = 2;
+							}
+							foreach (var player in Teams[team])
+							{
+								Helper.AddItemToInventory(player.Character, Prefabs.Item_Ingredient_Coin_Copper, MobaConfig.Config.CoinsGainedPerTowerKill, out var itemEntity);
+								DisplayCoins(player, MobaConfig.Config.CoinsGainedPerTowerKill);
+								player.ReceiveMessage($"You have been given {MobaConfig.Config.CoinsGainedPerTowerKill.ToString().Emphasize()} coins for killing an enemy tower".White());
+							}
+						}
+					}
+					for (var i = 0; i < TeamMobaStructures[spawnedUnit.Unit.Team].KeepTowers.Count; i++)
+					{
+						var tower = TeamMobaStructures[spawnedUnit.Unit.Team].KeepTowers[i];
+						if (unitEntity == tower)
+						{
+							TeamMobaStructures[spawnedUnit.Unit.Team].KeepTowers[i] = Entity.Null;
+							var team = 1;
+							if (spawnedUnit.Unit.Team == 1)
+							{
+								team = 2;
+							}
+							foreach (var player in Teams[team])
+							{
+								Helper.AddItemToInventory(player.Character, Prefabs.Item_Ingredient_Coin_Copper, MobaConfig.Config.CoinsGainedPerTowerKill, out var itemEntity);
+								DisplayCoins(player, MobaConfig.Config.CoinsGainedPerTowerKill);
+								player.ReceiveMessage($"You have been given {MobaConfig.Config.CoinsGainedPerTowerKill.ToString().Emphasize()} coins for killing an enemy tower".White());
+							}
+						}
+					}
+				}
+			}
+
+			if (UnitToMercenaryCamp.TryGetValue(unitEntity, out var mercenaryCamp))
+			{
+				mercenaryCamp.Entities.Remove(unitEntity);
+				UnitToMercenaryCamp.Remove(unitEntity);
+				if (mercenaryCamp.Entities.Count == 0)
+				{
+					mercenaryCamp.Point.IsActive = true;
+					SetAllPointLightsToColor(mercenaryCamp, 1);
+				}
 			}
 		}
 	}
@@ -689,9 +1027,7 @@ public class MobaGameMode : BaseGameMode
 	public override void HandleOnPlayerDamageDealt(Player player, Entity eventEntity)
 	{
 		if (player.CurrentState != this.GameModeType) return;
-
 		if (!eventEntity.Exists()) return;
-
 		var dealDamageEvent = eventEntity.Read<DealDamageEvent>();
 		var isStructure = dealDamageEvent.Target.Has<CastleHeartConnection>();
 		if (isStructure)
@@ -699,33 +1035,45 @@ public class MobaGameMode : BaseGameMode
 			eventEntity.Destroy();
 			return;
 		}
-
-		if (player.HasBuff(Prefabs.AB_Interact_Siege_Structure_T02_PlayerBuff))
+		if (player.HasBuff(Prefabs.AB_Shapeshift_Golem_T02_Buff))
 		{
 			dealDamageEvent.MaterialModifiers.Mechanical *= 10;
 			dealDamageEvent.MaterialModifiers.Human *= 8;
 			dealDamageEvent.MaterialModifiers.PlayerVampire *= 2;
-			eventEntity.Write(dealDamageEvent);
+            dealDamageEvent.MaterialModifiers.VBlood = 6;
+            eventEntity.Write(dealDamageEvent);
 		}
 	}
 
 	public void HandleOnUnitDamageDealt(Entity unit, Entity eventEntity)
 	{
-		if (!UnitFactory.HasCategory(unit, "moba")) return;
+		
+		/*if (!UnitFactory.HasCategory(unit, "moba")) return;*/
 
 		var dealDamageEvent = eventEntity.Read<DealDamageEvent>();
 		var source = dealDamageEvent.SpellSource;
-		if (source.Exists() && source.Read<PrefabGUID>() == Prefabs.AB_Gloomrot_SentryTurret_RangedAttack_Projectile)
+		var target = dealDamageEvent.Target;
+		if (Team.IsAllies(target.Read<Team>(), unit.Read<Team>()))
 		{
-			source.Add<DestroyOnSpawn>();
-			dealDamageEvent.MaterialModifiers.Human *= 2f;
-			eventEntity.Write(dealDamageEvent);
+			eventEntity.Destroy();
 			return;
 		}
-		if (!dealDamageEvent.Target.Has<PlayerCharacter>())
+
+		if (source.Exists())
 		{
-			dealDamageEvent.MaterialModifiers.Human *= 1.5f;
-			eventEntity.Write(dealDamageEvent);
+			if (source.Read<PrefabGUID>() == Prefabs.AB_Gloomrot_SentryTurret_RangedAttack_Projectile)
+			{
+				dealDamageEvent.MaterialModifiers.Human *= 1.75f;
+				source.Add<DestroyOnSpawn>();
+				return;
+			}
+			else if (TeamPatrols[1].Contains(unit) || TeamPatrols[2].Contains(unit))
+			{
+				dealDamageEvent.MaterialModifiers.Human *= .75f;
+				dealDamageEvent.MaterialModifiers.Mechanical *= .5f;
+				dealDamageEvent.MaterialModifiers.VBlood *= .5f;
+				eventEntity.Write(dealDamageEvent);
+			}
 		}
 	}
 
@@ -734,18 +1082,24 @@ public class MobaGameMode : BaseGameMode
 		if (!UnitFactory.HasCategory(unit, "moba")) return;
 
 		var prefabGuid = projectile.Read<PrefabGUID>();
+		
 		if (TrackingProjectiles.Contains(prefabGuid))
 		{
 			var projectileTarget = unit.Read<EntityInput>().HoveredEntity;
 			if (projectileTarget.Exists())
 			{
-				if (projectileTarget.Has<PlayerCharacter>())
+				projectile.Add<SpellTarget>();
+				projectile.Write(new SpellTarget
 				{
-					projectile.Add<SpellTarget>();
-					projectile.Write(new SpellTarget
-					{
-						Target = projectileTarget
-					});
+					Target = projectileTarget
+				});
+
+				var buffer = projectile.ReadBuffer<HitColliderCast>();
+				for (var i = 0; i < buffer.Length; i++)
+				{
+					var hitColliderCast = buffer[i];
+					hitColliderCast.IgnoreImmaterial = true;
+					buffer[i] = hitColliderCast;
 				}
 			}
 		}
@@ -758,24 +1112,31 @@ public class MobaGameMode : BaseGameMode
 		if (projectile.Has<SpellTarget>())
 		{
 			var projectileTarget = projectile.Read<SpellTarget>().Target;
-			
+
 			if (projectileTarget.Exists())
 			{
-				if (projectileTarget.Has<PlayerCharacter>())
-				{		
-					var targetPlayer = PlayerService.GetPlayerFromCharacter(projectileTarget);
-					if (targetPlayer.IsAlive)
-					{
-						var spellMovement = projectile.Read<SpellMovement>();
-						spellMovement.TargetPosition = targetPlayer.Position;
-						projectile.Write(spellMovement);
-					}
+				var health = projectileTarget.Read<Health>();
+				var position = projectileTarget.Read<LocalToWorld>().Position;
+				if (!health.IsDead)
+				{
+					var spellMovement = projectile.Read<SpellMovement>();
+
+					// Calculate direction vector from projectile to target
+					var direction = position - projectile.Read<LocalToWorld>().Position;
+					// Normalize the direction vector
+					direction = Vector3.Normalize(direction);
+					// Scale the direction vector to project past the target
+					//var projectedPosition = position + direction * 20;
+					spellMovement.TargetPosition = position;
+					spellMovement.SetRotationEveryFrame = false;
+					projectile.Write(spellMovement);
 				}
+				
 			}
 		}
 	}
 
-    public void HandleOnPlayerStartedCasting(Player player, Entity eventEntity)
+	public void HandleOnPlayerStartedCasting(Player player, Entity eventEntity)
     {
         if (player.CurrentState != this.GameModeType) return;
 
@@ -881,35 +1242,44 @@ public class MobaGameMode : BaseGameMode
 
 	public void HandleOnGameFrameUpdate()
 	{
-		foreach (var patrol in TeamPatrols)
+		foreach (var teamPatrol in TeamPatrols)
 		{
-			foreach (var unit in patrol.Value)
+			foreach (var unit in teamPatrol.Value)
 			{
 				if (unit.Exists())
 				{
 					TileCoordinate targetCoordinate;
 					float3 unitPosition = unit.Read<LocalToWorld>().Position;
-
-					if (Helper.HasBuff(unit, Prefabs.Buff_InCombat_Npc) || Helper.HasBuff(unit, Prefabs.Buff_Shared_Return_NoInvulernable))
+					
+					// Check if the unit is at the center of the lane
+					if (!IsAtLaneCenter(unitPosition))
 					{
-						targetCoordinate = TileCoordinate.FromWorldPos(unit.Read<LocalToWorld>().Position);
+						// If not, set the target to the lane center
+						targetCoordinate = TileCoordinate.FromWorldPos(GetLaneCenter(unitPosition));
 					}
 					else
 					{
-						// Check if the unit is at the center of the lane
-						if (!IsAtLaneCenter(unitPosition))
+						targetCoordinate = TileCoordinate.FromWorldPos(MobaConfig.Config.Team2PlayerRespawn.ToFloat3());
+						if (teamPatrol.Key == 2)
 						{
-							// If not, set the target to the lane center
-							targetCoordinate = TileCoordinate.FromWorldPos(GetLaneCenter(unitPosition));
+							targetCoordinate = TileCoordinate.FromWorldPos(MobaConfig.Config.Team1PlayerRespawn.ToFloat3());
 						}
-						else
-						{
-							targetCoordinate = TileCoordinate.FromWorldPos(MobaConfig.Config.Team2PlayerRespawn.ToFloat3());
-							if (patrol.Key == 2)
-							{
-								targetCoordinate = TileCoordinate.FromWorldPos(MobaConfig.Config.Team1PlayerRespawn.ToFloat3());
-							}
-						}
+					}
+
+					var behaviourTreeState = unit.Read<BehaviourTreeState>();
+					if (behaviourTreeState.Value == GenericEnemyState.Return)
+					{
+						behaviourTreeState.Value = GenericEnemyState.Idle;
+						unit.Write(behaviourTreeState);
+						targetCoordinate = TileCoordinate.FromWorldPos(unitPosition);
+					}
+
+					if (unit.Has<Stealthable>())
+					{
+						var stealthable = unit.Read<Stealthable>();
+						stealthable.IsStealthed.Value = false;
+						stealthable.ModelInvisible.Value = false;
+						unit.Write(stealthable);
 					}
 
 					// Set the path for the unit
@@ -920,6 +1290,11 @@ public class MobaGameMode : BaseGameMode
 					buffer.Add(pathBuffer);
 				}
 			}
+		}
+
+		foreach (var mercenaryCamp in MercenaryCamps)
+		{
+			mercenaryCamp.Value.Point.Update(Teams[1], Teams[2]);
 		}
 	}
 
@@ -1095,6 +1470,191 @@ public class MobaGameMode : BaseGameMode
 		receiver.ReceiveMessage("Team Recap:".Colorify(ExtendedColor.LightServerColor));
 		receiver.ReceiveMessage($"{team1NameColorized} - K/D: {team1KillsColorized} / {team1DeathsColorized} - DMG: {team1DamagesColorized}".White());
 		receiver.ReceiveMessage($"{team2NameColorized} - K/D: {team2KillsColorized} / {team2DeathsColorized} - DMG: {team2DamagesColorized}".White());
+	}
+
+	public override void HandleOnPlayerPlacedStructure(Player player, Entity eventEntity)
+	{
+		if (player.CurrentState != this.GameModeType) return;
+		if (eventEntity.Exists())
+		{
+			var buildTileModelEvent = eventEntity.Read<BuildTileModelEvent>();
+			if (buildTileModelEvent.PrefabGuid != Prefabs.TM_Siege_Structure_T02)
+			{
+				base.HandleOnPlayerPlacedStructure(player, eventEntity);
+			}
+			else
+			{
+				Helper.RemoveItemFromInventory(player, Prefabs.Item_Building_Siege_Golem_T02);
+			}
+		}
+	}
+
+	public override void HandleOnPlayerPurchasedItem(Player player, Entity eventEntity)
+	{
+		if (player.CurrentState != this.GameModeType) return;
+
+		var purchaseEvent = eventEntity.Read<TraderPurchaseEvent>();
+		Entity trader = Core.networkIdSystem._NetworkIdToEntityMap[purchaseEvent.Trader];
+
+		var buffer = trader.ReadBuffer<TradeOutput>();
+		var purchasedItem = buffer[purchaseEvent.ItemIndex];
+		if (VirtualItems.ContainsKey(purchasedItem.Item))
+		{
+			if (VirtualItems[purchasedItem.Item] != PrefabGUID.Empty)
+			{
+				Helper.BuffPlayer(player, VirtualItems[purchasedItem.Item], out var buffEntity, Helper.NO_DURATION, true);
+				PlayerToShardBuffsMap[player].Add(VirtualItems[purchasedItem.Item]);
+			}
+			else
+			{
+				var currentBlood = player.Character.Read<Blood>();
+				Helper.SetPlayerBlood(player, currentBlood.BloodType, currentBlood.Quality + 20);
+			}
+			var action = () => Helper.CompletelyRemoveItemFromInventory(player, purchasedItem.Item);
+			ActionScheduler.RunActionOnceAfterFrames(action, 2);
+		}
+		
+		TraderPurchaseSystemPatch.RefillStock(purchaseEvent, trader);
+	}
+
+	private static void HandleCaptureProgress(int pointIndex, int gainingTeamId, int controllingTeamId, int breakpoint)
+	{
+		// Define color indices for each team and neutral state
+		int team1ColorIndex = 5;
+		int team2ColorIndex = 8;
+		int neutralColorIndex = 1;
+
+		// Determine the target color index based on the gaining team
+		int targetColorIndex = (gainingTeamId == 1) ? team1ColorIndex : (gainingTeamId == 2) ? team2ColorIndex : neutralColorIndex;
+		// Process the lights
+		foreach (var lightEntity in CapturePointIndexToLights[pointIndex])
+		{
+			var dyeable = lightEntity.Read<DyeableCastleObject>();
+
+			if (gainingTeamId != 0)
+			{
+				// If progress is increasing, change a light not belonging to the gaining team
+				if (dyeable.ActiveColorIndex != targetColorIndex)
+				{
+					dyeable.ActiveColorIndex = (byte)targetColorIndex;
+					lightEntity.Write(dyeable);
+					break; // Exit the loop after changing one light
+				}
+			}
+			else
+			{
+				// If progress is decreasing, revert a light belonging to the gaining team
+				if (dyeable.ActiveColorIndex != targetColorIndex)
+				{
+					// Revert to the controlling team's color or neutral if no team controls it
+					int revertColorIndex = (controllingTeamId == 1) ? team1ColorIndex : (controllingTeamId == 2) ? team2ColorIndex : neutralColorIndex;
+					dyeable.ActiveColorIndex = (byte)revertColorIndex;
+					lightEntity.Write(dyeable);
+					break; // Exit the loop after reverting one light
+				}
+			}
+		}
+	}
+
+	public void HandlePointCapture(int pointIndex, int previousTeamIndex, int newTeamIndex)
+	{
+		var mercenaryCamp = MercenaryCamps[pointIndex];
+		mercenaryCamp.Point.ResetCapturePoint();
+		SetAllPointLightsToColor(mercenaryCamp, 9); //set all colors to white to show camp is deactivated
+		foreach (var unitSettings in MobaConfig.Config.MercenaryCamps[pointIndex].UnitSpawns)
+		{
+			var unitToSpawn = new Boss(unitSettings.PrefabGUID);
+			unitToSpawn.Level = unitSettings.Level;
+			unitToSpawn.DrawsAggro = true;
+			unitToSpawn.AggroRadius = 3.5f;
+			unitToSpawn.DynamicCollision = false;
+			unitToSpawn.MaxDistanceFromPreCombatPosition = 20;
+			unitToSpawn.MaxHealth = unitSettings.Health;
+			unitToSpawn.SoftSpawn = true;
+			unitToSpawn.SpawnDelay = 5;
+			unitToSpawn.MaxDistanceFromPreCombatPosition = 60;
+			unitToSpawn.Category = "moba";
+			var pos = MobaConfig.Config.Team1MercenaryStartPosition.ToFloat3();
+			if (newTeamIndex == 2)
+			{
+				pos = MobaConfig.Config.Team2MercenaryStartPosition.ToFloat3();
+			}
+			//spawn your version of mercs
+			UnitFactory.SpawnUnitWithCallback(unitToSpawn, pos, (e) =>
+			{
+				MobaHelper.ApplyTeamColorBuff(e, newTeamIndex);
+				e.Remove<DisableWhenNoPlayersInRange>();
+				if (newTeamIndex == 1 || newTeamIndex == 2)
+				{
+					MobaGameMode.TeamUnits[newTeamIndex].Add(e);
+					MobaGameMode.TeamPatrols[newTeamIndex].Add(e);
+				}
+				if (e.Has<VBloodUnit>())
+				{
+					var immortal = e.Read<Immortal>();
+					immortal.IsImmortal = false;
+					e.Write(immortal);
+				}
+				e.Remove<DisableWhenNoPlayersInRange>();
+				if (e.Has<BloodConsumeSource>())
+				{
+					var blood = e.Read<BloodConsumeSource>();
+					blood.BloodQuality = 0;
+					e.Write(blood);
+				}
+			}, Teams[newTeamIndex][0]);
+
+
+			//prepare respawn of neutral mercs
+			var newUnitToSpawn = new Boss(unitSettings.PrefabGUID);
+			newUnitToSpawn.Level = unitSettings.Level;
+			newUnitToSpawn.DrawsAggro = true;
+			newUnitToSpawn.AggroRadius = 3.5f;
+			newUnitToSpawn.DynamicCollision = false;
+			newUnitToSpawn.MaxDistanceFromPreCombatPosition = 20;
+			newUnitToSpawn.MaxHealth = unitSettings.Health;
+			newUnitToSpawn.MaxDistanceFromPreCombatPosition = 60;
+			newUnitToSpawn.Category = "moba";
+			newUnitToSpawn.SoftSpawn = true;
+			newUnitToSpawn.SpawnDelay = MobaConfig.Config.MercenaryCamps[pointIndex].RespawnTime;
+			newUnitToSpawn.MaxDistanceFromPreCombatPosition = -1;
+			UnitFactory.SpawnUnitWithCallback(newUnitToSpawn, unitSettings.Location.ToFloat3(), (e) =>
+			{
+				mercenaryCamp.Entities.Add(e);
+				UnitToMercenaryCamp[e] = mercenaryCamp;
+				e.Remove<DisableWhenNoPlayersInRange>();
+				if (e.Has<VBloodUnit>())
+				{
+					var immortal = e.Read<Immortal>();
+					immortal.IsImmortal = false;
+					e.Write(immortal);
+				}
+				e.Remove<DisableWhenNoPlayersInRange>();
+				if (e.Has<BloodConsumeSource>())
+				{
+					var blood = e.Read<BloodConsumeSource>();
+					blood.BloodQuality = 0;
+					e.Write(blood);
+				}
+			});
+		}
+	}
+
+	private void SetAllPointLightsToColor(MercenaryCamp mercenaryCamp, int color)
+	{
+		foreach (var lightEntity in CapturePointIndexToLights[mercenaryCamp.CampIndex])
+		{
+			var dyeable = lightEntity.Read<DyeableCastleObject>();
+			dyeable.ActiveColorIndex = (byte)color;
+			lightEntity.Write(dyeable);
+		}
+	}
+
+	private static void DisplayCoins(Player player, int amount)
+	{
+		var pos = player.Position;
+		pos.y += 2;
+		Helper.MakeSCT(player, Prefabs.SCT_Type_InfoWarning, amount, pos);
 	}
 }
 

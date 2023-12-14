@@ -70,6 +70,7 @@ public class PrisonBreakGameMode : BaseGameMode
 		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
 		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
 		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
+		GameEvents.OnPlayerPlacedStructure += HandleOnPlayerPlacedStructure;
 
 		foreach (var player in PlayerService.OnlinePlayers.Keys)
 		{
@@ -101,6 +102,7 @@ public class PrisonBreakGameMode : BaseGameMode
 		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
 		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
 		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
+		GameEvents.OnPlayerPlacedStructure -= HandleOnPlayerPlacedStructure;
 
 		PlayersAlive.Clear();
 		foreach (var kvp in PlayerRespawnTimers)
@@ -228,15 +230,15 @@ public class PrisonBreakGameMode : BaseGameMode
 		var enterShapeshiftEvent = eventEntity.Read<EnterShapeshiftEvent>();
 		if (enterShapeshiftEvent.Shapeshift != Prefabs.AB_Shapeshift_BloodMend_Group)
 		{
-			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
+			eventEntity.Destroy();
 			player.ReceiveMessage("You can't feel your vampire essence here...".Error());
 		}
 	}
 	public void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
 	{
 		if (player.CurrentState != GameModeType) return;
-		
-		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
+
+		eventEntity.Destroy();
 		player.ReceiveMessage("You can't drink those in prison!".Error());
 	}
 
@@ -245,14 +247,14 @@ public class PrisonBreakGameMode : BaseGameMode
 		if (player.CurrentState != GameModeType) return;
 
 		base.HandleOnPlayerDisconnected(player);
-		Helper.DestroyEntity(player.Character);
+		Helper.KillOrDestroyEntity(player.Character);
 	}
 
 	public void HandleOnPlayerInvitedToClan(Player player, Entity eventEntity)
 	{
 		if (player.CurrentState != GameModeType) return;
 
-		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
+		eventEntity.Destroy();
 		player.ReceiveMessage("You may not invite players to your clan while in prison".Error());
 	}
 

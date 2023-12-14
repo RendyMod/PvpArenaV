@@ -23,19 +23,34 @@ using PvpArena.GameModes.PrisonBreak;
 using ProjectM.Gameplay.Scripting;
 using ProjectM.Pathfinding;
 using ProjectM.Behaviours;
+using static ProjectM.Gameplay.Systems.StatChangeMutationSystem;
+using ProjectM.Gameplay.Systems;
+using Epic.OnlineServices.P2P;
+using ProjectM.Shared;
 
 namespace PvpArena.Commands.Debug;
 internal class TestCommands
 {
-
+	public static Entity MapIcon;
 	[Command("test", description: "Used for debugging", adminOnly: true)]
 	public void TestCommand(Player sender)
 	{
-		var e = Helper.GetHoveredEntity<AggroConsumer>(sender.User);
-		var stealthable = e.Read<Stealthable>();
-		stealthable.IsStealthed.Value = false;
-		stealthable.ModelInvisible.Value = false;
-		e.Write(stealthable);
+		var prefabEntity = Helper.GetPrefabEntityByPrefabGUID(Prefabs.Illusion_Vampire_Wisp_Projectile);
+		prefabEntity.LogComponentTypes();
+		var entities = Helper.GetPrefabEntitiesByComponentTypes<SpellModArithmetic>();
+		foreach (var entity in entities)
+		{
+			entity.LogPrefabName();
+		}
+		/*PrefabSpawnerService.SpawnWithCallback(Prefabs.MapIcon_DraculasCastle, sender.Position, (e) => {
+			MapIcon = e;
+			e.Write(new MapIconTargetEntity
+			{
+				TargetEntity = NetworkedEntity.ServerEntity(sender.User),
+				TargetNetworkId = sender.User.Read<NetworkId>()
+			});
+		});*/
+		sender.ReceiveMessage("done");
 	}
 
 	[Command("become", description: "Used for debugging", adminOnly: true)]
@@ -319,8 +334,8 @@ internal class TestCommands
 		}
 	}
 
-	[Command(name: "log-zone", description: "Gets the zone assuming you are at the bottom left facing north", usage: ".get-zone", adminOnly: true, includeInHelp: false)]
-	public void GetZoneCommand(Player player, int x, int z)
+	[Command(name: "log-zone", description: "Gets the zone assuming you are at the bottom left facing north, right then up", usage: ".get-zone", adminOnly: true, includeInHelp: false)]
+	public void LogZoneCommand(Player player, int x, int z)
 	{
 		player.ReceiveMessage($"{RectangleZone.GetZoneByCurrentCoordinates(player, x, z)}");
 		Plugin.PluginLog.LogInfo($"{RectangleZone.GetZoneByCurrentCoordinates(player, x, z)}");
@@ -380,13 +395,13 @@ internal class TestCommands
 				if (structureType == default)
 				{
 					sender.ReceiveMessage(entity.Read<PrefabGUID>().LookupNameString());
-					Helper.DestroyEntity(entity);
+					Helper.KillOrDestroyEntity(entity);
 				}
 				else
 				{
 					if (entity.Read<PrefabGUID>() == structureType)
 					{
-						Helper.DestroyEntity(entity);
+						Helper.KillOrDestroyEntity(entity);
 						sender.ReceiveMessage($"Killed entity: {entity.Read<PrefabGUID>().LookupName()}".Success());
 					}
 				}

@@ -25,6 +25,7 @@ public class DefaultGameMode : BaseGameMode
 		ResetCooldowns = true,
 		RemoveShapeshifts = false,
 		RemoveConsumables = false,
+		RemoveMinions = true,
 		BuffsToIgnore = new HashSet<PrefabGUID>
 		{
 			Helper.TrollBuff
@@ -103,6 +104,7 @@ public class DefaultGameMode : BaseGameMode
 		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
 		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
 		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
+		GameEvents.OnPlayerPlacedStructure += HandleOnPlayerPlacedStructure;
 	}
 	public override void Dispose()
 	{
@@ -117,6 +119,7 @@ public class DefaultGameMode : BaseGameMode
 		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
 		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
 		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
+		GameEvents.OnPlayerPlacedStructure -= HandleOnPlayerPlacedStructure;
 	}
 
 	private static HashSet<string> AllowedCommands = new HashSet<string>

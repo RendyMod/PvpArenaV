@@ -49,6 +49,7 @@ public static class TrollModeManager
 			if (Helper.BuffPlayer(player, Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Buff, out var grandmaBuffEntity, Helper.NO_DURATION))
 			{
 				var scriptBuffShapeshiftDataShared = grandmaBuffEntity.Read<Script_Buff_Shapeshift_DataShared>();
+				scriptBuffShapeshiftDataShared.DestroyOnAbilityEnd = false;
 				grandmaBuffEntity.Write(scriptBuffShapeshiftDataShared);
 				grandmaBuffEntity.Remove<DestroyOnAbilityCast>();
 				Helper.FixIconForShapeshiftBuff(player, grandmaBuffEntity, Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Group);

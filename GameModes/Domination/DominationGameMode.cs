@@ -16,7 +16,6 @@ using PvpArena.Services;
 using static PvpArena.Factories.UnitFactory;
 using ProjectM.CastleBuilding;
 using System.Linq;
-using PvpArena.GameModes.Domination.PvpArena.Models;
 
 namespace PvpArena.GameModes.Domination;
 
@@ -105,6 +104,7 @@ public class DominationGameMode : BaseGameMode
 			CapturePointIndexToNames[index] = capturePointConfig.Description;
 			CapturePointIndexToLights[index] = new List<Entity>();
 			index++;
+            capturePoint.IsActive = true;
 		}
 
 		var dyableEntities = Helper.GetEntitiesByComponentTypes<CastleHeartConnection, DyeableCastleObject>(true);
@@ -135,6 +135,7 @@ public class DominationGameMode : BaseGameMode
 		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
 		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
 		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
+		GameEvents.OnPlayerPlacedStructure += HandleOnPlayerPlacedStructure;
 
 		foreach (var timer in Timers)
 		{
@@ -183,6 +184,8 @@ public class DominationGameMode : BaseGameMode
 		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
 		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
 		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
+		GameEvents.OnPlayerPlacedStructure -= HandleOnPlayerPlacedStructure;
+
 		Teams.Clear();
 		playerKills.Clear();
 		playerDeaths.Clear();
@@ -454,7 +457,7 @@ public class DominationGameMode : BaseGameMode
 		if (player.CurrentState != GameModeType) return;
 
 
-		Helper.DestroyEntity(player.Character);
+		Helper.KillOrDestroyEntity(player.Character);
 		if (player.MatchmakingTeam == 1)
 		{
 			Helper.RespawnPlayer(player, DominationConfig.Config.Team1PlayerRespawn.ToFloat3());

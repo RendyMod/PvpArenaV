@@ -72,6 +72,8 @@ public class DodgeballGameMode : BaseGameMode
 		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
 		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
 		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
+		GameEvents.OnPlayerPlacedStructure += HandleOnPlayerPlacedStructure;
+
 	}
 
 	public void Initialize(List<Player> team1Players, List<Player> team2Players)
@@ -115,6 +117,8 @@ public class DodgeballGameMode : BaseGameMode
 		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
 		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
 		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
+		GameEvents.OnPlayerPlacedStructure -= HandleOnPlayerPlacedStructure;
+
 		HasStarted = false;
 		stopwatch.Reset();
 		foreach (var timer in Timers)
@@ -211,7 +215,7 @@ public class DodgeballGameMode : BaseGameMode
 		if (player.CurrentState != this.GameModeType) return;
 
 		base.HandleOnPlayerDisconnected(player);
-		Helper.DestroyEntity(player.Character);
+		Helper.KillOrDestroyEntity(player.Character);
 	}
 
 	public void HandleOnPlayerDamageReceived(Player player, Entity eventEntity)

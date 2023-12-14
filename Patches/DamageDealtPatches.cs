@@ -52,12 +52,16 @@ public static class DealDamageSystemPatch
 							}
 							else
 							{
-								if (dealDamageEvent.Target.Has<PlayerCharacter>())
-								{
-									var player = PlayerService.GetPlayerFromCharacter(dealDamageEvent.Target);
-									GameEvents.RaisePlayerReceivedDamage(player, entity);
-								}
 								GameEvents.RaiseUnitDealtDamage(owner, entity);
+								if (entity.Exists() && dealDamageEvent.Target.Has<CastleHeartConnection>())
+								{
+									entity.Destroy();
+								}
+							}
+							if (dealDamageEvent.Target.Has<PlayerCharacter>())
+							{
+								var player = PlayerService.GetPlayerFromCharacter(dealDamageEvent.Target);
+								GameEvents.RaisePlayerReceivedDamage(player, entity);
 							}
 						}
 					}

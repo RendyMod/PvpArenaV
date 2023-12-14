@@ -9,7 +9,12 @@ using Il2CppInterop.Runtime;
 using ProjectM;
 using ProjectM.Network;
 using ProjectM.Shared;
+using PvpArena.Commands.Debug;
+using PvpArena.Data;
+using PvpArena.GameModes;
+using PvpArena.Helpers;
 using Unity.Entities;
+using Unity.Transforms;
 using UnityEngine;
 
 namespace PvpArena.Services;
@@ -24,6 +29,22 @@ public static class ActionScheduler
 	
 	public static void Postfix()
 	{
+		GameEvents.RaiseGameFrameUpdate();
+		
+		if (CurrentFrameCount % 30 == 0) //move this into game mode actions later
+		{
+			foreach (var player in PlayerService.OnlinePlayers.Keys)
+			{
+				if (!player.HasControlledEntity())
+				{
+					GameEvents.RaisePlayerHasNoControlledEntity(player);
+					Helper.ControlOriginalCharacter(player);
+					Helper.RemoveBuff(player, Prefabs.Admin_Observe_Invisible_Buff);
+				}
+			}
+		}
+		
+		GameEvents.RaiseGameFrameUpdate();
 		CurrentFrameCount++;
 		// Execute scheduled actions for the current frame
 		for (int i = scheduledActions.Count - 1; i >= 0; i--)

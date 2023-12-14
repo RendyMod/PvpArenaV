@@ -39,10 +39,15 @@ public static class BuffDebugSystemPatch
 				try
 				{
 					var prefabGuid = entity.Read<PrefabGUID>();
-					var Character = entity.Read<EntityOwner>().Owner;
-					if (Character.Has<PlayerCharacter>())
+					var buffTarget = entity.Read<EntityOwner>().Owner;
+					var buff = entity.Read<Buff>();
+					if (buff.Target.Exists())
 					{
-						var player = PlayerService.GetPlayerFromCharacter(Character);
+						buffTarget = buff.Target;
+					}
+					if (buffTarget.Has<PlayerCharacter>())
+					{
+						var player = PlayerService.GetPlayerFromCharacter(buffTarget);
 						GameEvents.RaisePlayerBuffed(player, entity);
 						
 						if (prefabGuid == Prefabs.Item_EquipBuff_Shared_General)
@@ -72,7 +77,7 @@ public static class BuffDebugSystemPatch
 							}, false);
 						}
 
-						GameEvents.RaiseUnitBuffed(Character, entity);
+						GameEvents.RaiseUnitBuffed(buffTarget, entity);
 					}
 				}
 				catch (Exception e)
@@ -96,17 +101,22 @@ public static class BuffDebugSystemPatch
 			{
 				try
 				{
-					var owner = entity.Read<EntityOwner>().Owner;
-					if (owner.Exists())
+					var buffTarget = entity.Read<EntityOwner>().Owner;
+					var buff = entity.Read<Buff>();
+					if (buff.Target.Exists())
 					{
-						if (owner.Has<PlayerCharacter>())
+						buffTarget = buff.Target;
+					}
+					if (buffTarget.Exists())
+					{
+						if (buffTarget.Has<PlayerCharacter>())
 						{
-							var player = PlayerService.GetPlayerFromCharacter(owner);
+							var player = PlayerService.GetPlayerFromCharacter(buffTarget);
 							GameEvents.RaisePlayerBuffRemoved(player, entity);
 						}
 						else
 						{
-							GameEvents.RaiseUnitBuffRemoved(owner, entity);
+							GameEvents.RaiseUnitBuffRemoved(buffTarget, entity);
 						}
 					}
 				}

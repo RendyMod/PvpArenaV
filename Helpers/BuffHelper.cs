@@ -333,7 +333,6 @@ public static partial class Helper
 			{
 				if (ShouldDestroyBuff(buff.PrefabGuid, resetOptions))
 				{
-					Plugin.PluginLog.LogInfo($"Destroying: {buff.PrefabGuid.LookupNameString()}");
 					Helper.DestroyBuff(buff.Entity);
 				}
 			}

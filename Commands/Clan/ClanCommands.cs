@@ -102,33 +102,31 @@ internal class ClanCommands
 			if (request.Type == Request.RequestType.ClanJoinRequest)
 			{
 				Helper.RemoveFromClan(RequesterPlayer);
-				ScheduledAction action;
 
 				var clanEntity = RecipientPlayer.User.Read<User>().ClanEntity._Entity;
 				if (!clanEntity.Exists())
 				{
-					action = new ScheduledAction(Helper.CreateClanForPlayer, new object[] { RecipientPlayer.User });
-					ActionScheduler.ScheduleAction(action, 2);
+					var createClanAction = new ScheduledAction(Helper.CreateClanForPlayer, new object[] { RecipientPlayer.User });
+					ActionScheduler.ScheduleAction(createClanAction, 2);
 				}
 
-				action = new ScheduledAction(Helper.AddPlayerToPlayerClanForce, new object[] { RequesterPlayer.User, RecipientPlayer.User });
-				ActionScheduler.ScheduleAction(action, 3);
+				var addPlayerToClanForceAction = new ScheduledAction(Helper.AddPlayerToPlayerClanForce, new object[] { RequesterPlayer.User, RecipientPlayer.User });
+				ActionScheduler.ScheduleAction(addPlayerToClanForceAction, 3);
 				RequesterPlayer.ReceiveMessage("You have joined the clan.".White());
 			}
 			else if (request.Type == Request.RequestType.ClanInviteRequest)
 			{
 				RecipientPlayer.RemoveFromClan();
-				ScheduledAction action;
 
 				var clanEntity = RequesterPlayer.User.Read<User>().ClanEntity._Entity;
 				if (!clanEntity.Exists())
 				{
-					action = new ScheduledAction(Helper.CreateClanForPlayer, new object[] { RequesterPlayer.User });
-					ActionScheduler.ScheduleAction(action, 2);
+					var createClanAction = new ScheduledAction(Helper.CreateClanForPlayer, new object[] { RequesterPlayer.User });
+					ActionScheduler.ScheduleAction(createClanAction, 2);
 				}
 				
-				action = new ScheduledAction(Helper.AddPlayerToPlayerClanForce, new object[] { RecipientPlayer.User, RequesterPlayer.User });
-				ActionScheduler.ScheduleAction(action, 3);
+				var addPlayerToClanForceAction = new ScheduledAction(Helper.AddPlayerToPlayerClanForce, new object[] { RecipientPlayer.User, RequesterPlayer.User });
+				ActionScheduler.ScheduleAction(addPlayerToClanForceAction, 3);
 				RecipientPlayer.ReceiveMessage("You have joined the clan.".White());
 			}
 		}
