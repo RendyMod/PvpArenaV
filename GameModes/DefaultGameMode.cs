@@ -32,7 +32,19 @@ public class DefaultGameMode : BaseGameMode
 		}
 	};
 
-	private static List<PrefabGUID> ShapeshiftsToModify = new List<PrefabGUID>
+    public static Helper.ResetOptions TeamfightResetOptions { get; set; } = new Helper.ResetOptions
+    {
+        ResetCooldowns = true,
+        RemoveShapeshifts = false,
+        RemoveConsumables = false,
+        RemoveMinions = false,
+        BuffsToIgnore = new HashSet<PrefabGUID>
+        {
+            Helper.TrollBuff
+        }
+    };
+
+    private static List<PrefabGUID> ShapeshiftsToModify = new List<PrefabGUID>
 	{
 		Prefabs.AB_Shapeshift_Wolf_Buff,
 		Prefabs.AB_Shapeshift_Wolf_Skin01_Buff,
@@ -133,7 +145,14 @@ public class DefaultGameMode : BaseGameMode
 	{
 		if (player.CurrentState != this.GameModeType) return;
 
-		player.Reset(ResetOptions);
+        if (player.Clan.Exists()) //if they might be in a teamfight then we don't want to remove summons just because they died
+        {
+            player.Reset(TeamfightResetOptions);
+        }
+		else
+        {
+            player.Reset(ResetOptions);
+        }
 		if (Helper.BuffPlayer(player, Prefabs.Witch_PigTransformation_Buff, out var buffEntity, 3))
 		{
 			buffEntity.Add<BuffModificationFlagData>();

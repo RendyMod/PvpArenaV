@@ -153,6 +153,11 @@ public static class Core
 		defaultGameMode = new DefaultGameMode();
 		defaultGameMode.Initialize();
 
+		if (PvpArenaConfig.Config.MatchmakingEnabled)
+		{
+			MatchmakingService.Initialize();
+		}
+
 		matchmaking1v1GameMode = new Matchmaking1v1GameMode();
 		matchmaking1v1GameMode.Initialize();
 

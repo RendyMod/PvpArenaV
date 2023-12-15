@@ -333,8 +333,8 @@ public class DominationGameMode : BaseGameMode
 			{
 				if (!BuffUtility.TryGetBuff(VWorld.Server.EntityManager, player.Character, CapturePointIndexToBuffs[capturePoint.PointIndex], out var buffEntity))
 				{
-					var action = new ScheduledAction(Helper.BuffPlayer, new object[] { player, CapturePointIndexToBuffs[capturePoint.PointIndex], buffEntity, Helper.NO_DURATION, true, true });
-					ActionScheduler.ScheduleAction(action, 2);
+					var action = () => { Helper.BuffPlayer(player, CapturePointIndexToBuffs[capturePoint.PointIndex], out var buffEntity, Helper.NO_DURATION, true); };
+					ActionScheduler.RunActionOnceAfterFrames(action, 2);
 				}
 			}
 		}

@@ -264,8 +264,8 @@ public class Plugin : BasePlugin, IRunOnInitialized
 			return;
 		}
 		Core.Initialize();
-		var action = new ScheduledAction(HandleDebugSettings);
-		ActionScheduler.ScheduleAction(action, 30);
+		var action = () => HandleDebugSettings();
+		ActionScheduler.RunActionOnceAfterDelay(action, 1);
 
 		var radialZoneSystem_Holy_Server = VWorld.Server.GetExistingSystem<RadialZoneSystem_Holy_Server>();
 		var radialZoneSystem_Garlic_Server = VWorld.Server.GetExistingSystem<RadialZoneSystem_Garlic_Server>();
@@ -296,10 +296,6 @@ public class Plugin : BasePlugin, IRunOnInitialized
 		pavementBonusSystem.Enabled = false;
 		patrolMoveSystem.Enabled = false;
 		/*createGameplayEventsOnDeathSystem.Enabled = true;*/
-		if (PvpArenaConfig.Config.MatchmakingEnabled)
-		{
-			MatchmakingService.Start();
-		}
 
 		ModifyPrefabs();
 

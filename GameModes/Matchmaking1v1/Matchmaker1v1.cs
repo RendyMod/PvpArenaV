@@ -11,40 +11,51 @@ using PvpArena.Models;
 using PvpArena.Helpers;
 using PvpArena.Configs;
 using PvpArena.Persistence.MySql.PlayerDatabase;
+using System.Threading;
 
 namespace PvpArena.GameModes.Matchmaking1v1;
 
 public static class MatchmakingService
 {
-	private static ScheduledAction action;
-	private static bool initialized = false;
-
-	public static void Start()
+	private static List<Timer> Timers = new List<Timer>();
+	public static void Initialize()
 	{
-		if (!initialized)
+		foreach (var matchmakingArenaLocation in Core.matchmaking1v1ArenaLocations)
 		{
-			foreach (var matchmakingArenaLocation in Core.matchmaking1v1ArenaLocations)
+			ArenaManager.AddArena(new Arena()
 			{
-				ArenaManager.AddArena(new Arena()
-				{
-					Location1 = matchmakingArenaLocation.Location1.ToFloat3(),
-					Location2 = matchmakingArenaLocation.Location2.ToFloat3(),
-					IsOccupied = false
-				});
-			}
-
-			initialized = true;
+				Location1 = matchmakingArenaLocation.Location1.ToFloat3(),
+				Location2 = matchmakingArenaLocation.Location2.ToFloat3(),
+				IsOccupied = false
+			});
 		}
 
+		var lookForMatchesAction = () => MatchmakingService.LookForMatches();
+		var timer = ActionScheduler.RunActionEveryInterval(lookForMatchesAction, 15);
+		Timers.Add(timer);
+	}
+
+	public static void Dispose()
+	{
+		ArenaManager.Dispose();
+		foreach (var timer in Timers)
+		{
+			if (timer != null)
+			{
+				timer.Dispose();
+			}
+		}
+		Timers.Clear();
+	}
+
+	public static void LookForMatches()
+	{
 		var match = MatchmakingQueue.Matchmaker.FindMatch();
 		while (match != null)
 		{
 			MatchmakingQueue.MatchManager.StartMatch(match.Item1, match.Item2);
 			match = MatchmakingQueue.Matchmaker.FindMatch();
 		}
-
-		action = new ScheduledAction(Start);
-		ActionScheduler.ScheduleAction(action, 450);
 	}
 }
 
@@ -160,8 +171,8 @@ public static class MatchmakingQueue
 			p1.CurrentState = Player.PlayerState.In1v1Matchmaking;
 			p2.CurrentState = Player.PlayerState.In1v1Matchmaking;
 
-			var action = new ScheduledAction(BringPlayers, new object[] { p1, p2, arena });
-			ActionScheduler.ScheduleAction(action, 90);
+			var action = () => BringPlayers(p1, p2, arena);
+			ActionScheduler.RunActionOnceAfterDelay(action, 3);
 		}
 
 		public static void EndMatch(Player winner, Player loser, bool teleportLoser = true)
@@ -209,8 +220,8 @@ public static class MatchmakingQueue
 			};
 			Core.matchmaking1V1DataRepository.SaveDataAsync(dataToUpdate);
 
-			var action = new ScheduledAction(ReturnPlayers, new object[] { winner, loser, teleportLoser });
-			ActionScheduler.ScheduleAction(action, 90);
+			var action = () => ReturnPlayers(winner, loser, teleportLoser);
+			ActionScheduler.RunActionOnceAfterDelay(action, 3);
 		}
 
 		private static void ReturnPlayers(Player winner, Player loser, bool teleportLoser = true)
@@ -277,8 +288,8 @@ public static class MatchmakingQueue
 				Helper.SetDefaultBlood(player, PvpArenaConfig.Config.DefaultArenaBlood);
 			}
 
-			var action = new ScheduledAction(BringPlayersPart2, new object[] { p1, p2, arena });
-			ActionScheduler.ScheduleAction(action, 2);
+			var action = () => BringPlayersPart2(p1, p2, arena);
+			ActionScheduler.RunActionOnceAfterFrames(action, 2);
 		}
 
 		private static void BringPlayersPart2(Player p1, Player p2, Arena arena)
@@ -349,5 +360,10 @@ public static class ArenaManager
 		arena.Player1 = default;
 		arena.Player2 = default;
 		arena.IsOccupied = false;
+	}
+
+	public static void Dispose()
+	{
+		_arenas.Clear();
 	}
 }

@@ -239,8 +239,8 @@ public static partial class Helper
 	{
 		GiveArmorAndNecks(player);
 
-		var action = new ScheduledAction(GiveDefaultLegendaries, new object[] { player });
-		ActionScheduler.ScheduleAction(action, 3);
+		var action = () => GiveDefaultLegendaries(player);
+		ActionScheduler.RunActionOnceAfterFrames(action, 3);
 	}
 
 	

@@ -348,10 +348,6 @@ public class CaptureThePancakeGameMode : BaseGameMode
 			pos = CaptureThePancakeConfig.Config.Team2PlayerRespawn.ToFloat3();
 		}
 
-		var respawnDelay = CalculateRespawnDelay();
-
-
-
 		Action removeSpectatorModeAction = () =>
 		{
 			player.Reset(ResetOptions);
@@ -372,23 +368,23 @@ public class CaptureThePancakeGameMode : BaseGameMode
 			}
 			var timer = ActionScheduler.RunActionOnceAfterDelay(removeSpectatorModeAction, 3);
 			PlayerRespawnTimers[player].Add(timer);
+
+			foreach (var buff in TeamToShardBuffsMap[player.MatchmakingTeam])
+			{
+				if (!Helper.BuffPlayer(player, buff, out buffEntity, Helper.NO_DURATION))
+				{
+					var action = () => { Helper.BuffPlayer(player, buff, out var buffEntity, Helper.NO_DURATION, true); };
+					ActionScheduler.RunActionOnceAfterFrames(action, 2); //some buffs need delays or they won't be applied
+				}
+			}
 		};
 
 		player.Reset(ResetOptions);
-
+		var respawnDelay = CalculateRespawnDelay();
 		PlayerRespawnTimers[player].Add(Helper.MakeGhostlySpectator(player, respawnDelay));
 
 		var timer = ActionScheduler.RunActionOnceAfterDelay(bringSpectatorBackToBaseRootedAction, respawnDelay - 3);
 		PlayerRespawnTimers[player].Add(timer);
-
-		foreach (var buff in TeamToShardBuffsMap[player.MatchmakingTeam])
-		{
-			if (!Helper.BuffPlayer(player, buff, out var buffEntity, Helper.NO_DURATION))
-			{
-				var action = new ScheduledAction(Helper.BuffPlayer, new object[] { player, buff, buffEntity, Helper.NO_DURATION, true, true });
-				ActionScheduler.ScheduleAction(action, 2); //some buffs need delays or they won't be applied
-			}
-		}
 	}
 
 	private string CreatePlayerDownedMessage(Player victim, Player killer, Player observer)
