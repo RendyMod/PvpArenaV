@@ -110,25 +110,11 @@ public abstract class BaseGameMode
 	public virtual void HandleOnPlayerPurchasedItem(Player player, Entity eventEntity)
 	{
 		if (player.CurrentState != this.GameModeType) return;
+		if (!eventEntity.Exists()) return;
 
 		var purchaseEvent = eventEntity.Read<TraderPurchaseEvent>();
 		Entity trader = Core.networkIdSystem._NetworkIdToEntityMap[purchaseEvent.Trader];
-
-		var costBuffer = trader.ReadBuffer<TradeCost>();
-		var cost = -1 * (costBuffer[purchaseEvent.ItemIndex].Amount);
-		if (player.PlayerPointsData.TotalPoints >= cost)
-		{
-			player.PlayerPointsData.TotalPoints -= cost;
-			Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { player.PlayerPointsData });
-			player.ReceiveMessage($"Purchased for {cost.ToString().Emphasize()} {"VPoints".Warning()}. New total points: {player.PlayerPointsData.TotalPoints.ToString().Warning()}".Success());
-
-			TraderPurchaseSystemPatch.RefillStock(purchaseEvent, trader);
-		}
-		else
-		{
-			eventEntity.Destroy();
-			player.ReceiveMessage($"Not enough {"VPoints".Warning()} to purchase! {player.PlayerPointsData.TotalPoints.ToString().Warning()} / {cost}".Error());
-		}
+		TraderPurchaseSystemPatch.RefillStock(purchaseEvent, trader);
 	}
     public virtual Player.PlayerState GameModeType { get; }
 

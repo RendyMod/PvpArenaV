@@ -161,13 +161,13 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		GameEvents.OnUnitBuffed += HandleOnUnitBuffed;
 		GameEvents.OnUnitDeath += HandleOnUnitDeath;
 		GameEvents.OnGameFrameUpdate += HandleOnGameFrameUpdate;
-		GameEvents.OnPlayerDamageReceived += HandleOnPlayerDamageReceived;
         GameEvents.OnDelayedSpawn += HandleOnDelayedSpawnEvent;
         GameEvents.OnPlayerStartedCasting += HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerDamageReported += HandleOnPlayerDamageReported;
 		GameEvents.OnPlayerProjectileCreated += HandleOnPlayerProjectileCreated;
 		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
 		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
+		GameEvents.OnUnitDamageDealt += HandleOnUnitDamageDealt;
 		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
 		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
 		GameEvents.OnPlayerPlacedStructure += HandleOnPlayerPlacedStructure;
@@ -214,13 +214,13 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		GameEvents.OnUnitBuffed -= HandleOnUnitBuffed;
 		GameEvents.OnUnitDeath -= HandleOnUnitDeath;
 		GameEvents.OnGameFrameUpdate -= HandleOnGameFrameUpdate;
-		GameEvents.OnPlayerDamageReceived -= HandleOnPlayerDamageReceived;
         GameEvents.OnDelayedSpawn -= HandleOnDelayedSpawnEvent;
         GameEvents.OnPlayerStartedCasting -= HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerDamageReported -= HandleOnPlayerDamageReported;
 		GameEvents.OnPlayerProjectileCreated -= HandleOnPlayerProjectileCreated;
 		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
 		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
+		GameEvents.OnUnitDamageDealt -= HandleOnUnitDamageDealt;
 		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
 		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
 		GameEvents.OnPlayerPlacedStructure -= HandleOnPlayerPlacedStructure;
@@ -233,7 +233,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		}
         foreach (var kvp in UnitFactory.UnitToEntity)
         {
-            if (kvp.Key.Category == "pancake")
+            if (kvp.Key.GameMode == "pancake")
             {
                 UnitFactory.UnitToEntity.Remove(kvp.Key);
             }
@@ -519,7 +519,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 				{
 					var unit = new ObjectiveHorse(unitSpawn.Team);
 					unit.MaxHealth = unitSpawn.Health;
-					unit.Category = "pancake";
+					unit.GameMode = "pancake";
 					UnitFactory.SpawnUnit(unit, unitSpawn.Location.ToFloat3(), Teams[unitSpawn.Team][0]);
 					break;
 				}
@@ -687,7 +687,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 	{
 		if (TryGetSpawnedUnitFromEntity(unit, out SpawnedUnit spawnedUnit))
 		{
-			if (spawnedUnit.Unit.Category != "pancake")
+			if (spawnedUnit.Unit.GameMode != "pancake")
 			{
 				return;
 			}
@@ -769,8 +769,9 @@ public class CaptureThePancakeGameMode : BaseGameMode
 	{
 		if (player.CurrentState != this.GameModeType) return;
 
-		Helper.KillOrDestroyEntity(player.Character);
-        player.Teleport(new float3(0, 0, 0));
+        Helper.SoftKillPlayer(player);
+        var action = () => player.Teleport(new float3(0, 0, 0));
+		ActionScheduler.RunActionOnceAfterFrames(action, 2);
     }
 
 	public void HandleOnPlayerWillLoseGallopBuff(Player player, Entity eventEntity)
@@ -848,7 +849,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 		if (TryGetSpawnedUnitFromEntity(unitEntity, out var spawnedUnit))
 		{
-			if (spawnedUnit.Unit.Category != "pancake") return;
+			if (spawnedUnit.Unit.GameMode != "pancake") return;
 			if (spawnedUnit.Unit.PrefabGuid == Prefabs.CHAR_Gloomrot_Purifier_VBlood)
 			{
 				if (spawnedUnit.Unit.Team == 1)
@@ -933,7 +934,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		var isStructure = damageDealtEvent.Target.Has<CastleHeartConnection>();
 		if (UnitFactory.TryGetSpawnedUnitFromEntity(damageDealtEvent.Target, out var unit))
 		{
-			if (unit.Unit.Category == "pancake")
+			if (unit.Unit.GameMode == "pancake")
 			{
 				isSpawnedByGameMode = true;
 			}
@@ -952,17 +953,20 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		}
 	}
 
-	public void HandleOnPlayerDamageReceived(Player player, Entity eventEntity)
+	public void HandleOnUnitDamageDealt(Entity unit, Entity eventEntity)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (!UnitFactory.HasGameMode(unit, "pancake")) return;
 
 		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
 		var source = damageDealtEvent.SpellSource.Read<EntityOwner>().Owner;
-
-		if (source.Read<PrefabGUID>() == Prefabs.CHAR_Gloomrot_Purifier_VBlood)
+		var target = damageDealtEvent.Target;
+		if (target.Exists() && target.Has<PlayerCharacter>())
 		{
-			damageDealtEvent.MaterialModifiers.PlayerVampire *= 1.5f;
-			eventEntity.Write(damageDealtEvent);
+			if (source.Read<PrefabGUID>() == Prefabs.CHAR_Gloomrot_Purifier_VBlood)
+			{
+				damageDealtEvent.MaterialModifiers.PlayerVampire *= 1.5f;
+				eventEntity.Write(damageDealtEvent);
+			}
 		}
 	}
 
@@ -1001,7 +1005,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 	public void HandleOnDelayedSpawnEvent(Unit unit, int timeToSpawn)
     {
-        if (unit.Category != "pancake") return;
+        if (unit.GameMode != "pancake") return;
 
 		if (timeToSpawn <= 0)
         {

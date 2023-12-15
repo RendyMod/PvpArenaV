@@ -284,7 +284,7 @@ public static class BulletHellManager
 			unitToSpawn.KnockbackResistance = true;
 			unitToSpawn.DrawsAggro = true;
 			unitToSpawn.MaxHealth = 10000;
-			unitToSpawn.Category = $"bullethell{arena.ArenaNumber}";
+			unitToSpawn.GameMode = $"bullethell{arena.ArenaNumber}";
 			unitToSpawn.AggroRadius = 25;
 			unitToSpawn.SpawnDelay = unitSettings.SpawnDelay;
 			unitToSpawn.Level = 150;

@@ -216,39 +216,27 @@ public static class CaptureThePancakeHelper
 
 	public static void KillPreviousEntities()
 	{
-		var entities = Helper.GetEntitiesByComponentTypes<CanFly>(true);
+		var entities = Helper.GetNonPlayerSpawnedEntities(true);
 		foreach (var entity in entities)
 		{
 			if (!entity.Has<PlayerCharacter>())
 			{
-				if (UnitFactory.TryGetSpawnedUnitFromEntity(entity, out SpawnedUnit spawnedUnit))
+				if (UnitFactory.HasGameMode(entity, "pancake"))
 				{
-					if (spawnedUnit.Unit.Category == "pancake")
-					{
-						Helper.KillOrDestroyEntity(entity);
-					}
-				}
-				else
-				{
-					if (UnitFactory.HasCategory(entity, "pancake"))
-					{
-						Helper.KillOrDestroyEntity(entity);
-					}
-/*					else if (entity.Has<CanFly>() && entity.Read<PrefabGUID>() == Prefabs.Resource_PlayerDeathContainer_Drop)
-					{
-						Helper.DestroyEntity(entity);
-					}*/
+					Helper.DestroyEntity(entity);
 				}
 			}
 		}
+		entities.Dispose();
 		var relics = Helper.GetEntitiesByComponentTypes<SpawnSequenceForEntity, ItemPickup, PlaySequenceOnPickup>(true);
 		foreach (var relic in relics)
 		{
 			if (relic.Read<PrefabGUID>() == Prefabs.Resource_Drop_Relic)
 			{
-				Helper.KillOrDestroyEntity(relic);
+				Helper.DestroyEntity(relic);
 			}
 		}
+		relics.Dispose();
 	}
 
 	public static void DropItemsIntoBag(Player player, List<PrefabGUID> items, int quantity = 1)
@@ -297,6 +285,7 @@ public static class CaptureThePancakeHelper
 			userOwner.Owner = players[i].User;
 			entity.Write(userOwner);
 		}
+		entities.Dispose();
 	}
 
 	public static void StartMatch(Player team1LeaderPlayer, Player team2LeaderPlayer)
@@ -392,7 +381,7 @@ public static class CaptureThePancakeHelper
 				unitToSpawn.IsRooted = true;
 			}
 			unitToSpawn.MaxHealth = unitSettings.Health;
-			unitToSpawn.Category = "pancake";
+			unitToSpawn.GameMode = "pancake";
 			unitToSpawn.RespawnTime = unitSettings.RespawnTime;
 			unitToSpawn.SpawnDelay = unitSettings.SpawnDelay;
 			if (unitSettings.SpawnDelay > 30)
@@ -425,6 +414,7 @@ public static class CaptureThePancakeHelper
 			{
 				Helper.KillOrDestroyEntity(relic);
 			}
+			relics.Dispose();
 			foreach (var timer in CaptureThePancakeGameMode.Timers)
 			{
 				if (timer != null)

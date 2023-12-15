@@ -64,8 +64,8 @@ public class DodgeballGameMode : BaseGameMode
 		GameEvents.OnPlayerStartedCasting += HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerUsedConsumable += HandleOnConsumableUse;
 		GameEvents.OnPlayerBuffed += HandleOnPlayerBuffed;
-		GameEvents.OnPlayerDamageReceived += HandleOnPlayerDamageReceived;
-        GameEvents.OnPlayerInvitedToClan += HandleOnPlayerInvitedToClan;
+		GameEvents.OnUnitDamageDealt += HandleOnUnitDamageDealt;
+		GameEvents.OnPlayerInvitedToClan += HandleOnPlayerInvitedToClan;
         GameEvents.OnPlayerLeftClan += HandleOnPlayerLeftClan;
         GameEvents.OnPlayerKickedFromClan += HandleOnPlayerKickedFromClan;
 		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
@@ -109,7 +109,7 @@ public class DodgeballGameMode : BaseGameMode
 		GameEvents.OnPlayerStartedCasting -= HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerUsedConsumable -= HandleOnConsumableUse;
 		GameEvents.OnPlayerBuffed -= HandleOnPlayerBuffed;
-		GameEvents.OnPlayerDamageReceived -= HandleOnPlayerDamageReceived;
+		GameEvents.OnUnitDamageDealt -= HandleOnUnitDamageDealt;
         GameEvents.OnPlayerInvitedToClan -= HandleOnPlayerInvitedToClan;
         GameEvents.OnPlayerLeftClan -= HandleOnPlayerLeftClan;
         GameEvents.OnPlayerKickedFromClan -= HandleOnPlayerKickedFromClan;
@@ -216,6 +216,33 @@ public class DodgeballGameMode : BaseGameMode
 
 		base.HandleOnPlayerDisconnected(player);
 		Helper.KillOrDestroyEntity(player.Character);
+	}
+
+	public void HandleOnUnitDamageDealt(Entity unit, Entity eventEntity)
+	{
+		if (!UnitFactory.HasGameMode(unit, "pancake")) return;
+
+		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
+		if (damageDealtEvent.Target.Exists() && damageDealtEvent.Target.Has<PlayerCharacter>())
+		{
+			var player = PlayerService.GetPlayerFromCharacter(damageDealtEvent.Target);
+			var spell = damageDealtEvent.SpellSource.Read<PrefabGUID>();
+			float damagePercent;
+			if (spell == Prefabs.EH_Monster_EnergyBeam_Active && !IsGhost[player])
+			{
+				damagePercent = 4f;
+				var damageDealtEventNew = new DealDamageEvent(damageDealtEvent.Target, damageDealtEvent.MainType, damageDealtEvent.MainFactor, damageDealtEvent.ResourceModifier, damageDealtEvent.MaterialModifiers, damageDealtEvent.SpellSource, 0, damagePercent, damageDealtEvent.Modifier, damageDealtEvent.DealDamageFlags);
+				eventEntity.Write(damageDealtEventNew);
+			}
+			else
+			{
+				eventEntity.Destroy();
+			}
+		}
+		else
+		{
+			eventEntity.Destroy();
+		}
 	}
 
 	public void HandleOnPlayerDamageReceived(Player player, Entity eventEntity)

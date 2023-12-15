@@ -148,7 +148,7 @@ public static partial class Helper
 			{
 				if (item.ItemEntity._Entity.Exists())
 				{
-					Helper.KillOrDestroyEntity(item.ItemEntity._Entity);
+					Helper.DestroyEntity(item.ItemEntity._Entity);
 				}
 			}
 		}

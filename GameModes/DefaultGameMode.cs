@@ -105,6 +105,7 @@ public class DefaultGameMode : BaseGameMode
 		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
 		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
 		GameEvents.OnPlayerPlacedStructure += HandleOnPlayerPlacedStructure;
+		GameEvents.OnPlayerPurchasedItem += HandleOnPlayerPurchasedItem;
 	}
 	public override void Dispose()
 	{
@@ -120,6 +121,7 @@ public class DefaultGameMode : BaseGameMode
 		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
 		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
 		GameEvents.OnPlayerPlacedStructure -= HandleOnPlayerPlacedStructure;
+		GameEvents.OnPlayerPurchasedItem -= HandleOnPlayerPurchasedItem;
 	}
 
 	private static HashSet<string> AllowedCommands = new HashSet<string>
@@ -275,19 +277,50 @@ public class DefaultGameMode : BaseGameMode
 
 	public void HandleOnPlayerDamageReported(Player source, Entity target, PrefabGUID ability, DamageInfo damageInfo)
 	{
-		if (target.Has<PlayerCharacter>() || UnitFactory.HasCategory(target, "dummy"))
+		if (target.Has<PlayerCharacter>() || UnitFactory.HasGameMode(target, "dummy"))
 		{
 			DamageRecorderService.RecordDamageDone(source, ability, damageInfo);
 		}
 	}
 
-	public void HandleOnPlayerReset(Player player)
+	public virtual void HandleOnPlayerReset(Player player)
 	{
 		if (player.CurrentState != this.GameModeType) return;
 
 		var sctEntity = Helper.GetPrefabEntityByPrefabGUID(Prefabs.ScrollingCombatTextMessage);
 		ScrollingCombatTextMessage.Create(VWorld.Server.EntityManager, Core.entityCommandBufferSystem.CreateCommandBuffer(), sctEntity, 0, Prefabs.SCT_Type_MAX, player.Position, player.Character, player.Character);
 		Helper.BuffPlayer(player, Prefabs.AB_Shapeshift_NormalForm_Buff, out var buffEntity);
+	}
+
+	public override void HandleOnPlayerPurchasedItem(Player player, Entity eventEntity)
+	{
+		if (player.CurrentState != this.GameModeType) return;
+
+		if (!eventEntity.Exists()) return;
+		var purchaseEvent = eventEntity.Read<TraderPurchaseEvent>();
+		Entity trader = Core.networkIdSystem._NetworkIdToEntityMap[purchaseEvent.Trader];
+		if (UnitFactory.HasGameMode(trader, "moba"))
+		{
+			eventEntity.Destroy();
+		};
+		var costBuffer = trader.ReadBuffer<TradeCost>();
+		var cost = -1 * (costBuffer[purchaseEvent.ItemIndex].Amount);
+		if (cost > 0)
+		{
+			if (player.PlayerPointsData.TotalPoints >= cost)
+			{
+				player.PlayerPointsData.TotalPoints -= cost;
+				Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { player.PlayerPointsData });
+				player.ReceiveMessage($"Purchased for {cost.ToString().Emphasize()} {"VPoints".Warning()}. New total points: {player.PlayerPointsData.TotalPoints.ToString().Warning()}".Success());
+			}
+			else
+			{
+				eventEntity.Destroy();
+				player.ReceiveMessage($"Not enough {"VPoints".Warning()} to purchase! {player.PlayerPointsData.TotalPoints.ToString().Warning()} / {cost}".Error());
+			}
+		}
+		
+		base.HandleOnPlayerPurchasedItem(player, eventEntity);
 	}
 
 	public static new HashSet<string> GetAllowedCommands()

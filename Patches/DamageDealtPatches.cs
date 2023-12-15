@@ -27,24 +27,21 @@ public static class DealDamageSystemPatch
 				var dealDamageEvent = entity.Read<DealDamageEvent>();
 				if (dealDamageEvent.Target.Exists())
 				{
-					if (UnitFactory.HasCategory(dealDamageEvent.Target, "dummy"))
-					{
-						if (Helper.TryGetBuff(dealDamageEvent.Target, Helper.CustomBuff4, out var buffEntity))
-						{
-							var age = buffEntity.Read<Age>();
-							age.Value = 0;
-							buffEntity.Write(age);
-						}
-						else
-						{
-							Helper.BuffEntity(dealDamageEvent.Target, Helper.CustomBuff4, out buffEntity, Dummy.ResetTime);
-						}
-					}
 					if (dealDamageEvent.SpellSource.Exists())
 					{
 						var owner = dealDamageEvent.SpellSource.Read<EntityOwner>().Owner;
 						if (owner.Exists())
 						{
+							if (owner.Has<EntityOwner>())
+							{
+								var minionOwner = owner.Read<EntityOwner>().Owner;
+								if (minionOwner.Exists() && minionOwner.Has<PlayerCharacter>())
+								{
+									var player = PlayerService.GetPlayerFromCharacter(owner);
+									GameEvents.RaisePlayerDealtDamage(player, entity);
+									return;
+								}
+							}
 							if (owner.Has<PlayerCharacter>())
 							{
 								var player = PlayerService.GetPlayerFromCharacter(owner);
@@ -57,11 +54,6 @@ public static class DealDamageSystemPatch
 								{
 									entity.Destroy();
 								}
-							}
-							if (dealDamageEvent.Target.Has<PlayerCharacter>())
-							{
-								var player = PlayerService.GetPlayerFromCharacter(dealDamageEvent.Target);
-								GameEvents.RaisePlayerReceivedDamage(player, entity);
 							}
 						}
 					}

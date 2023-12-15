@@ -7,12 +7,13 @@ using PvpArena.Factories;
 using Unity.Collections;
 using ProjectM.Shared;
 using PvpArena.Data;
+using static PvpArena.Helpers.Helper;
 
 namespace PvpArena.GameModes.Troll;
 
 public class TrollGameMode : DefaultGameMode
 {
-	Player player;
+	public HashSet<Player> Players = new();
 	public override Player.PlayerState GameModeType => Player.PlayerState.Troll;
 
 	public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
@@ -52,9 +53,8 @@ public class TrollGameMode : DefaultGameMode
 		//
 	};
 
-    public TrollGameMode(Player player) : base()
+    public TrollGameMode() : base()
 	{
-		this.player = player;
 		Initialize();
 	}
 
@@ -77,6 +77,7 @@ public class TrollGameMode : DefaultGameMode
 		GameEvents.OnPlayerStartedCasting += HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerBuffRemoved += HandleOnPlayerBuffRemoved;
 		GameEvents.OnPlayerPlacedStructure += HandleOnPlayerPlacedStructure;
+		GameEvents.OnPlayerPurchasedItem += HandleOnPlayerPurchasedItem;
 	}
 	public override void Dispose()
 	{
@@ -96,6 +97,9 @@ public class TrollGameMode : DefaultGameMode
 		GameEvents.OnPlayerStartedCasting -= HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerBuffRemoved -= HandleOnPlayerBuffRemoved;
 		GameEvents.OnPlayerPlacedStructure -= HandleOnPlayerPlacedStructure;
+		GameEvents.OnPlayerPurchasedItem -= HandleOnPlayerPurchasedItem;
+
+		Players.Clear();
 	}
 
 	private static HashSet<string> AllowedCommands = new HashSet<string>
@@ -110,22 +114,23 @@ public class TrollGameMode : DefaultGameMode
 	
 	public override void HandleOnShapeshift(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != this.GameModeType || player != this.player) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 		eventEntity.Destroy();
 	}
 
 	public override void HandleOnPlayerStartedCasting(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != this.GameModeType || player != this.player) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 	}
 
 	public override void HandleOnPlayerBuffed(Player player, Entity buffEntity)
 	{
-		if (player.CurrentState != this.GameModeType || player != this.player) return;
+		if (player.CurrentState != this.GameModeType) return;
 
-		if (buffEntity.Read<PrefabGUID>() == Helper.TrollBuff)
+		var prefabGuid = buffEntity.Read<PrefabGUID>();
+		if (prefabGuid == Helper.TrollBuff)
 		{
 			Helper.ModifyBuff(buffEntity, BuffModificationTypes.ImmuneToHazards | BuffModificationTypes.Invulnerable | BuffModificationTypes.ImmuneToSun | BuffModificationTypes.Immaterial | BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.DisableMapCollision);
 			var buffer = buffEntity.AddBuffer<ModifyUnitStatBuff_DOTS>();
@@ -139,28 +144,25 @@ public class TrollGameMode : DefaultGameMode
 
     public void HandleOnPlayerBuffRemoved(Player player, Entity buffEntity)
     {
-        if (player.CurrentState != this.GameModeType || player != this.player) return;
+        if (player.CurrentState != this.GameModeType) return;
 		if (buffEntity.Read<PrefabGUID>() == Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Buff)
         {
-			var destroyData = buffEntity.Read<DestroyData>();
-			if (destroyData.DestroyReason == DestroyReason.Default)
-			{
-				buffEntity.Remove<DestroyTag>();
-				buffEntity.Write(new DestroyState
-				{
-					Value = DestroyStateEnum.NotDestroyed
-				});
-			}
-			else
-			{
-				TrollModeManager.RemoveTroll(player);
-			}
+            buffEntity.Remove<DestroyTag>();
+            buffEntity.Write(new DestroyState
+            {
+                Value = DestroyStateEnum.NotDestroyed
+            });
+            var destroyReason = buffEntity.Read<DestroyData>().DestroyReason;
+            if (destroyReason != DestroyReason.Default)
+            { 
+                TrollModeManager.RemoveTroll(player);
+            }
         }
     }
 
 	public void HandleOnPlayerProjectileCreated(Player player, Entity projectileEntity)
 	{
-		if (player.CurrentState != this.GameModeType || player != this.player) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 		var projectile = projectileEntity.Read<Projectile>();
 		projectile.Range = 100;
@@ -190,7 +192,7 @@ public class TrollGameMode : DefaultGameMode
 
 	public void HandleOnPlayerAoeCreated(Player player, Entity aoeEntity)
 	{
-		if (player.CurrentState != this.GameModeType || player != this.player) return;
+		if (player.CurrentState != this.GameModeType) return;
 
 		var buffer = aoeEntity.ReadBuffer<HitColliderCast>();
 		for (var i = 0; i < buffer.Length; i++)
@@ -203,6 +205,11 @@ public class TrollGameMode : DefaultGameMode
 		var lifeTime = aoeEntity.Read<LifeTime>();
 		lifeTime.Duration = 0;
 		aoeEntity.Write(lifeTime);
+	}
+
+	public override void HandleOnPlayerReset(Player player)
+	{
+		
 	}
 }
 

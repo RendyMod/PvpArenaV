@@ -25,6 +25,7 @@ using PvpArena.Models;
 using PvpArena.Patches;
 using PvpArena.Persistence.MySql;
 using PvpArena.Persistence.MySql.AllDatabases;
+using PvpArena.Persistence.MySql.MainDatabase;
 using PvpArena.Persistence.MySql.PlayerDatabase;
 using PvpArena.Services;
 using Unity.Entities;
@@ -57,6 +58,8 @@ public static class Core
 	public static PrisonBreakGameMode prisonBreakGameMode;
 	public static NoHealingLimitGameMode noHealingLimitGameMode;
 	public static MobaGameMode mobaGameMode;
+	public static TrollGameMode trollGameMode;
+
 	public static bool HasInitialized = false;
 	public static SQLHandler sqlHandler;
 	public static DebugEventsSystem debugEventsSystem = VWorld.Server.GetExistingSystem<DebugEventsSystem>();
@@ -94,22 +97,22 @@ public static class Core
 		matchmaking1V1DataRepository = new PlayerMatchmaking1v1DataStorage(PvpArenaConfig.Config.ServerDatabase);
 		matchmaking1V1DataRepository.LoadDataAsync();
 
-		pointsDataRepository = new PlayerPointsStorage(PvpArenaConfig.Config.ServerDatabase);
+		pointsDataRepository = new PlayerPointsStorage(PvpArenaConfig.Config.MainDatabase);
 		pointsDataRepository.LoadDataAsync();
 
-		banDataRepository = new PlayerBanInfoStorage(PvpArenaConfig.Config.ServerDatabase);
+		banDataRepository = new PlayerBanInfoStorage(PvpArenaConfig.Config.MainDatabase);
 		banDataRepository.LoadDataAsync();
 
-		muteDataRepository = new PlayerMuteInfoStorage(PvpArenaConfig.Config.ServerDatabase);
+		muteDataRepository = new PlayerMuteInfoStorage(PvpArenaConfig.Config.MainDatabase);
 		muteDataRepository.LoadDataAsync();
 
-		imprisonDataRepository = new PlayerImprisonInfoStorage(PvpArenaConfig.Config.ServerDatabase);
+		imprisonDataRepository = new PlayerImprisonInfoStorage(PvpArenaConfig.Config.MainDatabase);
 		imprisonDataRepository.LoadDataAsync();
 
-		playerConfigOptionsRepository = new PlayerConfigOptionsStorage(PvpArenaConfig.Config.ServerDatabase);
+		playerConfigOptionsRepository = new PlayerConfigOptionsStorage(PvpArenaConfig.Config.MainDatabase);
 		playerConfigOptionsRepository.LoadDataAsync();
 
-		playerBulletHellDataRepository = new PlayerBulletHellDataStorage(PvpArenaConfig.Config.ServerDatabase);
+		playerBulletHellDataRepository = new PlayerBulletHellDataStorage(PvpArenaConfig.Config.MainDatabase);
 		playerBulletHellDataRepository.LoadDataAsync();
 
 		defaultJewelStorage = new DefaultJewelDataStorage(PvpArenaConfig.Config.MainDatabase, PvpArenaConfig.Config.ServerDatabase);
@@ -170,6 +173,8 @@ public static class Core
 		prisonBreakGameMode = new PrisonBreakGameMode();
 
 		noHealingLimitGameMode = new NoHealingLimitGameMode();
+
+		trollGameMode = new TrollGameMode();
 
 		DummyHandler.Initialize();
 		PlayerSpawnHandler.Initialize();

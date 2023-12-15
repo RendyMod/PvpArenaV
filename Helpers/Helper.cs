@@ -26,6 +26,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using PvpArena.GameModes;
 using Il2CppSystem.Security.Cryptography;
+using ProjectM.Gameplay.Systems;
 
 namespace PvpArena.Helpers;
 
@@ -186,14 +187,21 @@ public static partial class Helper
 		return false;
 	}
 
+	public static void SoftKillPlayer(Player player)
+	{
+		Helper.BuffPlayer(player, Prefabs.Buff_General_Vampire_Wounded_Buff, out var buffEntity);
+	}
 
+    //used to kill something via damage if it has health, otherwise destroys it. It is better to destroy using DestroyEntity
 	public static void KillOrDestroyEntity(Entity entity)
 	{
-		if (entity.Has<CanFly>() && !entity.Has<PlayerCharacter>())
-		{
-			entity.Remove<CanFly>(); //this prevents a unit from being respawned when killed this way
-		}
 		StatChangeUtility.KillOrDestroyEntity(VWorld.Server.EntityManager, entity, entity, entity, 0, true);
+	}
+
+    //used to remove things from existence -- doesn't trigger on-death logic (but will trigger on-destroy logic)
+	public static void DestroyEntity(Entity entity)
+	{
+		DestroyUtility.CreateDestroyEvent(VWorld.Server.EntityManager, entity, DestroyReason.Default, DestroyDebugReason.None);
 	}
 
 	public static void RespawnPlayer(Player player, float3 pos)
@@ -288,17 +296,12 @@ public static partial class Helper
 			var owner = entity.Read<EntityOwner>().Owner;
 			if (owner == player.Character)
 			{
-				if (entity.Has<GameplayEventListeners>())
-				{
-					var buffer = entity.ReadBuffer<GameplayEventListeners>();
-					buffer.Clear();
-				}
 				if (entity.Has<CreateGameplayEventsOnDestroy>())
 				{
 					var buffer = entity.ReadBuffer<CreateGameplayEventsOnDestroy>();
 					buffer.Clear();
 				}
-				Helper.KillOrDestroyEntity(entity);
+				Helper.DestroyEntity(entity);
 			}
 		}
 		projectileEntities.Dispose();
@@ -309,18 +312,17 @@ public static partial class Helper
 			var owner = entity.Read<EntityOwner>().Owner;
 			if (owner == player.Character)
 			{
-				if (entity.Has<GameplayEventListeners>())
-				{
-					var buffer = entity.ReadBuffer<GameplayEventListeners>();
-					buffer.Clear();
-				}
 				if (entity.Has<CreateGameplayEventsOnDestroy>())
 				{
 					var buffer = entity.ReadBuffer<CreateGameplayEventsOnDestroy>();
 					buffer.Clear();
 				}
-				
-				Helper.KillOrDestroyEntity(entity);
+				if (entity.Has<CreateGameplayEventOnDeath>())
+				{
+					var buffer = entity.ReadBuffer<CreateGameplayEventOnDeath>();
+					buffer.Clear();
+				}
+				Helper.DestroyEntity(entity);
 			}
 		}
 		minionEntities.Dispose();
@@ -340,8 +342,8 @@ public static partial class Helper
 		}
         ClearExtraBuffs(player.Character, resetOptions);
         //delay so that removing gun e / heart strike doesnt dmg you
-        var action = new ScheduledAction(HealEntity, new object[] { player.Character });
-		ActionScheduler.ScheduleAction(action, 3);
+        var action = () => HealEntity(player.Character);
+		ActionScheduler.RunActionOnceAfterFrames(action, 3);
 
         GameEvents.RaisePlayerReset(player);
     }
@@ -408,6 +410,48 @@ public static partial class Helper
 		entity.Write(health);
 	}
 
+	public static int HealEntity(Entity entity, int amount)
+	{
+		Health health = entity.Read<Health>();
+		var originalHealth = health.Value;
+		if (health.Value + amount > health.MaxHealth)
+		{
+			health.Value = health.MaxHealth;
+		}
+		else
+		{
+			health.Value += amount;
+		}
+		
+		if (health.MaxRecoveryHealth + amount > health.MaxHealth)
+		{
+			health.MaxRecoveryHealth = health.MaxHealth;
+		}
+		else
+		{
+			health.MaxRecoveryHealth += amount;
+		}
+
+		entity.Write(health);
+		return (int)(health.Value - originalHealth);
+	}
+
+	public static void HealPlayer(Player player, int amount)
+	{
+		var amountHealed = HealEntity(player.Character, amount);
+		if (amountHealed > 0)
+		{
+			if (amountHealed < amount)
+			{
+				MakeSCT(player, Prefabs.SCT_Type_MAX, amountHealed);
+			}
+			else
+			{
+				MakeSCT(player, Prefabs.SCT_Type_Healing, amountHealed);
+			}
+		}
+	}
+
 	// Adds Blood Moon visual Effect + Witch + Rage on Toggle
 	public static void ToggleBuffsOnPlayer(Player player)
 	{
@@ -440,23 +484,23 @@ public static partial class Helper
 
 	public static void KillPreviousEntities(string category)
 	{
-		var entities = Helper.GetEntitiesByComponentTypes<CanFly>(true);
+		var entities = Helper.GetNonPlayerSpawnedEntities(true);
 		foreach (var entity in entities)
 		{
 			if (!entity.Has<PlayerCharacter>())
 			{
 				if (UnitFactory.TryGetSpawnedUnitFromEntity(entity, out SpawnedUnit spawnedUnit))
 				{
-					if (spawnedUnit.Unit.Category == category)
+					if (spawnedUnit.Unit.GameMode == category)
 					{
-						Helper.KillOrDestroyEntity(entity);
+						Helper.DestroyEntity(entity);
 					}
 				}
 				else
 				{
 					if (entity.Has<ResistanceData>() && entity.Read<ResistanceData>().GarlicResistance_IncreasedExposureFactorPerRating == StringToFloatHash(category))
 					{
-						Helper.KillOrDestroyEntity(entity);
+						Helper.DestroyEntity(entity);
 					}
 				}
 			}

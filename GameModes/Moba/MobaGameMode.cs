@@ -28,6 +28,7 @@ using ProjectM.Network;
 using PvpArena.Patches;
 using static PvpArena.Configs.ConfigDtos;
 using static RootMotion.FinalIK.AimPoser;
+using MS.Internal.Xml.XPath;
 
 namespace PvpArena.GameModes.Moba;
 
@@ -251,6 +252,7 @@ public class MobaGameMode : BaseGameMode
 		{ Prefabs.AB_Shapeshift_Golem_T02_Buff, HandleGolemBuff },
 		{ Prefabs.AB_Interact_LocalCastleTeleport_Travel_Shared, HandleTeleportBuff },
 		{ Prefabs.Buff_General_Freeze_HighDamageTreshold, HandleFreezeBuff },
+		{ Prefabs.Buff_InCombat_PvPVampire, HandlePvPCombatBuff },
 	};
 
 
@@ -276,6 +278,8 @@ public class MobaGameMode : BaseGameMode
     public static Dictionary<Player, List<Timer>> PlayerRespawnTimers = new Dictionary<Player, List<Timer>>();
 	public static Dictionary<Player, float> PlayerDamageDealt = new Dictionary<Player, float>();
 	public static Dictionary<Player, float> PlayerDamageReceived = new Dictionary<Player, float>();
+	private RectangleZone team1HealingZone;
+	private RectangleZone team2HealingZone;
 
 	public static HashSet<PrefabGUID> TrackingProjectiles = new HashSet<PrefabGUID>
 	{
@@ -293,6 +297,8 @@ public class MobaGameMode : BaseGameMode
 		{ Prefabs.AB_Interact_OpenGate_AbilityGroup, new List<PrefabGUID>{Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Buff}},
 		{ Prefabs.AB_Interact_HealingOrb_AbilityGroup, new List<PrefabGUID>{Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Buff, Prefabs.AB_Shapeshift_Bear_Buff, Prefabs.AB_Shapeshift_Bear_Skin01_Buff}},
 	};
+
+	private static long frameCount = 0;
 
 	public override void Initialize()
 	{
@@ -372,6 +378,48 @@ public class MobaGameMode : BaseGameMode
 			mercenaryCamp.Point.OnPointCaptured += HandlePointCapture;
 			mercenaryCamp.Point.OnCaptureProgress += HandleCaptureProgress;
 		}
+
+		team1HealingZone = MobaConfig.Config.Team1HealZone.ToRectangleZone();
+		team2HealingZone = MobaConfig.Config.Team2HealZone.ToRectangleZone();
+
+		var healPlayersAtBaseAction = () =>
+		{
+			foreach (var team in Teams.Values)
+			{
+				foreach (var player in team)
+				{
+					if (player.MatchmakingTeam == 1)
+					{
+						if (team1HealingZone.Contains(player))
+						{
+							Helper.HealPlayer(player, 50);
+						}
+					}
+					else if (player.MatchmakingTeam == 2)
+					{
+						if (team2HealingZone.Contains(player))
+						{
+							Helper.HealPlayer(player, 50);
+						}
+					}
+				}
+			}
+		};
+		var healPlayersAtBaseTimer = ActionScheduler.RunActionEveryInterval(healPlayersAtBaseAction, 1);
+		Timers.Add(healPlayersAtBaseTimer);
+
+		var givePeriodicGoldAction = () =>
+		{
+			foreach (var team in Teams.Values)
+			{
+				foreach (var player in team)
+				{
+					GiveAndDisplayCoins(player, MobaConfig.Config.CoinsGainedPassivelyPerMinute);
+				}
+			}
+		};
+		var givePeriodicGoldTimer = ActionScheduler.RunActionEveryInterval(givePeriodicGoldAction, 60);
+		Timers.Add(givePeriodicGoldTimer);
 	}
 	public override void Dispose()
 	{
@@ -410,11 +458,21 @@ public class MobaGameMode : BaseGameMode
 
 		foreach (var kvp in UnitFactory.UnitToEntity)
         {
-            if (kvp.Key.Category == "moba")
+            if (kvp.Key.GameMode == "moba")
             {
                 UnitFactory.UnitToEntity.Remove(kvp.Key);
             }
         }
+
+		foreach (var timer in Timers)
+		{
+			if (timer != null)
+			{
+				timer.Dispose();
+			}
+		}
+		Timers.Clear();
+
         foreach (var kvp in PlayerRespawnTimers)
         {
             foreach (var timer in kvp.Value)
@@ -472,7 +530,7 @@ public class MobaGameMode : BaseGameMode
 					if (Helper.AddItemToInventory(killerPlayer.Character, Prefabs.Item_Ingredient_Coin_Copper, MobaConfig.Config.CoinsGainedPerPlayerKill, out var item))
 					{
 						killerPlayer.ReceiveMessage($"You gained {MobaConfig.Config.CoinsGainedPerPlayerKill} coins for killing {player.Name.EnemyTeam()}".White());
-						DisplayCoins(player, MobaConfig.Config.CoinsGainedPerPlayerKill);
+						GiveAndDisplayCoins(player, MobaConfig.Config.CoinsGainedPerPlayerKill);
 					}
 
 					if (playerKills.ContainsKey(killerPlayer))
@@ -739,7 +797,13 @@ public class MobaGameMode : BaseGameMode
 			absorbBuff.AbsorbValue = 10;
 			buffEntity.Write(absorbBuff);
 		}
-		return;
+	}
+
+	public static void HandlePvPCombatBuff(Player player, Entity buffEntity)
+	{
+		var lifeTime = buffEntity.Read<LifeTime>();
+		lifeTime.Duration = 10;
+		buffEntity.Write(lifeTime);
 	}
 
 	public void HandleOnPlayerBuffed(Player player, Entity buffEntity)
@@ -776,7 +840,7 @@ public class MobaGameMode : BaseGameMode
 	{
 		if (TryGetSpawnedUnitFromEntity(unit, out SpawnedUnit spawnedUnit))
 		{
-			if (spawnedUnit.Unit.Category != "moba")
+			if (spawnedUnit.Unit.GameMode != "moba")
 			{
 				return;
 			}
@@ -814,7 +878,7 @@ public class MobaGameMode : BaseGameMode
 		{
 			if (TryGetSpawnedUnitFromEntity(unit, out SpawnedUnit spawnedUnit))
 			{
-				if (spawnedUnit.Unit.Category != "moba")
+				if (spawnedUnit.Unit.GameMode != "moba")
 				{
 					return;
 				}
@@ -851,7 +915,7 @@ public class MobaGameMode : BaseGameMode
 	{
 		if (player.CurrentState != this.GameModeType) return;
 
-		Helper.KillOrDestroyEntity(player.Character);
+		Helper.SoftKillPlayer(player);
 		player.Teleport(new float3(0, 0, 0));
 	}
 
@@ -895,7 +959,7 @@ public class MobaGameMode : BaseGameMode
 		}
 		if (TryGetSpawnedUnitFromEntity(unitEntity, out var spawnedUnit))
 		{
-			if (!UnitFactory.HasCategory(unitEntity, "moba")) return;
+			if (!UnitFactory.HasGameMode(unitEntity, "moba")) return;
 
 			var killer = deathEvent.Killer;
 			if (killer.Exists())
@@ -903,8 +967,7 @@ public class MobaGameMode : BaseGameMode
 				if (killer.Has<PlayerCharacter>())
 				{
 					var player = PlayerService.GetPlayerFromCharacter(killer);
-					Helper.AddItemToInventory(killer, Prefabs.Item_Ingredient_Coin_Copper, MobaConfig.Config.CoinsGainedPerUnitKill, out var itemEntity);
-					DisplayCoins(player, MobaConfig.Config.CoinsGainedPerUnitKill);
+					GiveAndDisplayCoins(player, MobaConfig.Config.CoinsGainedPerUnitKill);
 				}
 			}
 
@@ -931,8 +994,7 @@ public class MobaGameMode : BaseGameMode
 						}
 						foreach (var player in Teams[team])
 						{
-							Helper.AddItemToInventory(player.Character, Prefabs.Item_Ingredient_Coin_Copper, MobaConfig.Config.CoinsGainedPerFortKill, out var itemEntity);
-							DisplayCoins(player, MobaConfig.Config.CoinsGainedPerFortKill);
+							GiveAndDisplayCoins(player, MobaConfig.Config.CoinsGainedPerFortKill);
 							player.ReceiveMessage($"You have been given {MobaConfig.Config.CoinsGainedPerFortKill.ToString().Emphasize()} coins for killing an enemy fort".White());
 						}
 					}
@@ -946,8 +1008,7 @@ public class MobaGameMode : BaseGameMode
 						}
 						foreach (var player in Teams[team])
 						{
-							Helper.AddItemToInventory(player.Character, Prefabs.Item_Ingredient_Coin_Copper, MobaConfig.Config.CoinsGainedPerKeepKill, out var itemEntity);
-							DisplayCoins(player, MobaConfig.Config.CoinsGainedPerKeepKill);
+							GiveAndDisplayCoins(player, MobaConfig.Config.CoinsGainedPerKeepKill);
 							player.ReceiveMessage($"You have been given {MobaConfig.Config.CoinsGainedPerKeepKill.ToString().Emphasize()} coins for killing an enemy keep".White());
 						}
 					}
@@ -974,8 +1035,7 @@ public class MobaGameMode : BaseGameMode
 							}
 							foreach (var player in Teams[team])
 							{
-								Helper.AddItemToInventory(player.Character, Prefabs.Item_Ingredient_Coin_Copper, MobaConfig.Config.CoinsGainedPerTowerKill, out var itemEntity);
-								DisplayCoins(player, MobaConfig.Config.CoinsGainedPerTowerKill);
+								GiveAndDisplayCoins(player, MobaConfig.Config.CoinsGainedPerTowerKill);
 								player.ReceiveMessage($"You have been given {MobaConfig.Config.CoinsGainedPerTowerKill.ToString().Emphasize()} coins for killing an enemy tower".White());
 							}
 						}
@@ -993,8 +1053,7 @@ public class MobaGameMode : BaseGameMode
 							}
 							foreach (var player in Teams[team])
 							{
-								Helper.AddItemToInventory(player.Character, Prefabs.Item_Ingredient_Coin_Copper, MobaConfig.Config.CoinsGainedPerTowerKill, out var itemEntity);
-								DisplayCoins(player, MobaConfig.Config.CoinsGainedPerTowerKill);
+								GiveAndDisplayCoins(player, MobaConfig.Config.CoinsGainedPerTowerKill);
 								player.ReceiveMessage($"You have been given {MobaConfig.Config.CoinsGainedPerTowerKill.ToString().Emphasize()} coins for killing an enemy tower".White());
 							}
 						}
@@ -1079,7 +1138,7 @@ public class MobaGameMode : BaseGameMode
 
 	public void HandleOnUnitProjectileCreated(Entity unit, Entity projectile)
 	{
-		if (!UnitFactory.HasCategory(unit, "moba")) return;
+		if (!UnitFactory.HasGameMode(unit, "moba")) return;
 
 		var prefabGuid = projectile.Read<PrefabGUID>();
 		
@@ -1107,7 +1166,7 @@ public class MobaGameMode : BaseGameMode
 
 	public void HandleOnUnitProjectileUpdate(Entity unit, Entity projectile)
 	{
-		if (!UnitFactory.HasCategory(unit, "moba")) return;
+		if (!UnitFactory.HasGameMode(unit, "moba")) return;
 
 		if (projectile.Has<SpellTarget>())
 		{
@@ -1171,7 +1230,7 @@ public class MobaGameMode : BaseGameMode
 
 	public void HandleOnDelayedSpawnEvent(Unit unit, int timeToSpawn)
     {
-        if (unit.Category != "moba") return;
+        if (unit.GameMode != "moba") return;
 
 		if (timeToSpawn <= 0)
         {
@@ -1296,6 +1355,7 @@ public class MobaGameMode : BaseGameMode
 		{
 			mercenaryCamp.Value.Point.Update(Teams[1], Teams[2]);
 		}
+		frameCount++;
 	}
 
 	public void HandleOnAggroPostUpdate(Entity entity)
@@ -1573,7 +1633,7 @@ public class MobaGameMode : BaseGameMode
 			unitToSpawn.SoftSpawn = true;
 			unitToSpawn.SpawnDelay = 5;
 			unitToSpawn.MaxDistanceFromPreCombatPosition = 60;
-			unitToSpawn.Category = "moba";
+			unitToSpawn.GameMode = "moba";
 			var pos = MobaConfig.Config.Team1MercenaryStartPosition.ToFloat3();
 			if (newTeamIndex == 2)
 			{
@@ -1614,7 +1674,7 @@ public class MobaGameMode : BaseGameMode
 			newUnitToSpawn.MaxDistanceFromPreCombatPosition = 20;
 			newUnitToSpawn.MaxHealth = unitSettings.Health;
 			newUnitToSpawn.MaxDistanceFromPreCombatPosition = 60;
-			newUnitToSpawn.Category = "moba";
+			newUnitToSpawn.GameMode = "moba";
 			newUnitToSpawn.SoftSpawn = true;
 			newUnitToSpawn.SpawnDelay = MobaConfig.Config.MercenaryCamps[pointIndex].RespawnTime;
 			newUnitToSpawn.MaxDistanceFromPreCombatPosition = -1;
@@ -1650,11 +1710,14 @@ public class MobaGameMode : BaseGameMode
 		}
 	}
 
-	private static void DisplayCoins(Player player, int amount)
+	private static void GiveAndDisplayCoins(Player player, int amount)
 	{
-		var pos = player.Position;
-		pos.y += 2;
-		Helper.MakeSCT(player, Prefabs.SCT_Type_InfoWarning, amount, pos);
+		if (Helper.AddItemToInventory(player.Character, Prefabs.Item_Ingredient_Coin_Copper, amount, out var itemEntity))
+		{
+			var pos = player.Position;
+			pos.y += 2;
+			Helper.MakeSCT(player, Prefabs.SCT_Type_InfoWarning, amount, pos);
+		}
 	}
 }
 

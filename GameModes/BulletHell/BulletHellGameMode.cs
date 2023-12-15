@@ -172,7 +172,7 @@ public class BulletHellGameMode : BaseGameMode
 
 	public void HandleOnUnitProjectileCreated(Entity unit, Entity projectile)
 	{
-		if (!UnitFactory.HasCategory(unit, "bullethell")) { return; }
+		if (!UnitFactory.HasGameMode(unit, "bullethell")) { return; }
 
 		var prefabGuid = projectile.Read<PrefabGUID>();
 		if (prefabGuid == Prefabs.AB_Sorceress_Projectile)
@@ -189,7 +189,7 @@ public class BulletHellGameMode : BaseGameMode
 
 	public void HandleOnUnitAoeCreated(Entity unit, Entity aoe)
 	{
-		if (!UnitFactory.HasCategory(unit, "bullethell")) { return; }
+		if (!UnitFactory.HasGameMode(unit, "bullethell")) { return; }
 
 		var prefabGuid = aoe.Read<PrefabGUID>();
 		if (prefabGuid == Prefabs.AB_Sorceress_AoE_Throw)

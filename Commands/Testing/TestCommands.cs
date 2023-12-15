@@ -35,21 +35,27 @@ internal class TestCommands
 	[Command("test", description: "Used for debugging", adminOnly: true)]
 	public void TestCommand(Player sender)
 	{
-		var prefabEntity = Helper.GetPrefabEntityByPrefabGUID(Prefabs.Illusion_Vampire_Wisp_Projectile);
-		prefabEntity.LogComponentTypes();
-		var entities = Helper.GetPrefabEntitiesByComponentTypes<SpellModArithmetic>();
-		foreach (var entity in entities)
+		sender.CurrentState = Player.PlayerState.Troll;
+		sender.Reset(TrollGameMode.ResetOptions);
+		
+		if (Helper.BuffPlayer(sender, Helper.TrollBuff, out var buffEntity, Helper.NO_DURATION, true))
 		{
-			entity.LogPrefabName();
-		}
-		/*PrefabSpawnerService.SpawnWithCallback(Prefabs.MapIcon_DraculasCastle, sender.Position, (e) => {
-			MapIcon = e;
-			e.Write(new MapIconTargetEntity
+			buffEntity.Add<DisableAggroBuff>();
+			buffEntity.Write(new DisableAggroBuff
 			{
-				TargetEntity = NetworkedEntity.ServerEntity(sender.User),
-				TargetNetworkId = sender.User.Read<NetworkId>()
+				Mode = DisableAggroBuffMode.OthersDontAttackTarget
 			});
-		});*/
+			if (Helper.BuffPlayer(sender, Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Buff, out var grandmaBuffEntity, Helper.NO_DURATION))
+			{
+				var scriptBuffShapeshiftDataShared = grandmaBuffEntity.Read<Script_Buff_Shapeshift_DataShared>();
+				scriptBuffShapeshiftDataShared.DestroyOnAbilityEnd = false;
+				grandmaBuffEntity.Write(scriptBuffShapeshiftDataShared);
+				grandmaBuffEntity.Remove<DestroyOnAbilityCast>();
+				Helper.FixIconForShapeshiftBuff(sender, grandmaBuffEntity, Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Group);
+				Helper.ChangeBuffResistances(grandmaBuffEntity, Prefabs.BuffResistance_UberMobNoKnockbackOrGrab);
+				sender.ReceiveMessage($"You have entered {"troll".Emphasize()} mode.".White());
+			}
+		}
 		sender.ReceiveMessage("done");
 	}
 
@@ -395,13 +401,13 @@ internal class TestCommands
 				if (structureType == default)
 				{
 					sender.ReceiveMessage(entity.Read<PrefabGUID>().LookupNameString());
-					Helper.KillOrDestroyEntity(entity);
+					Helper.DestroyEntity(entity);
 				}
 				else
 				{
 					if (entity.Read<PrefabGUID>() == structureType)
 					{
-						Helper.KillOrDestroyEntity(entity);
+						Helper.DestroyEntity(entity);
 						sender.ReceiveMessage($"Killed entity: {entity.Read<PrefabGUID>().LookupName()}".Success());
 					}
 				}

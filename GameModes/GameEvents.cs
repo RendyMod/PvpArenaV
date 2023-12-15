@@ -87,9 +87,6 @@ public static class GameEvents
 	public delegate void PlayerDamageReported(Player source, Entity target, PrefabGUID ability, DamageInfo damageInfo);
 	public static event PlayerDamageReported OnPlayerDamageReported;
 
-	public delegate void PlayerDamageReceivedHandler(Player player, Entity eventEntity);
-	public static event PlayerDamageReceivedHandler OnPlayerDamageReceived;
-
 	public delegate void PlayerProjectileCreatedHandler(Player player, Entity projectile);
 	public static event PlayerProjectileCreatedHandler OnPlayerProjectileCreated;
 
@@ -255,12 +252,6 @@ public static class GameEvents
 	public static void RaiseUnitDealtDamage(Entity unit, Entity eventEntity)
 	{
 		OnUnitDamageDealt?.Invoke(unit, eventEntity);
-	}
-
-
-	public static void RaisePlayerReceivedDamage(Player player, Entity eventEntity)
-	{
-		OnPlayerDamageReceived?.Invoke(player, eventEntity);
 	}
 
 	public static void RaiseItemWasDropped(Player closestPlayer, Entity eventEntity, PrefabGUID itemType, int slotIndex)

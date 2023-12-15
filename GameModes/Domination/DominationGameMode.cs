@@ -439,7 +439,7 @@ public class DominationGameMode : BaseGameMode
 	{
 		if (TryGetSpawnedUnitFromEntity(unit, out SpawnedUnit spawnedUnit))
 		{
-			if (spawnedUnit.Unit.Category != "domination")
+			if (spawnedUnit.Unit.GameMode != "domination")
 			{
 				return;
 			}

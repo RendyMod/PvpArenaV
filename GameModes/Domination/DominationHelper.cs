@@ -91,7 +91,7 @@ public static class DominationHelper
 				unitToSpawn = new Unit(unitSettings.PrefabGUID, unitSettings.Team, unitSettings.Level);
 			}
 			unitToSpawn.MaxHealth = unitSettings.Health;
-			unitToSpawn.Category = "domination";
+			unitToSpawn.GameMode = "domination";
 			unitToSpawn.RespawnTime = unitSettings.RespawnTime;
 			unitToSpawn.SpawnDelay = unitSettings.SpawnDelay;
 			Player teamLeader;
@@ -114,20 +114,21 @@ public static class DominationHelper
 
 	public static void KillPreviousEntities()
 	{
-		var entities = Helper.GetEntitiesByComponentTypes<CanFly>(true);
+		var entities = Helper.GetNonPlayerSpawnedEntities(true);
 		foreach (var entity in entities)
 		{
 			if (!entity.Has<PlayerCharacter>())
 			{
 				if (UnitFactory.TryGetSpawnedUnitFromEntity(entity, out SpawnedUnit spawnedUnit))
 				{
-					if (spawnedUnit.Unit.Category == "domination")
+					if (spawnedUnit.Unit.GameMode == "domination")
 					{
-						Helper.KillOrDestroyEntity(entity);
+						Helper.DestroyEntity(entity);
 					}
 				}
 			}
 		}
+		entities.Dispose();
 	}
 
 	public static void StartMatch(Player team1LeaderPlayer, Player team2LeaderPlayer)

@@ -26,32 +26,36 @@ namespace PvpArena.Helpers;
 //this is horrible god help us all
 public static partial class Helper
 {
-	public static void CreateClanForPlayer(Entity User)
+	public static void CreateClanForPlayer(Player player, string name = "")
 	{
 		var clanRequestEntity = CreateEntityWithComponents<CreateClan_Request, FromCharacter, NetworkEventType, ReceiveNetworkEventTag>();
+		if (name == "")
+		{
+			name = player.Name;
+		}
         clanRequestEntity.Write(new CreateClan_Request
         {
             ClanMotto = "",
-            ClanName = $"{User.Read<User>().CharacterName}"
+            ClanName = $"{name}"
         });
 		clanRequestEntity.Write(new FromCharacter
 		{
-			User = User,
-			Character = User.Read<User>().LocalCharacter._Entity
+			User = player.User,
+			Character = player.Character
 		});
 	}
 
-	public static void AddPlayerToPlayerClanNatural(Entity UserJoiningClan, Entity UserInClan)
+	public static void AddPlayerToPlayerClanNatural(Player playerJoiningClan, Player playerInClan)
 	{
-		var user = UserJoiningClan.Read<User>();
-		var clanEntity = UserInClan.Read<User>().ClanEntity._Entity;
+		var user = playerJoiningClan.User.Read<User>();
+		var clanEntity = playerInClan.User.Read<User>().ClanEntity._Entity;
 		if (clanEntity.Exists())
 		{
 			Entity clanInviteRequestEntity = CreateEntityWithComponents<ClanInviteRequest_Server>();
 			clanInviteRequestEntity.Write(new ClanInviteRequest_Server
 			{
-				FromUser = UserInClan,
-				ToUser = UserJoiningClan,
+				FromUser = playerInClan.User,
+				ToUser = playerJoiningClan.User,
 				ClanEntity = clanEntity
 			});
 
@@ -61,28 +65,31 @@ public static partial class Helper
 				Response = InviteRequestResponse.Accept,
 				ClanId = clanEntity.Read<NetworkId>()
 			});
-			clanInviteResponseEntity.Write(new FromCharacter
-			{
-				User = UserJoiningClan,
-				Character = UserInClan.Read<User>().LocalCharacter._Entity
-			});
-			ClanUtility.SetCharacterClanName(VWorld.Server.EntityManager, UserJoiningClan, clanEntity.Read<ClanTeam>().Name);
-			ClanUtility.SetCharacterClanName(VWorld.Server.EntityManager, UserInClan, clanEntity.Read<ClanTeam>().Name);
+			clanInviteResponseEntity.Write(playerInClan.ToFromCharacter());
+			ClanUtility.SetCharacterClanName(VWorld.Server.EntityManager, playerJoiningClan.User, clanEntity.Read<ClanTeam>().Name);
+			ClanUtility.SetCharacterClanName(VWorld.Server.EntityManager, playerInClan.User, clanEntity.Read<ClanTeam>().Name);
 		}
 	}
 
-	public static void AddPlayerToPlayerClanForce(Entity UserJoiningClan, Entity UserInClan)
+	public static void AddPlayerToPlayerClanForce(Player playerJoiningClan, Player playerInClan)
 	{
+		RemoveFromClan(playerJoiningClan);
+		if (!playerInClan.User.Read<User>().ClanEntity._Entity.Exists())
+		{
+			var action = () => CreateClanForPlayer(playerInClan);
+			ActionScheduler.RunActionOnceAfterFrames(action, 2);
+		}
 		TryJoinClanArgs tryJoinClanArgs = new TryJoinClanArgs
 		{
 			Ecb = Core.entityCommandBufferSystem.CreateCommandBuffer(),
 			EntityManager = VWorld.Server.EntityManager,
-			FromUser = UserJoiningClan,
-			TargetUser = UserInClan
+			FromUser = playerJoiningClan.User,
+			TargetUser = playerInClan.User
 		};
 		try
 		{
-			ForceJoinClanEventSystem_Server.TryJoinClan(ref tryJoinClanArgs);
+			var forceJoinClanAction = () => { ForceJoinClanEventSystem_Server.TryJoinClan(ref tryJoinClanArgs); };
+			ActionScheduler.RunActionOnceAfterFrames(forceJoinClanAction, 3);
 		}
 		catch
 		{

@@ -103,14 +103,14 @@ internal class ClanCommands
 			{
 				Helper.RemoveFromClan(RequesterPlayer);
 
-				var clanEntity = RecipientPlayer.User.Read<User>().ClanEntity._Entity;
+				var clanEntity = RecipientPlayer.Clan;
 				if (!clanEntity.Exists())
 				{
-					var createClanAction = new ScheduledAction(Helper.CreateClanForPlayer, new object[] { RecipientPlayer.User });
+					var createClanAction = new ScheduledAction(Helper.CreateClanForPlayer, new object[] { RecipientPlayer });
 					ActionScheduler.ScheduleAction(createClanAction, 2);
 				}
 
-				var addPlayerToClanForceAction = new ScheduledAction(Helper.AddPlayerToPlayerClanForce, new object[] { RequesterPlayer.User, RecipientPlayer.User });
+				var addPlayerToClanForceAction = new ScheduledAction(Helper.AddPlayerToPlayerClanForce, new object[] { RequesterPlayer, RecipientPlayer });
 				ActionScheduler.ScheduleAction(addPlayerToClanForceAction, 3);
 				RequesterPlayer.ReceiveMessage("You have joined the clan.".White());
 			}
@@ -118,14 +118,14 @@ internal class ClanCommands
 			{
 				RecipientPlayer.RemoveFromClan();
 
-				var clanEntity = RequesterPlayer.User.Read<User>().ClanEntity._Entity;
+				var clanEntity = RequesterPlayer.Clan;
 				if (!clanEntity.Exists())
 				{
-					var createClanAction = new ScheduledAction(Helper.CreateClanForPlayer, new object[] { RequesterPlayer.User });
+					var createClanAction = new ScheduledAction(Helper.CreateClanForPlayer, new object[] { RequesterPlayer });
 					ActionScheduler.ScheduleAction(createClanAction, 2);
 				}
 				
-				var addPlayerToClanForceAction = new ScheduledAction(Helper.AddPlayerToPlayerClanForce, new object[] { RecipientPlayer.User, RequesterPlayer.User });
+				var addPlayerToClanForceAction = new ScheduledAction(Helper.AddPlayerToPlayerClanForce, new object[] { RecipientPlayer, RequesterPlayer });
 				ActionScheduler.ScheduleAction(addPlayerToClanForceAction, 3);
 				RecipientPlayer.ReceiveMessage("You have joined the clan.".White());
 			}
@@ -139,7 +139,7 @@ internal class ClanCommands
 	[Command("leave clan", description: "Leave your clan", usage: ".lc", adminOnly: false, aliases: new string[] { "lc", "leaveclan", "leave-clan" }, category: "Clan", includeInHelp: true)]
 	public void LeaveClanCommand (Player sender)
 	{
-		var clanEntity = sender.User.Read<User>().ClanEntity._Entity;
+		var clanEntity = sender.Clan;
 		if (!clanEntity.Exists())
 			sender.ReceiveMessage("You aren't in a clan.".Error());
 		else
@@ -152,7 +152,7 @@ internal class ClanCommands
 	[Command("rename clan", description: "Rename your clan", usage: ".rnc", adminOnly: false, aliases: new string[] { "rnc", "renameclan", "rename-clan" }, category: "Clan", includeInHelp: true)]
 	public void RenameClanCommand(Player sender, string name)
 	{
-		var clanEntity = sender.User.Read<User>().ClanEntity._Entity;
+		var clanEntity = sender.Clan;
 		if (clanEntity.Exists())
 		{
 			var clanTeam = clanEntity.Read<ClanTeam>();
@@ -174,7 +174,14 @@ internal class ClanCommands
 	[Command("create-clan", description: "Used for debugging", adminOnly: true)]
 	public static void CreateClanCommand(Player sender, string name = "")
 	{
-		Helper.CreateClanForPlayer(sender.User);
+		Helper.CreateClanForPlayer(sender);
 		sender.ReceiveMessage("You successfully created the clan!");
+	}
+
+	[Command("force-clan", description: "Forces a player to join the clan of another", usage: ".force-clan ash rendy", adminOnly: true)]
+	public static void ForceClanCommand(Player sender, Player player1, Player player2)
+	{
+		Helper.AddPlayerToPlayerClanForce(player1, player2);
+		sender.ReceiveMessage($"{player1.Name} has joined {player2.Name}'s clan");
 	}
 }

@@ -246,16 +246,16 @@ public static class MobaHelper
 			{
 				if (UnitFactory.TryGetSpawnedUnitFromEntity(entity, out SpawnedUnit spawnedUnit))
 				{
-					if (spawnedUnit.Unit.Category == "moba")
+					if (spawnedUnit.Unit.GameMode == "moba")
 					{
-						Helper.KillOrDestroyEntity(entity);
+						Helper.DestroyEntity(entity);
 					}
 				}
 				else
 				{
-					if (UnitFactory.HasCategory(entity, "moba"))
+					if (UnitFactory.HasGameMode(entity, "moba"))
 					{
-						Helper.KillOrDestroyEntity(entity);
+						Helper.DestroyEntity(entity);
 					}
 				}
 			}
@@ -266,7 +266,7 @@ public static class MobaHelper
 			entities = Helper.GetEntitiesByComponentTypes<SiegeWeapon>(true);
 			foreach (var entity in entities)
 			{
-				Helper.KillOrDestroyEntity(entity);
+				Helper.DestroyEntity(entity);
 			}
 			entities.Dispose();
 		};
@@ -277,7 +277,7 @@ public static class MobaHelper
 			entities = Helper.GetEntitiesByComponentTypes<ItemPickup>(true);
 			foreach (var entity in entities)
 			{
-				Helper.KillOrDestroyEntity(entity);
+				Helper.DestroyEntity(entity);
 			}
 			entities.Dispose();
 		};
@@ -354,6 +354,9 @@ public static class MobaHelper
 
 	private static void SpawnUnits(Player team1LeaderPlayer, Player team2LeaderPlayer)
 	{
+		UnitFactory.SpawnMerchant("moba", MobaConfig.Config.Team1MerchantPosition.ToFloat3());
+		UnitFactory.SpawnMerchant("moba", MobaConfig.Config.Team2MerchantPosition.ToFloat3());
+
 		foreach (var unitSettings in MobaConfig.Config.UnitSpawns)
 		{
 			Unit unitToSpawn;
@@ -384,7 +387,7 @@ public static class MobaHelper
 				unitToSpawn.IsRooted = true;
 			}
 			unitToSpawn.MaxHealth = unitSettings.Health;
-			unitToSpawn.Category = "moba";
+			unitToSpawn.GameMode = "moba";
 			unitToSpawn.RespawnTime = unitSettings.RespawnTime;
 			unitToSpawn.SpawnDelay = unitSettings.SpawnDelay;
 			Player teamLeader;
@@ -507,7 +510,7 @@ public static class MobaHelper
 					unitToSpawn.IsRooted = true;
 				}
 				unitToSpawn.MaxHealth = unitSettings.Health;
-				unitToSpawn.Category = "moba";
+				unitToSpawn.GameMode = "moba";
 				unitToSpawn.RespawnTime = unitSettings.RespawnTime;
 				unitToSpawn.SoftSpawn = true;
 				unitToSpawn.SpawnDelay = mercenaryCampConfig.SpawnDelay;
@@ -563,7 +566,7 @@ public static class MobaHelper
 			var unitType = unitSettings.Type.ToLower();
 			unitToSpawn = new Unit(unitSettings.PrefabGUID, unitSettings.Team, unitSettings.Level);
 			unitToSpawn.MaxHealth = unitSettings.Health;
-			unitToSpawn.Category = "moba";
+			unitToSpawn.GameMode = "moba";
 			unitToSpawn.RespawnTime = unitSettings.RespawnTime;
 			unitToSpawn.SpawnDelay = 5;
 			unitToSpawn.DynamicCollision = true;

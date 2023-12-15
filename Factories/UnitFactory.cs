@@ -85,7 +85,7 @@ public static class UnitFactory
 						SpawnUnit(spawnedUnit.Unit, spawnedUnit.SpawnPosition, spawnedUnit.Player);
 					};
 					timer = ActionScheduler.RunActionOnceAfterDelay(action, spawnedUnit.Unit.RespawnTime);
-					timersByCategory[spawnedUnit.Unit.Category].Add(timer);
+					timersByCategory[spawnedUnit.Unit.GameMode].Add(timer);
 				}
 			}
 		}
@@ -165,7 +165,7 @@ public static class UnitFactory
 		if (unit.SpawnDelay >= 0)
 		{
 			var timer = ActionScheduler.RunActionOnceAfterDelay(() => GameEvents.RaiseDelayedSpawnEvent(unit, 0), unit.SpawnDelay);
-			AddTimerToCategory(timer, unit.Category);
+			AddTimerToCategory(timer, unit.GameMode);
 			if (unit.SpawnDelay > 30)
 			{
 				GameEvents.RaiseDelayedSpawnEvent(unit, unit.SpawnDelay);
@@ -173,7 +173,7 @@ public static class UnitFactory
 			if (unit.SpawnDelay > 60)
 			{
 				timer = ActionScheduler.RunActionOnceAfterDelay(() => GameEvents.RaiseDelayedSpawnEvent(unit, 30), unit.SpawnDelay - 30);
-				AddTimerToCategory(timer, unit.Category);
+				AddTimerToCategory(timer, unit.GameMode);
 			}
 		}
 
@@ -181,7 +181,7 @@ public static class UnitFactory
 		{	
 			// Schedule the spawn action after the specified delay
 			var timer = ActionScheduler.RunActionOnceAfterDelay(spawnAction, unit.SpawnDelay);
-			AddTimerToCategory(timer, unit.Category);
+			AddTimerToCategory(timer, unit.GameMode);
 		}
 		else
 		{
@@ -258,7 +258,7 @@ public static class UnitFactory
 		if (unit.SpawnDelay >= 0)
 		{
 			var timer = ActionScheduler.RunActionOnceAfterDelay(() => GameEvents.RaiseDelayedSpawnEvent(unit, 0), unit.SpawnDelay);
-			AddTimerToCategory(timer, unit.Category);
+			AddTimerToCategory(timer, unit.GameMode);
 			if (unit.SpawnDelay > 30)
 			{
 				GameEvents.RaiseDelayedSpawnEvent(unit, unit.SpawnDelay);
@@ -266,7 +266,7 @@ public static class UnitFactory
 			if (unit.SpawnDelay > 60)
 			{
 				timer = ActionScheduler.RunActionOnceAfterDelay(() => GameEvents.RaiseDelayedSpawnEvent(unit, 30), unit.SpawnDelay - 30);
-				AddTimerToCategory(timer, unit.Category);
+				AddTimerToCategory(timer, unit.GameMode);
 			}
 		}
 
@@ -274,12 +274,33 @@ public static class UnitFactory
 		{
 			// Schedule the spawn action after the specified delay
 			var timer = ActionScheduler.RunActionOnceAfterDelay(spawnAction, unit.SpawnDelay);
-			AddTimerToCategory(timer, unit.Category);
+			AddTimerToCategory(timer, unit.GameMode);
 		}
 		else
 		{
 			// Execute immediately if no delay is specified
 			spawnAction.Invoke();
+		}
+	}
+
+	public static void SpawnMerchant(string merchantName, float3 spawnPosition)
+	{
+		foreach (var trader in TradersConfig.Config.Traders)
+		{
+			if (trader.UnitSpawn.Description.ToLower() == merchantName.ToLower())
+			{
+				var unit = new Factories.Trader(trader.UnitSpawn.PrefabGUID, trader.TraderItems);
+				unit.IsImmaterial = true;
+				unit.IsInvulnerable = true;
+				unit.IsRooted = true;
+				unit.IsTargetable = false;
+				unit.DrawsAggro = false;
+				unit.KnockbackResistance = true;
+				unit.MaxHealth = 10000;
+				unit.GameMode = merchantName.ToLower();
+				UnitFactory.SpawnUnit(unit, spawnPosition);
+				/*UnitFactory.SpawnUnit(unit, trader.UnitSpawn.Location.ToFloat3());*/
+			}
 		}
 	}
 
@@ -353,7 +374,7 @@ public static class UnitFactory
 		var resistanceData = e.Read<ResistanceData>();
 		resistanceData.FireResistance_DamageReductionPerRating = unit.Team;
 		resistanceData.FireResistance_RedcuedIgiteChancePerRating = e.GetHashCode(); //going to use position to identify spawn point 
-		resistanceData.GarlicResistance_IncreasedExposureFactorPerRating = StringToFloatHash(unit.Category);
+		resistanceData.GarlicResistance_IncreasedExposureFactorPerRating = StringToFloatHash(unit.GameMode);
         resistanceData.HolyResistance_DamageAbsorbPerRating = position.x;
         resistanceData.HolyResistance_DamageReductionPerRating = position.y;
         resistanceData.SilverResistance_DamageReductionPerRating = position.z;
@@ -438,7 +459,7 @@ public static class UnitFactory
 		e.Write(health);
 	}
 
-	public static bool HasCategory(Entity entity, string category)
+	public static bool HasGameMode(Entity entity, string category)
 	{
 		if (entity.Has<CanFly>() && entity.Has<ResistanceData>())
 		{
@@ -470,7 +491,7 @@ public class Unit
 	protected bool dynamicCollision = false;
 	protected float maxDistanceFromPreCombatPosition = -1;
 	protected bool worldCollision = true;
-	protected string category = "";
+	protected string gameMode = "";
 	protected int spawnDelay = -1;
 	protected bool softSpawn = false;
 	protected bool announceSpawn = false;
@@ -491,7 +512,7 @@ public class Unit
 	public float MaxDistanceFromPreCombatPosition { get => maxDistanceFromPreCombatPosition; set => maxDistanceFromPreCombatPosition = value; }
 	public bool MapCollision { get => worldCollision; set => worldCollision = value; }
 	public bool IsTargetable { get => isTargetable; set => isTargetable = value; }
-	public string Category { get => category; set => category = value; }
+	public string GameMode { get => gameMode; set => gameMode = value; }
 	public bool AnnounceSpawn { get => announceSpawn; set => announceSpawn = value; }
 	public int SpawnDelay { get => spawnDelay; set => spawnDelay = value; }
 	public bool SoftSpawn { get => softSpawn; set => softSpawn = value; }
@@ -591,7 +612,7 @@ public class Dummy : Unit
 		isRooted = true;
 		dynamicCollision = true;
 		knockbackResistance = false;
-        category = "dummy";
+        gameMode = "dummy";
         PrefabGuid = prefabGuid;
 		Aggro = aggro;
 	}
@@ -605,7 +626,7 @@ public class Dummy : Unit
         isRooted = true;
 		dynamicCollision = true;
 		knockbackResistance = false;
-        category = "dummy";
+        gameMode = "dummy";
     }
 
     public override void Modify(Entity e, Entity buffEntity)

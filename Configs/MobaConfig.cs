@@ -76,12 +76,14 @@ public class MobaConfigData
 	public int DefaultBloodQuality { get; set; } = 0; 
 	public CoordinateDto Team1Heart { get; set; } = new CoordinateDto();
 	public CoordinateDto Team2Heart { get; set; } = new CoordinateDto();
+	public CoordinateDto Team1MerchantPosition { get; set; } = new CoordinateDto();
+	public CoordinateDto Team2MerchantPosition { get; set; } = new CoordinateDto();
 	public CoordinateDto Team1PlayerRespawn { get; set; } = new CoordinateDto();
 	public CoordinateDto Team2PlayerRespawn { get; set; } = new CoordinateDto();
 	public CoordinateDto Team1MercenaryStartPosition { get; set; } = new CoordinateDto();
 	public CoordinateDto Team2MercenaryStartPosition { get; set; } = new CoordinateDto();
-	public RectangleZoneDto Team1EndZone { get; set; } = new RectangleZoneDto();
-	public RectangleZoneDto Team2EndZone { get; set; } = new RectangleZoneDto();
+	public RectangleZoneDto Team1HealZone { get; set; } = new RectangleZoneDto();
+	public RectangleZoneDto Team2HealZone { get; set; } = new RectangleZoneDto();
 	public RectangleZoneDto MapCenter { get; set; } = new RectangleZoneDto();
 	public List<TraderDto> Traders { get; set; } = new();
 	public List<PrefabSpawn> StructureSpawns { get; set; } = new List<PrefabSpawn>();
@@ -94,6 +96,6 @@ public class MobaConfigData
 	public int CoinsGainedPerTowerKill { get; set; } = 10;
 	public int CoinsGainedPerFortKill { get; set; } = 15;
 	public int CoinsGainedPerKeepKill { get; set; } = 15;
-
+	public int CoinsGainedPassivelyPerMinute { get; set; } = 5;
 	// Additional properties...
 }

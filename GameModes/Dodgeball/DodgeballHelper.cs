@@ -299,14 +299,14 @@ public static class DodgeballHelper
 				}
 				if (UnitFactory.TryGetSpawnedUnitFromEntity(entity, out SpawnedUnit spawnedUnit))
 				{
-					if (spawnedUnit.Unit.Category == "dodgeball")
+					if (spawnedUnit.Unit.GameMode == "dodgeball")
 					{
 						Helper.KillOrDestroyEntity(entity);
 					}
 				}
 				else
 				{
-					if (UnitFactory.HasCategory(entity, "dodgeball"))
+					if (UnitFactory.HasGameMode(entity, "dodgeball"))
 					{
 						Helper.KillOrDestroyEntity(entity);
 					}

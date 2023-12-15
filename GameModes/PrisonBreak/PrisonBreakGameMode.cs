@@ -247,7 +247,7 @@ public class PrisonBreakGameMode : BaseGameMode
 		if (player.CurrentState != GameModeType) return;
 
 		base.HandleOnPlayerDisconnected(player);
-		Helper.KillOrDestroyEntity(player.Character);
+		Helper.SoftKillPlayer(player);
 	}
 
 	public void HandleOnPlayerInvitedToClan(Player player, Entity eventEntity)

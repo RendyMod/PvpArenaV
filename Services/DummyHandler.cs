@@ -4,6 +4,8 @@ using PvpArena.GameModes;
 using PvpArena.Helpers;
 using PvpArena.Factories;
 using static ProjectM.DeathEventListenerSystem;
+using System.Runtime.CompilerServices;
+using PvpArena.Models;
 
 namespace PvpArena.Services;
 
@@ -15,17 +17,19 @@ public static class DummyHandler
 	{
 		GameEvents.OnUnitBuffRemoved += HandleOnUnitBuffRemoved;
 		GameEvents.OnUnitDeath += HandleOnUnitDeath;
+		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
 	}
 
 	public static void Dispose()
 	{
 		GameEvents.OnUnitBuffRemoved -= HandleOnUnitBuffRemoved;
 		GameEvents.OnUnitDeath -= HandleOnUnitDeath;
+		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
 	}
 
 	private static void HandleOnUnitBuffRemoved(Entity unit, Entity buffEntity)
 	{
-		if (buffEntity.Read<PrefabGUID>() == Helper.CustomBuff4 && UnitFactory.HasCategory(unit, "dummy"))
+		if (buffEntity.Read<PrefabGUID>() == Helper.CustomBuff4 && UnitFactory.HasGameMode(unit, "dummy"))
 		{
 			var health = unit.Read<Health>();
 			var destroyReason = buffEntity.Read<DestroyData>().DestroyReason;
@@ -42,13 +46,35 @@ public static class DummyHandler
 
 	private static void HandleOnUnitDeath(Entity victim, DeathEvent deathEvent)
 	{
-		if (UnitFactory.HasCategory(victim, "dummy"))
+		if (victim.Exists())
 		{
-			var spawnPosition = UnitFactory.GetSpawnPositionOfEntity(victim);
-			if (spawnPosition.x != 0 && spawnPosition.y != 0 && spawnPosition.z != 0)
+			if (UnitFactory.HasGameMode(victim, "dummy"))
 			{
-				Dummy dummy = new Dummy(victim.Read<PrefabGUID>(), victim.Read<AggroConsumer>().Active.Value);
-				UnitFactory.SpawnUnit(dummy, spawnPosition);
+				var spawnPosition = UnitFactory.GetSpawnPositionOfEntity(victim);
+				if (spawnPosition.x != 0 && spawnPosition.y != 0 && spawnPosition.z != 0)
+				{
+					Dummy dummy = new Dummy(victim.Read<PrefabGUID>(), victim.Read<AggroConsumer>().Active.Value);
+					UnitFactory.SpawnUnit(dummy, spawnPosition);
+				}
+			}
+		}
+	}
+
+	private static void HandleOnPlayerDamageDealt(Player player, Entity eventEntity)
+	{
+		if (!eventEntity.Exists()) return;
+		var dealDamageEvent = eventEntity.Read<DealDamageEvent>();
+		if (UnitFactory.HasGameMode(dealDamageEvent.Target, "dummy"))
+		{
+			if (Helper.TryGetBuff(dealDamageEvent.Target, Helper.CustomBuff4, out var buffEntity))
+			{
+				var age = buffEntity.Read<Age>();
+				age.Value = 0;
+				buffEntity.Write(age);
+			}
+			else
+			{
+				Helper.BuffEntity(dealDamageEvent.Target, Helper.CustomBuff4, out buffEntity, Dummy.ResetTime);
 			}
 		}
 	}

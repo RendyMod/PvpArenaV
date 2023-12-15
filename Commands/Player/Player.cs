@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Bloodstone.API;
 using ProjectM;
 using ProjectM.Network;
@@ -59,6 +60,7 @@ public class Player
 		get => _steamID == default && _user != default ? _user.Read<User>().PlatformId : _steamID;
 		set => _steamID = value;
 	}
+	public Entity Clan => GetClan();
 
 	public string Name => GetName();
 	public PlayerState CurrentState { get; set; } = PlayerState.Normal;
@@ -140,6 +142,11 @@ public class Player
 	private string GetName()
 	{
 		return User.Read<User>().CharacterName.ToString();
+	}
+
+	private Entity GetClan()
+	{
+		return User.Read<User>().ClanEntity._Entity;
 	}
 
 	private bool GetIsAdmin()
