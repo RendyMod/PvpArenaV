@@ -57,8 +57,8 @@ internal class GameModeCommands
 		}
 		if (!Team.IsAllies(team1Leader.Character.Read<Team>(), team2Leader.Character.Read<Team>()))
 		{
-			DodgeballHelper.EndMatch();
-			DodgeballHelper.StartMatch(team1Leader, team2Leader);
+			DominationHelper.EndMatch();
+			DominationHelper.StartMatch(team1Leader, team2Leader);
 			sender.ReceiveMessage("Match started".Success());
 		}
 		else
@@ -70,7 +70,7 @@ internal class GameModeCommands
 	[Command("end-domination", description: "Ends domination", adminOnly: true)]
 	public void EndDominationCommand(Player sender)
 	{
-		DodgeballHelper.EndMatch();
+		DominationHelper.EndMatch();
 		sender.ReceiveMessage("Match ended".Success());
 	}
 
