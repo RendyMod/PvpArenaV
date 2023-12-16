@@ -261,6 +261,8 @@ public class PrisonBreakGameMode : BaseGameMode
 
 	public void HandleOnPlayerBuffed(Player player, Entity buffEntity)
 	{
+		if (player.CurrentState != PlayerGameModeType) return;
+
 		if (buffEntity.Read<PrefabGUID>() == Prefabs.AB_Shapeshift_BloodMend_Buff)
 		{
 			var buffer = buffEntity.ReadBuffer<ChangeBloodOnGameplayEvent>();

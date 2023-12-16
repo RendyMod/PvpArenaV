@@ -65,11 +65,7 @@ public static class BuffModifiers
 		Value = 24
 	};
 
-	public static BuffModificationFlagData PigModifications = new BuffModificationFlagData()
-	{
-		ModificationTypes = (long)(BuffModificationTypes.Invulnerable | BuffModificationTypes.Immaterial | BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.AbilityCastImpair),
-		ModificationId = ModificationIdFactory.NewId(),
-	};
+	public static BuffModificationTypes PigModifications = BuffModificationTypes.Invulnerable | BuffModificationTypes.Immaterial | BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.AbilityCastImpair;
 
 	public static BuffModificationFlagData DefaultShapeshiftModifications = new BuffModificationFlagData()
 	{

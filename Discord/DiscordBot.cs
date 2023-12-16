@@ -60,7 +60,6 @@ public static partial class DiscordBot
 
 	public static async void UpdatePlayerCountStatus ()
 	{
-		return; //remove me
 		await _client.SetActivityAsync(new Game("Online: " + PlayerService.OnlinePlayers.Count + "/" + Core.serverBootstrapSystem.ServerHostData.ServerMaxConnectedUsers, ActivityType.Watching));
 	}
 

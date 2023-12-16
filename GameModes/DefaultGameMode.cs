@@ -157,8 +157,7 @@ public class DefaultGameMode : BaseGameMode
         }
 		if (Helper.BuffPlayer(player, Prefabs.Witch_PigTransformation_Buff, out var buffEntity, 3))
 		{
-			buffEntity.Add<BuffModificationFlagData>();
-			buffEntity.Write(BuffModifiers.PigModifications);
+			Helper.ModifyBuff(buffEntity, BuffModifiers.PigModifications, true);
 		}
 
 		if (killer.Has<PlayerCharacter>())
@@ -264,11 +263,9 @@ public class DefaultGameMode : BaseGameMode
 		var prefabGuid = buffEntity.Read<PrefabGUID>();
 		if (prefabGuid == Prefabs.Witch_PigTransformation_Buff)
 		{
-			var Buffer = VWorld.Server.EntityManager.AddBuffer<ModifyUnitStatBuff_DOTS>(buffEntity);
-			Buffer.Clear();
-			Buffer.Add(BuffModifiers.ShapeshiftFastMoveSpeed);
-			buffEntity.Add<BuffModificationFlagData>();
-			buffEntity.Write(BuffModifiers.PigModifications);
+			var buffer = VWorld.Server.EntityManager.AddBuffer<ModifyUnitStatBuff_DOTS>(buffEntity);
+			buffer.Clear();
+			buffer.Add(BuffModifiers.ShapeshiftFastMoveSpeed);
 		}
 		if (ShapeshiftsToModify.Contains(prefabGuid))
 		{

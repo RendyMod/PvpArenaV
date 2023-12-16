@@ -57,13 +57,6 @@ public static class KitCommands
 		sender.ReceiveMessage("Gave:".Success()+" Sanguine".White());
 	}
 
-	[Command("kit jewels", description: "Gives default jewels", usage: ".kit jewels", adminOnly: false, includeInHelp: true, category: "Kits")]
-	public static void JewelKitCommand(Player sender)
-	{
-		Helper.GiveDefaultJewels(sender);
-		sender.ReceiveMessage("Gave jewels".White());
-	}
-
 	[Command("heals", description: "Gives health pots", usage: ".heals", aliases: new string[] {"heal"}, adminOnly: false, includeInHelp: false, category: "Healing Potions")]
 	public static void HealsKitCommand(Player sender)
 	{

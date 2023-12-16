@@ -120,12 +120,6 @@ public class TrollGameMode : DefaultGameMode
 		eventEntity.Destroy();
 	}
 
-	public override void HandleOnPlayerStartedCasting(Player player, Entity eventEntity)
-	{
-		if (player.CurrentState != this.PlayerGameModeType) return;
-
-	}
-
 	public override void HandleOnPlayerBuffed(Player player, Entity buffEntity)
 	{
 		if (player.CurrentState != this.PlayerGameModeType) return;
@@ -172,6 +166,8 @@ public class TrollGameMode : DefaultGameMode
 
 	public void HandleOnPlayerHitColliderCastCreated(Player player, Entity hitCastCollider)
 	{
+		if (player.CurrentState != this.PlayerGameModeType) return;
+
 		var buffer = hitCastCollider.ReadBuffer<HitColliderCast>();
 		for (var i = 0; i < buffer.Length; i++)
 		{
