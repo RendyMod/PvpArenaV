@@ -9,7 +9,7 @@ using PvpArena.Models;
 using PvpArena.Services;
 using static PvpArena.Configs.ConfigDtos;
 
-namespace PvpArena.Persistence.MySql.PlayerDatabase;
+namespace PvpArena.Persistence.MySql.MainDatabase;
 public class PlayerBanInfoStorage : MySqlDataStorage<PlayerBanInfo>
 {
 	public PlayerBanInfoStorage(DatabaseConfig dbConfig) : base(dbConfig) { }

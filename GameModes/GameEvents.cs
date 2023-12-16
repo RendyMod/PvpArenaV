@@ -81,14 +81,29 @@ public static class GameEvents
 	public delegate void PlayerDamageDealtHandler(Player player, Entity eventEntity);
 	public static event PlayerDamageDealtHandler OnPlayerDamageDealt;
 
+	public delegate void UnitDamageDealtHandler(Entity unit, Entity eventEntity);
+	public static event UnitDamageDealtHandler OnUnitDamageDealt;
+
 	public delegate void PlayerDamageReported(Player source, Entity target, PrefabGUID ability, DamageInfo damageInfo);
 	public static event PlayerDamageReported OnPlayerDamageReported;
 
-	public delegate void PlayerDamageReceivedHandler(Player player, Entity eventEntity);
-	public static event PlayerDamageReceivedHandler OnPlayerDamageReceived;
-
 	public delegate void PlayerProjectileCreatedHandler(Player player, Entity projectile);
-	public static event PlayerProjectileCreatedHandler OnPlayerHitColliderCreated;
+	public static event PlayerProjectileCreatedHandler OnPlayerProjectileCreated;
+
+	public delegate void UnitProjectileCreatedHandler(Entity unit, Entity projectile);
+	public static event UnitProjectileCreatedHandler OnUnitProjectileCreated;
+
+	public delegate void PlayerProjectileUpdateHandler(Player player, Entity projectile);
+	public static event PlayerProjectileUpdateHandler OnPlayerProjectileUpdate;
+
+	public delegate void UnitProjectileUpdateHandler(Entity unit, Entity projectile);
+	public static event UnitProjectileUpdateHandler OnUnitProjectileUpdate;
+
+	public delegate void PlayerAoeCreatedHandler(Player player, Entity aoe);
+	public static event PlayerAoeCreatedHandler OnPlayerAoeCreated;
+
+	public delegate void UnitAoeCreatedHandler(Entity unit, Entity aoe);
+	public static event UnitAoeCreatedHandler OnUnitAoeCreated;
 
 	public delegate void PlayerChatMessageHandler(Player player, Entity eventEntity);
 	public static event PlayerChatMessageHandler OnPlayerChatMessage;
@@ -108,8 +123,26 @@ public static class GameEvents
     public delegate void PlayerHasNoControlledEntityHandler(Player player);
     public static event PlayerHasNoControlledEntityHandler OnPlayerHasNoControlledEntity;
 
-    public delegate void GameFrameUpdateHandler();
+	public delegate void PlayerHitColliderCastCreated(Player player, Entity hitCastCollider);
+	public static event PlayerHitColliderCastCreated OnPlayerHitColliderCastCreated;
+
+	public delegate void UnitHitCastColliderCreated(Entity unit, Entity hitCastCollider);
+	public static event UnitHitCastColliderCreated OnUnitHitCastColliderCreated;
+
+	public delegate void PlayerPlacedStructure(Player player, Entity eventEntity);
+	public static event PlayerPlacedStructure OnPlayerPlacedStructure;
+
+	public delegate void PlayerPurchasedItem(Player player, Entity eventEntity);
+	public static event PlayerPurchasedItem OnPlayerPurchasedItem;
+
+	public delegate void GameFrameUpdateHandler();
 	public static event GameFrameUpdateHandler OnGameFrameUpdate;
+
+	public delegate void AggroPostUpdateHandler(Entity entity);
+	public static event AggroPostUpdateHandler OnAggroPostUpdate;
+
+	public delegate void PlayerInteractedHandler(Player player, Interactor interactor);
+	public static event PlayerInteractedHandler OnPlayerInteracted;
 
 	public static void RaisePlayerRespawn(Player player)
 	{
@@ -216,9 +249,9 @@ public static class GameEvents
 		OnPlayerDamageDealt?.Invoke(player, eventEntity);
 	}
 
-	public static void RaisePlayerReceivedDamage(Player player, Entity eventEntity)
+	public static void RaiseUnitDealtDamage(Entity unit, Entity eventEntity)
 	{
-		OnPlayerDamageReceived?.Invoke(player, eventEntity);
+		OnUnitDamageDealt?.Invoke(unit, eventEntity);
 	}
 
 	public static void RaiseItemWasDropped(Player closestPlayer, Entity eventEntity, PrefabGUID itemType, int slotIndex)
@@ -226,9 +259,34 @@ public static class GameEvents
 		OnItemWasDropped?.Invoke(closestPlayer, eventEntity, itemType, slotIndex);
 	}
 
-	public static void RaisePlayerHitColliderCreated(Player player, Entity hitCollider)
+	public static void RaisePlayerProjectileCreated(Player player, Entity projectile)
 	{
-		OnPlayerHitColliderCreated?.Invoke(player, hitCollider);
+		OnPlayerProjectileCreated?.Invoke(player, projectile);
+	}
+
+	public static void RaiseUnitProjectileCreated(Entity unit, Entity projectile)
+	{
+		OnUnitProjectileCreated?.Invoke(unit, projectile);
+	}
+
+	public static void RaisePlayerProjectileUpdate(Player player, Entity projectile)
+	{
+		OnPlayerProjectileUpdate?.Invoke(player, projectile);
+	}
+
+	public static void RaiseUnitProjectileUpdate(Entity unit, Entity projectile)
+	{
+		OnUnitProjectileUpdate?.Invoke(unit, projectile);
+	}
+
+	public static void RaisePlayerAoeCreated(Player player, Entity aoe)
+	{
+		OnPlayerAoeCreated?.Invoke(player, aoe);
+	}
+
+	public static void RaiseUnitAoeCreated(Entity unit, Entity aoe)
+	{
+		OnUnitAoeCreated?.Invoke(unit, aoe);
 	}
 
 	public static void RaiseDelayedSpawnEvent(Unit unit, int timeUntilSpawn)
@@ -269,5 +327,35 @@ public static class GameEvents
     public static void RaiseGameFrameUpdate()
 	{
 		OnGameFrameUpdate?.Invoke();
+	}
+
+	public static void RaiseAggroPostUpdate(Entity entity)
+	{
+		OnAggroPostUpdate?.Invoke(entity);
+	}
+
+	public static void RaisePlayerHitColliderCastCreated(Player player, Entity hitCastCollider)
+	{
+		OnPlayerHitColliderCastCreated?.Invoke(player, hitCastCollider);
+	}
+
+	public static void RaiseUnitHitColliderCastCreated(Entity unit, Entity hitCastCollider)
+	{
+		OnUnitHitCastColliderCreated?.Invoke(unit, hitCastCollider);
+	}
+
+	public static void RaisePlayerPlacedStructure(Player player, Entity eventEntity)
+	{
+		OnPlayerPlacedStructure?.Invoke(player, eventEntity);
+	}
+
+	public static void RaisePlayerPurchasedItem(Player player, Entity eventEntity)
+	{
+		OnPlayerPurchasedItem?.Invoke(player, eventEntity);
+	}
+
+	public static void RaisePlayerInteracted(Player player, Interactor interactor)
+	{
+		OnPlayerInteracted?.Invoke(player, interactor);
 	}
 }

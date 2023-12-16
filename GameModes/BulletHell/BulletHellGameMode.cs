@@ -21,12 +21,13 @@ namespace PvpArena.GameModes.BulletHell;
 
 public class BulletHellGameMode : BaseGameMode
 {
-	public override Player.PlayerState GameModeType => Player.PlayerState.BulletHell;
-    public Player player = null;
+	public override Player.PlayerState PlayerGameModeType => Player.PlayerState.BulletHell;
+	public Player player = null;
 	public bool HasStarted = false;
 	public List<Timer> Timers = new List<Timer>();
 	public Stopwatch stopwatch = new Stopwatch();
 	public int ArenaNumber = 0;
+	public override string UnitGameModeType => $"bullethell{ArenaNumber}";
 	public CircleZone FightZone;
 	public TemplateUnitSpawn UnitSpawns = new TemplateUnitSpawn();
 	private long lastReportedInterval = 0;
@@ -41,29 +42,41 @@ public class BulletHellGameMode : BaseGameMode
 		FightZone = fightZone;
 		UnitSpawns = unitSpawns;
 		ArenaNumber = arenaNumber;
+		UnitGameModeType = $"bullethell{ArenaNumber}";
 	}
 
 	public override void Initialize()
 	{
-		/*GameEvents.OnPlayerRespawn += HandleOnPlayerRespawn;*/
 		GameEvents.OnPlayerDowned += HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath += HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift += HandleOnShapeshift;
-		GameEvents.OnPlayerStartedCasting += HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerUsedConsumable += HandleOnConsumableUse;
+		GameEvents.OnUnitProjectileCreated += HandleOnUnitProjectileCreated;
+		GameEvents.OnUnitAoeCreated += HandleOnUnitAoeCreated;
 		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
 		GameEvents.OnGameFrameUpdate += HandleOnGameFrameUpdate;
+		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
+		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
+		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
+		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
+		GameEvents.OnPlayerPlacedStructure += HandleOnPlayerPlacedStructure;
 	}
 	public override void Dispose()
 	{
-		/*GameEvents.OnPlayerRespawn -= HandleOnPlayerRespawn;*/
 		GameEvents.OnPlayerDowned -= HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath -= HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift -= HandleOnShapeshift;
-		GameEvents.OnPlayerStartedCasting -= HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerUsedConsumable -= HandleOnConsumableUse;
+		GameEvents.OnUnitProjectileCreated -= HandleOnUnitProjectileCreated;
+		GameEvents.OnUnitAoeCreated -= HandleOnUnitAoeCreated;
 		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
 		GameEvents.OnGameFrameUpdate -= HandleOnGameFrameUpdate;
+		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
+		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
+		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
+		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
+		GameEvents.OnPlayerPlacedStructure -= HandleOnPlayerPlacedStructure;
+
 		HasStarted = false;
 		stopwatch.Reset();
 		foreach (var timer in Timers)
@@ -85,59 +98,24 @@ public class BulletHellGameMode : BaseGameMode
 
 	public override void HandleOnPlayerDowned(Player player, Entity killer)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType || player != this.player) return;
 
 		player.Reset(ResetOptions);
-		if (Helper.BuffPlayer(player, Prefabs.Witch_PigTransformation_Buff, out var buffEntity, 3))
-		{
-			buffEntity.Add<BuffModificationFlagData>();
-			buffEntity.Write(BuffModifiers.PigModifications);
-		}
 		BulletHellManager.EndMatch(this);
 		//end match and tp to training + report time and record score
 	}
-	public override void HandleOnPlayerDeath(Player player, DeathEvent deathEvent)
+
+	public void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType || player != this.player) return;
 
-		var pos = player.Position;
-		Helper.RespawnPlayer(player, pos);
-        player.Reset(ResetOptions);
-        var blood = player.Character.Read<Blood>();
-		Helper.SetPlayerBlood(player, blood.BloodType, blood.Quality);
-		BulletHellManager.EndMatch(this);
-		//end match and tp to training + report time and record score
-	}
-	/*public override void HandleOnPlayerRespawn(Player player)
-	{
-		if (!player.IsInDefaultMode()) return;
-
-	}*/
-	public override void HandleOnPlayerChatCommand(Player player, CommandAttribute command)
-	{
-		if (player.CurrentState != GameModeType) return;
-
-	}
-	public override void HandleOnShapeshift(Player player, Entity eventEntity)
-	{
-		if (player.CurrentState != GameModeType) return;
-
-	}
-	public override void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
-	{
-		if (player.CurrentState != GameModeType) return;
-
-	}
-
-	public void HandleOnPlayerStartedCasting(Player player, Entity eventEntity)
-	{
-		if (player.CurrentState != GameModeType) return;
-
+		eventEntity.Destroy();
+		player.ReceiveMessage("You can't drink those during a bullet hell match!".Error());
 	}
 
 	public override void HandleOnPlayerDisconnected(Player player)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType || player != this.player) return;
 
         BulletHellManager.EndMatch(this);
         base.HandleOnPlayerDisconnected(player);
@@ -174,6 +152,40 @@ public class BulletHellGameMode : BaseGameMode
 			
 		}
 
+	}
+
+	public void HandleOnUnitProjectileCreated(Entity unit, Entity projectile)
+	{
+		if (!UnitFactory.HasGameMode(unit, UnitGameModeType)) return;
+
+		var prefabGuid = projectile.Read<PrefabGUID>();
+		if (prefabGuid == Prefabs.AB_Sorceress_Projectile)
+		{
+			var buffer = projectile.ReadBuffer<HitColliderCast>();
+			for (var i = 0; i < buffer.Length; i++)
+			{
+				var hitCollider = buffer[i];
+				hitCollider.IgnoreImmaterial = true;
+				buffer[i] = hitCollider;
+			}
+		}
+	}
+
+	public void HandleOnUnitAoeCreated(Entity unit, Entity aoe)
+	{
+		if (!UnitFactory.HasGameMode(unit, UnitGameModeType)) return;
+
+		var prefabGuid = aoe.Read<PrefabGUID>();
+		if (prefabGuid == Prefabs.AB_Sorceress_AoE_Throw)
+		{
+			var buffer = aoe.ReadBuffer<HitColliderCast>();
+			for (var i = 0; i < buffer.Length; i++)
+			{
+				var hitColliderCast = buffer[i];
+				hitColliderCast.IgnoreImmaterial = true;
+				buffer[i] = hitColliderCast;
+			}
+		}
 	}
 
 	public static new HashSet<string> GetAllowedCommands()

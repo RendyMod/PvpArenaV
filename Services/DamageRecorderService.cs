@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using ProjectM;
 using PvpArena;
+using PvpArena.Data;
 using PvpArena.Models;
+using UnityEngine;
 
 public static class DamageRecorderService
 {
@@ -69,12 +71,29 @@ public static class DamageRecorderService
 			{
 				float groupTotalDamage = group.Value.Sum(val => val.Value.TotalDamage);
 				float percentage = (float)Math.Round((groupTotalDamage / totalDamage) * 100);
-				string groupName = FindLargestSharedSubstring(group.Value.Keys.Select(k => k.LookupNameString()).ToList());
+
+				// Get the group name and color
+				string groupName = null;
+				Color32 groupColor = ExtendedColor.ServerColor; // Default color
+				foreach (var prefabGUID in group.Value.Keys)
+				{
+					if (groupName == null && AbilityData.AbilityPrefabToName.TryGetValue(prefabGUID, out var name))
+					{
+						groupName = name;
+					}
+
+					if (AbilityData.AbilityPrefabToColor.TryGetValue(prefabGUID, out var color))
+					{
+						groupColor = color; // Use the color associated with this ability
+						break;
+					}
+				}
+
 				float roundedGroupTotalDamage = (float)Math.Round(groupTotalDamage);
 
 				if (roundedGroupTotalDamage > 0)
 				{
-					player.ReceiveMessage($"{groupName.Colorify(ExtendedColor.ServerColor)} - {roundedGroupTotalDamage} ({percentage}%)".White());
+					player.ReceiveMessage($"{groupName.Colorify(groupColor)} - {roundedGroupTotalDamage} ({percentage}%)".White());
 				}
 			}
 
@@ -87,7 +106,7 @@ public static class DamageRecorderService
 		var groupedAbilities = new Dictionary<string, Dictionary<PrefabGUID, DamageInfo>>();
 		foreach (var kvp in abilityDamage)
 		{
-			string groupName = GroupKey(kvp.Key);
+			string groupName = GetGroupName(kvp.Key);
 			if (!groupedAbilities.ContainsKey(groupName))
 			{
 				groupedAbilities[groupName] = new Dictionary<PrefabGUID, DamageInfo>();
@@ -97,38 +116,14 @@ public static class DamageRecorderService
 		return groupedAbilities;
 	}
 
-	private static string GroupKey(PrefabGUID prefabGUID)
+	private static string GetGroupName(PrefabGUID prefabGUID)
 	{
-		string name = prefabGUID.LookupName();
-		string[] parts = name.Split('_');
-
-		// Return the first three parts joined by underscores, or the entire name if less than three parts
-		return parts.Length >= 3 ? string.Join("_", parts.Take(3)) : name;
-	}
-
-
-	private static string FindLargestSharedSubstring(List<string> names)
-	{
-		if (names.Count == 0)
-			return "";
-
-		string reference = names[0];
-		int length = reference.Length;
-		string longestCommonSubstring = "";
-
-		for (int i = 0; i < length; i++)
+		if (AbilityData.AbilityPrefabToName.TryGetValue(prefabGUID, out var name))
 		{
-			for (int j = i + 1; j <= length; j++)
-			{
-				string substring = reference.Substring(i, j - i);
-				if (substring.EndsWith("_") && names.All(name => name.StartsWith(substring)) && substring.Length > longestCommonSubstring.Length)
-				{
-					longestCommonSubstring = substring;
-				}
-			}
+			return name;
 		}
-
-		return longestCommonSubstring != "" ? longestCommonSubstring.TrimEnd('_') : reference;
+		name = prefabGUID.LookupNameString();
+		return name;
 	}
 }
 

@@ -231,4 +231,27 @@ public static partial class Helper
 			jewelEntity.Write(spellModSet);
 		}
 	}
+
+	public static void GiveDefaultJewels(Player player)
+	{
+		var steamId = player.SteamID;
+		// Generate jewels for the character.
+		foreach (var jewel in JewelData.abilityToPrefabDictionary)
+		{
+			string mods = Core.defaultJewelStorage.GetModsForSpell(jewel.Key, player.SteamID);
+			Helper.GenerateJewelViaEvent(player, jewel.Key, mods);
+		}
+		var action = () => EquipJewels(player);
+		ActionScheduler.RunActionOnceAfterFrames(action, 2);
+	}
+
+	public static void EquipJewels(Player player)
+	{
+		int inventoryIndex = 0;
+		foreach (var jewel in JewelData.abilityToPrefabDictionary)
+		{
+			Helper.EquipJewelAtSlot(player, inventoryIndex);
+			inventoryIndex++;
+		}
+	}
 }

@@ -13,7 +13,8 @@ namespace PvpArena.GameModes.Troll;
 public class NoHealingLimitGameMode : DefaultGameMode
 {
 	public static HashSet<Player> Players = new HashSet<Player>();
-	public override Player.PlayerState GameModeType => Player.PlayerState.NoHealingLimit;
+	public override Player.PlayerState PlayerGameModeType => Player.PlayerState.NoHealingLimit;
+	public override string UnitGameModeType => "nohealing";
 
 	public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
 	{
@@ -79,7 +80,7 @@ public class NoHealingLimitGameMode : DefaultGameMode
 
 	public override void HandleOnPlayerBuffed(Player player, Entity buffEntity)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 
 		base.HandleOnPlayerBuffed(player, buffEntity);
 
@@ -98,7 +99,7 @@ public class NoHealingLimitGameMode : DefaultGameMode
 	{
 		foreach (var player in Players)
 		{
-			if (player.CurrentState != GameModeType) return;
+			if (player.CurrentState != PlayerGameModeType) return;
 			var health = player.Character.Read<Health>();
 			health.MaxRecoveryHealth = health.MaxHealth;
 			player.Character.Write(health);

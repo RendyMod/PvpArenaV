@@ -73,7 +73,6 @@ public static class PrisonBreakHelper
 	public static void StartMatch()
 	{
 		Core.prisonBreakGameMode.Initialize();
-		Action action;
 		var gates = GetAllGates();
 		foreach (var gate in gates)
 		{
@@ -104,11 +103,11 @@ public static class PrisonBreakHelper
 			}
 		}
 
-		action = () => { StartMatchCountdown(); };
+		var startMatchAction = () => { StartMatchCountdown(); };
 
-		Timer timer = ActionScheduler.RunActionOnceAfterDelay(action, 5);
+		Timer timer = ActionScheduler.RunActionOnceAfterDelay(startMatchAction, 5);
 		PrisonBreakGameMode.Timers.Add(timer);
-		action = () =>
+		var openGatesAction = () =>
 		{
 			foreach (var gate in gates)
 			{
@@ -117,7 +116,7 @@ public static class PrisonBreakHelper
 				gate.Write(door);
 			}
 		};
-		ActionScheduler.RunActionOnceAfterDelay(action, 10);
+		ActionScheduler.RunActionOnceAfterDelay(openGatesAction, 10);
 	}
 
 	public static void EndMatch(Player winner = null)

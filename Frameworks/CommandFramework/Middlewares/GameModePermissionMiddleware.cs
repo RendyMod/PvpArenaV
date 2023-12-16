@@ -9,6 +9,7 @@ using PvpArena.GameModes.CaptureThePancake;
 using PvpArena.GameModes.Dodgeball;
 using PvpArena.GameModes.Domination;
 using PvpArena.GameModes.Matchmaking1v1;
+using PvpArena.GameModes.Moba;
 using PvpArena.GameModes.Prison;
 using PvpArena.GameModes.PrisonBreak;
 using PvpArena.GameModes.Troll;
@@ -38,7 +39,8 @@ public class GameModePermissionMiddleware : IMiddleware
 			{ Player.PlayerState.Dodgeball, DodgeballGameMode.GetAllowedCommands() },
 			{ Player.PlayerState.Troll, TrollGameMode.GetAllowedCommands() },
 			{ Player.PlayerState.PrisonBreak, PrisonBreakGameMode.GetAllowedCommands() },
-			{ Player.PlayerState.NoHealingLimit, NoHealingLimitGameMode.GetAllowedCommands() }
+			{ Player.PlayerState.NoHealingLimit, NoHealingLimitGameMode.GetAllowedCommands() },
+			{ Player.PlayerState.Moba, MobaGameMode.GetAllowedCommands() }
 			// Add more game modes and their corresponding allowed commands here
 		};
 	}
@@ -54,9 +56,17 @@ public class GameModePermissionMiddleware : IMiddleware
 				{
 					return true;
 				}
+				else
+				{
+					sender.ReceiveMessage("That command is not allowed while in this game mode".Error());
+				}
+			}
+			else
+			{
+				sender.ReceiveMessage("This game mode is not properly configured for commands yet");
 			}
 
-			sender.ReceiveMessage("That command is not allowed while in this game mode".Error());
+			
 			return false;
 		}
 		catch (Exception ex)

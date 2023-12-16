@@ -62,10 +62,10 @@ public static class PlayerSpawnHandler
 	}
 
 	// Helper method to schedule actions with delay.
-	private static void ScheduleAction(System.Action<Player> action, Player player, int delay)
+	private static void ScheduleAction(System.Action<Player> action, Player player, int frameDelay)
 	{
-		var scheduledAction = new ScheduledAction(action, new object[] { player });
-		ActionScheduler.ScheduleAction(scheduledAction, delay);
+		var scheduledAction = () => action(player);
+		ActionScheduler.RunActionOnceAfterFrames(scheduledAction, frameDelay);
 	}
 
 	private static void HandleOnFirstSpawn(Player player)
@@ -90,26 +90,11 @@ public static class PlayerSpawnHandler
 
 	private static void GiveJewelsAndScheduleEquipment(Player player)
 	{
-		var steamId = player.SteamID;
-		// Generate jewels for the character.
-		foreach (var jewel in JewelData.abilityToPrefabDictionary)
-		{
-			string mods = Core.defaultJewelStorage.GetModsForSpell(jewel.Key, player.SteamID);
-			Helper.GenerateJewelViaEvent(player, jewel.Key, mods);
-		}
-		ScheduleAction(EquipJewels, player, delay: 2);
-		ScheduleAction(Helper.GiveDefaultLegendaries, player, delay: 3);
-		ScheduleAction(Helper.GiveArmorAndNecks, player, delay: 4);
+		Helper.GiveDefaultJewels(player);
+		ScheduleAction(Helper.GiveDefaultLegendaries, player, frameDelay: 3);
+		ScheduleAction(Helper.GiveArmorAndNecks, player, frameDelay: 4);
 	}
 
-	public static void EquipJewels(Player player)
-	{
-		int inventoryIndex = 0;
-		foreach (var jewel in JewelData.abilityToPrefabDictionary)
-		{
-			Helper.EquipJewelAtSlot(player, inventoryIndex);
-			inventoryIndex++;
-		}
-	}
+
 }
 

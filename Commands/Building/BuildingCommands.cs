@@ -30,6 +30,7 @@ internal class BuildingCommands
 				break;
 			}
 		}
+		entities.Dispose();
 
 		entities = Helper.GetEntitiesByComponentTypes<CastleHeartConnection>(true);
 		foreach (var entity in entities)
@@ -46,6 +47,7 @@ internal class BuildingCommands
 				});
 			}
 		}
+		entities.Dispose();
 		sender.ReceiveMessage(sender.Character.Read<Team>().Value.ToString());
 	}
 
@@ -67,7 +69,7 @@ internal class BuildingCommands
 				});
 			}
 		}
-
+		entities.Dispose();
 		sender.ReceiveMessage(sender.Character.Read<Team>().Value.ToString());
 	}
 

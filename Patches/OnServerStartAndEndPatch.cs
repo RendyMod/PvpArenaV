@@ -10,8 +10,8 @@ public static class InitializationPatch1
 	[HarmonyPostfix]
 	public static void OneShot_AfterLoad_InitializationPatch1()
 	{
-		var action = new ScheduledAction(Plugin.OnServerStart);
-		ActionScheduler.ScheduleAction(action, 180);
+		var action = () => Plugin.OnServerStart();
+		ActionScheduler.RunActionOnceAfterDelay(action, 6);
 		Plugin.Harmony.Unpatch(typeof(ServerBootstrapSystem).GetMethod("OnGameDataInitialized"), typeof(InitializationPatch1).GetMethod("OneShot_AfterLoad_InitializationPatch1"));
 	}
 }

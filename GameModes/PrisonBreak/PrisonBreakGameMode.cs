@@ -23,7 +23,8 @@ public class PrisonBreakGameMode : BaseGameMode
 "Top": -325.00,
 "Right": -345.00,
 "Bottom": -355.00*/
-	public override Player.PlayerState GameModeType => Player.PlayerState.PrisonBreak;
+	public override Player.PlayerState PlayerGameModeType => Player.PlayerState.PrisonBreak;
+	public override string UnitGameModeType => "prisonbreak";
 	public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
 	{
 		RemoveConsumables = false,
@@ -60,14 +61,17 @@ public class PrisonBreakGameMode : BaseGameMode
 
 	public override void Initialize()
 	{
-		BaseInitialize();
-		GameEvents.OnPlayerRespawn += HandleOnPlayerRespawn;
 		GameEvents.OnPlayerDowned += HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath += HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift += HandleOnShapeshift;
 		GameEvents.OnPlayerUsedConsumable += HandleOnConsumableUse;
 		GameEvents.OnPlayerInvitedToClan += HandleOnPlayerInvitedToClan;
 		GameEvents.OnPlayerBuffed += HandleOnPlayerBuffed;
+		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
+		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
+		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
+		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
+		GameEvents.OnPlayerPlacedStructure += HandleOnPlayerPlacedStructure;
 
 		foreach (var player in PlayerService.OnlinePlayers.Keys)
 		{
@@ -89,14 +93,17 @@ public class PrisonBreakGameMode : BaseGameMode
 	}
 	public override void Dispose()
 	{
-		BaseDispose();
-		GameEvents.OnPlayerRespawn -= HandleOnPlayerRespawn;
 		GameEvents.OnPlayerDowned -= HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath -= HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift -= HandleOnShapeshift;
 		GameEvents.OnPlayerUsedConsumable -= HandleOnConsumableUse;
 		GameEvents.OnPlayerInvitedToClan -= HandleOnPlayerInvitedToClan;
 		GameEvents.OnPlayerBuffed -= HandleOnPlayerBuffed;
+		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
+		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
+		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
+		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
+		GameEvents.OnPlayerPlacedStructure -= HandleOnPlayerPlacedStructure;
 
 		PlayersAlive.Clear();
 		foreach (var kvp in PlayerRespawnTimers)
@@ -124,7 +131,7 @@ public class PrisonBreakGameMode : BaseGameMode
 
 	public override void HandleOnPlayerDowned(Player player, Entity killer)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 		if (killer.Exists())
 		{
@@ -164,9 +171,7 @@ public class PrisonBreakGameMode : BaseGameMode
 		}
 
 		player.Reset(ResetOptions);
-		var action = () => Helper.MakeGhostlySpectator(player); //when run immediately after reset the mist buff doesn't always get applied
-		var timer = ActionScheduler.RunActionOnceAfterDelay(action, .05f);
-		Timers.Add(timer);
+		Timers.Add(Helper.MakeGhostlySpectator(player));
 		PlayersAlive[player] = false;
 		CheckForWinner();
 	}
@@ -184,35 +189,6 @@ public class PrisonBreakGameMode : BaseGameMode
 		{
 			return $"{coloredVictimName} died to {"PvE".NeutralTeam()}".White();
 		}
-	}
-	public override void HandleOnPlayerDeath(Player player, DeathEvent deathEvent)
-	{
-		if (player.CurrentState != GameModeType) return;
-
-		//clear out any queued up respawn actions since we will recreate them now that the player has died (in case they killed themselves twice in a row before the initial respawn actions finished)
-		if (PlayerRespawnTimers.TryGetValue(player, out var respawnActions))
-		{
-			foreach (var respawnAction in respawnActions)
-			{
-				respawnAction?.Dispose();
-			}
-			respawnActions.Clear();
-		}
-
-		if (!BuffUtility.HasBuff(VWorld.Server.EntityManager, player.Character, Prefabs.Buff_General_Vampire_Wounded_Buff))
-		{
-			foreach (var alivePlayer in PlayersAlive.Keys)
-			{
-				string coloredVictimName = player.Name.Colorify(ExtendedColor.ClanNameColor);
-				
-				var message = $"{coloredVictimName} killed themselves".White();
-				alivePlayer.ReceiveMessage(message);
-			}
-		}
-
-		Helper.RevivePlayer(player);
-		PlayersAlive[player] = false;
-		CheckForWinner();
 	}
 
 	private void CheckForWinner()
@@ -248,60 +224,39 @@ public class PrisonBreakGameMode : BaseGameMode
 		return PlayersAlive.Count(p => p.Value) <= 1;
 	}
 
-	public override void HandleOnPlayerChatCommand(Player player, CommandAttribute command)
-	{
-		if (player.CurrentState != GameModeType) return;
-
-	}
 	public override void HandleOnShapeshift(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 		var enterShapeshiftEvent = eventEntity.Read<EnterShapeshiftEvent>();
 		if (enterShapeshiftEvent.Shapeshift != Prefabs.AB_Shapeshift_BloodMend_Group)
 		{
-			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
+			eventEntity.Destroy();
 			player.ReceiveMessage("You can't feel your vampire essence here...".Error());
 		}
 	}
-	public override void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
+	public void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
 	{
-		if (player.CurrentState != GameModeType) return;
-		
-		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
+		if (player.CurrentState != PlayerGameModeType) return;
+
+		eventEntity.Destroy();
 		player.ReceiveMessage("You can't drink those in prison!".Error());
 	}
 
 	public override void HandleOnPlayerDisconnected(Player player)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 		base.HandleOnPlayerDisconnected(player);
-		Helper.DestroyEntity(player.Character);
+		Helper.SoftKillPlayer(player);
 	}
 
 	public void HandleOnPlayerInvitedToClan(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
-		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
+		eventEntity.Destroy();
 		player.ReceiveMessage("You may not invite players to your clan while in prison".Error());
-	}
-
-	public void HandleOnPlayerChatCommand(Player player, Entity eventEntity)
-	{
-		if (player.CurrentState != GameModeType) return;
-
-
-	}
-
-	public void HandleOnPlayerRespawn(Player player)
-	{
-		if (player.CurrentState != GameModeType) return;
-
-		var blood = player.Character.Read<Blood>();
-		Helper.SetPlayerBlood(player, blood.BloodType, blood.Quality);
-		Helper.MakeGhostlySpectator(player);
 	}
 
 	public void HandleOnPlayerBuffed(Player player, Entity buffEntity)

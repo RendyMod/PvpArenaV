@@ -3,6 +3,8 @@ using ProjectM;
 using Unity.Collections;
 using ProjectM.Gameplay.Systems;
 using System;
+using PvpArena.GameModes;
+using PvpArena.Services;
 
 namespace PvpArena.Patches;
 
@@ -18,10 +20,10 @@ public static class InteractSystemServerPatch
 			try
 			{
 				var interactor = entity.Read<Interactor>();
-				if (interactor.Target.Has<Mountable>() && !Team.IsAllies(interactor.Target.Read<Team>(), entity.Read<Team>()))
+				if (entity.Has<PlayerCharacter>())
 				{
-					interactor.Target = entity;
-					entity.Write(interactor);
+					var player = PlayerService.GetPlayerFromCharacter(entity);
+					GameEvents.RaisePlayerInteracted(player, interactor);
 				}
 			}
 			catch (Exception e)

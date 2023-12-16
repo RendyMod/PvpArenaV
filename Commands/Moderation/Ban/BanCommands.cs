@@ -24,8 +24,8 @@ internal class BanCommands
 		sender.ReceiveMessage(("You ".Emphasize() + Moderation.BanMuteMessage(false, false, player.Name.Emphasize(), player.SteamID.ToString().Emphasize(), numberOfDays, reason.Emphasize()).White()));
 		player.ReceiveMessage(Moderation.BanMuteMessage(true, false, player.Name, player.SteamID.ToString(), numberOfDays, reason.Emphasize()).White());
 
-		var action = new ScheduledAction(Helper.KickPlayer, new object[] { player.SteamID });
-		ActionScheduler.ScheduleAction(action, 10);
+		var action = () => Helper.KickPlayer(player.SteamID);
+		ActionScheduler.RunActionOnceAfterFrames(action, 10);
 	}
 
 	[Command("unban", description: "Unbans a player", adminOnly: true)]

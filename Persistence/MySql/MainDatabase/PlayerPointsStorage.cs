@@ -9,7 +9,7 @@ using PvpArena.Models;
 using PvpArena.Services;
 using static PvpArena.Configs.ConfigDtos;
 
-namespace PvpArena.Persistence.MySql.PlayerDatabase;
+namespace PvpArena.Persistence.MySql.MainDatabase;
 public class PlayerPointsStorage : MySqlDataStorage<PlayerPoints>
 {
 	public PlayerPointsStorage(DatabaseConfig dbConfig) : base(dbConfig) { }

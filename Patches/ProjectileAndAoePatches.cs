@@ -11,6 +11,11 @@ using static ProjectM.HitColliderCast;
 using PvpArena.Listeners;
 using Unity.Entities;
 using Unity.Transforms;
+using ProjectM.Gameplay.Scripting;
+using PvpArena.Helpers;
+using ProjectM.Scripting;
+using PvpArena.Models;
+using static UnityEngine.UI.GridLayoutGroup;
 
 namespace PvpArena.Patches;
 
@@ -26,93 +31,129 @@ public static class ProjectileSystem_Spawn_ServerPatch
 			{
 				var prefabGuid = entity.Read<PrefabGUID>();
 				var owner = entity.Read<EntityOwner>().Owner;
-				if (owner.Exists() && owner.Has<PlayerCharacter>())
+				if (owner.Exists())
 				{
-					var player = PlayerService.GetPlayerFromCharacter(owner);
-					GameEvents.RaisePlayerHitColliderCreated(player, entity);
-				}
-				if (prefabGuid == Prefabs.AB_Subdue_Projectile || prefabGuid == Prefabs.AB_Sorceress_Projectile)
-				{
-					var buffer = entity.ReadBuffer<HitColliderCast>();
-					for (var i = 0; i < buffer.Length; i++)
+					if (owner.Has<PlayerCharacter>())
 					{
-						var hitCollider = buffer[i];
-						hitCollider.IgnoreImmaterial = true;
-						buffer[i] = hitCollider;
+						var player = PlayerService.GetPlayerFromCharacter(owner);
+						GameEvents.RaisePlayerProjectileCreated(player, entity);
+					}
+					else
+					{
+						GameEvents.RaiseUnitProjectileCreated(owner, entity);
 					}
 				}
 			}
 			catch (Exception e)
 			{
+				entities.Dispose();
 				Plugin.PluginLog.LogInfo(e.ToString());
 			}
 		}
 	}
 }
 
-//this finds the entities too late to change some properties, hence the AoeListener below
-/*[HarmonyPatch(typeof(HitCastColliderSystem_OnDestroy), nameof(HitCastColliderSystem_OnDestroy.OnUpdate))]
-public static class HitCastColliderSystem_OnDestroyPatch
+[HarmonyPatch(typeof(HitCastColliderSystem_OnSpawn), nameof(HitCastColliderSystem_OnSpawn.OnUpdate))]
+public static class HitCastColliderSystem_OnSpawnPatch
 {
-	public static void Prefix(HitCastColliderSystem_OnDestroy __instance)
+	public static void Prefix(HitCastColliderSystem_OnSpawn __instance)
+	{
+		var entities = __instance.__OnUpdate_LambdaJob0_entityQuery.ToEntityArray(Allocator.Temp);
+		foreach (var entity in entities)
+		{
+			if (entity.Exists())
+			{
+				var owner = entity.Read<EntityOwner>().Owner;
+				if (owner.Exists())
+				{
+					if (owner.Has<PlayerCharacter>())
+					{
+						var player = PlayerService.GetPlayerFromCharacter(owner);
+						GameEvents.RaisePlayerHitColliderCastCreated(player, entity);
+					}
+					else
+					{
+						GameEvents.RaiseUnitHitColliderCastCreated(owner, entity);
+					}
+				}
+			}
+		}
+		entities.Dispose();
+	}
+}
+
+[HarmonyPatch(typeof(HitCastColliderSystem_OnUpdate), nameof(HitCastColliderSystem_OnUpdate.OnUpdate))]
+public static class HitCastColliderSystem_OnUpdatePatch
+{
+	public static void Prefix(HitCastColliderSystem_OnUpdate __instance)
 	{
 		var entities = __instance.__OnUpdate_LambdaJob0_entityQuery.ToEntityArray(Allocator.Temp);
 		foreach (var entity in entities)
 		{
 			try
 			{
-				var owner = entity.Read<EntityOwner>().Owner;
-				if (owner.Exists() && owner.Has<PlayerCharacter>())
+				if (entity.Exists())
 				{
-					var player = PlayerService.GetPlayerFromCharacter(owner);
-					GameEvents.RaisePlayerHitColliderCreated(player, entity);
+					var owner = entity.Read<EntityOwner>().Owner;
+					var prefabGuid = entity.Read<PrefabGUID>();
+					if (owner.Exists())
+					{
+						if (entity.Has<Projectile>())
+						{
+							if (owner.Has<PlayerCharacter>())
+							{
+								var player = PlayerService.GetPlayerFromCharacter(owner);
+								GameEvents.RaisePlayerProjectileUpdate(player, entity);
+							}
+							else
+							{
+								GameEvents.RaiseUnitProjectileUpdate(owner, entity);
+							}
+						}
+					}
 				}
-
-
 			}
 			catch (Exception e)
 			{
+				entities.Dispose();
 				Plugin.PluginLog.LogInfo(e.ToString());
 			}
 		}
 		entities.Dispose();
 	}
-}*/
+}
 
-public class AoeListener : EntityQueryListener
+public class TargetAoeListener : EntityQueryListener
 {
 	public void OnNewMatchFound(Entity entity)
 	{
-        try
-        {
-            if (entity.Exists())
-            {
-                var owner = entity.Read<EntityOwner>().Owner;
-                if (owner.Exists() && owner.Has<PlayerCharacter>())
-                {
-                    var player = PlayerService.GetPlayerFromCharacter(owner);
-                    GameEvents.RaisePlayerHitColliderCreated(player, entity);
-                }
-                var prefabGuid = entity.Read<PrefabGUID>();
-                if (prefabGuid == Prefabs.AB_Sorceress_AoE_Throw)
-                {
-                    var buffer = entity.ReadBuffer<HitColliderCast>();
-                    for (var i = 0; i < buffer.Length; i++)
-                    {
-                        var hitColliderCast = buffer[i];
-                        hitColliderCast.IgnoreImmaterial = true;
-                        buffer[i] = hitColliderCast;
-                    }
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            Plugin.PluginLog.LogInfo(e.ToString());
-        }
+		if (entity.Exists())
+		{
+			var owner = entity.Read<EntityOwner>().Owner;
+			if (owner.Exists())
+			{
+				if (owner.Exists())
+				{
+					if (owner.Has<PlayerCharacter>())
+					{
+						var player = PlayerService.GetPlayerFromCharacter(owner);
+						GameEvents.RaisePlayerAoeCreated(player, entity);
+					}
+					else
+					{
+						GameEvents.RaiseUnitAoeCreated(owner, entity);
+					}
+				}
+			}
+		}
 	}
 
 	public void OnNewMatchRemoved(Entity entity)
+	{
+
+	}
+
+	public void OnUpdate(Entity entity)
 	{
 
 	}

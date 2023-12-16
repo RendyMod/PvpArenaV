@@ -8,6 +8,7 @@ using PvpArena.GameModes.BulletHell;
 using PvpArena.GameModes.CaptureThePancake;
 using PvpArena.GameModes.Dodgeball;
 using PvpArena.GameModes.Domination;
+using PvpArena.GameModes.Moba;
 using PvpArena.GameModes.PrisonBreak;
 using PvpArena.GameModes.Troll;
 using PvpArena.Models;
@@ -56,8 +57,8 @@ internal class GameModeCommands
 		}
 		if (!Team.IsAllies(team1Leader.Character.Read<Team>(), team2Leader.Character.Read<Team>()))
 		{
-			DodgeballHelper.EndMatch();
-			DodgeballHelper.StartMatch(team1Leader, team2Leader);
+			DominationHelper.EndMatch();
+			DominationHelper.StartMatch(team1Leader, team2Leader);
 			sender.ReceiveMessage("Match started".Success());
 		}
 		else
@@ -69,7 +70,7 @@ internal class GameModeCommands
 	[Command("end-domination", description: "Ends domination", adminOnly: true)]
 	public void EndDominationCommand(Player sender)
 	{
-		DodgeballHelper.EndMatch();
+		DominationHelper.EndMatch();
 		sender.ReceiveMessage("Match ended".Success());
 	}
 
@@ -158,5 +159,35 @@ internal class GameModeCommands
 		{
 			NoHealingLimitManager.AddPlayer(player ?? sender);
 		}
+	}
+
+	[Command("start-moba", description: "Used for debugging", adminOnly: true)]
+	public void StartMobaCommand(Player sender, Player team2Leader, Player team1Leader = null)
+	{
+		if (team1Leader == null)
+		{
+			team1Leader = sender;
+		}
+		if (!Team.IsAllies(team1Leader.Character.Read<Team>(), team2Leader.Character.Read<Team>()))
+		{
+			MobaHelper.EndMatch();
+			Action action = () =>
+			{
+				MobaHelper.StartMatch(team1Leader, team2Leader);
+			};
+			ActionScheduler.RunActionOnceAfterDelay(action, 1);
+		}
+		else
+		{
+			sender.ReceiveMessage("Cannot start a match against someone in the same clan!".Error());
+		}
+	}
+
+
+	[Command("end-moba", description: "Used for debugging", adminOnly: true)]
+	public void EndMobaCommand(Player sender)
+	{
+		MobaHelper.EndMatch();
+		sender.ReceiveMessage("Match ended".Success());
 	}
 }

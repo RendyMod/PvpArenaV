@@ -11,6 +11,7 @@ using PvpArena.Helpers;
 using PvpArena.Models;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
 using Unity.Physics;
 using static PvpArena.Frameworks.CommandFramework.CommandFramework;
 using static PvpArena.Helpers.Helper;
@@ -19,10 +20,11 @@ namespace PvpArena.Commands.Utility;
 internal class SpawnCommands
 {
 	[Command("spawn-turret", description: "Spawns a turret at your location", adminOnly: true)]
-	public static void SpawnTurretCommand(Player sender, PrefabGUID _prefab, int team = 10, int level = 80)
+	public static void SpawnTurretCommand(Player sender, PrefabGUID _prefab, int spawnSnapMode = 5)
 	{
-		var turret = new Turret(_prefab, team, level);
-		UnitFactory.SpawnUnit(turret, sender.Position);
+		var spawnPosition = Helper.GetSnappedHoverPosition(sender, (SnapMode)spawnSnapMode);
+		var turret = new Turret(_prefab);
+		UnitFactory.SpawnUnit(turret, spawnPosition);
 		sender.ReceiveMessage($"Spawned turret!".Success());
 	}
 
@@ -58,6 +60,9 @@ internal class SpawnCommands
 		}
 		
 		boss.Level = level;
+		boss.AggroRadius = 3;
+		boss.IsRooted = false;
+		boss.MaxDistanceFromPreCombatPosition = 20;
 		UnitFactory.SpawnUnit(boss, spawnPosition);
 		sender.ReceiveMessage($"Spawned boss!".Success());
 	}
@@ -76,7 +81,7 @@ internal class SpawnCommands
 				SettingsEntity = ModifiableEntity.CreateFixed(Helper.GetPrefabEntityByPrefabGUID(Prefabs.BuffResistance_Golem)),
 				InitialSettingGuid = Prefabs.BuffResistance_Golem
 			});
-			Helper.BuffEntity(e, Helper.CustomBuff, out var buffEntity, (float)Helper.NO_DURATION, false, true);
+			Helper.BuffEntity(e, Helper.CustomBuff, out var buffEntity, (float)Helper.NO_DURATION, false);
 			Helper.ModifyBuff(buffEntity, BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.DisableMapCollision);
 		}), 0, -1);
 		sender.ReceiveMessage($"Spawned vampire!".Success());
@@ -143,21 +148,6 @@ internal class SpawnCommands
 	public static void SpawnMerchantCommand(Player sender, string merchantName, int spawnSnapMode = 5)
 	{
 		var spawnPosition = Helper.GetSnappedHoverPosition(sender, (SnapMode)spawnSnapMode);
-		foreach (var trader in TradersConfig.Config.Traders)
-		{
-			if (trader.UnitSpawn.Description.ToLower() == merchantName.ToLower())
-			{
-				var unit = new Factories.Trader(trader.UnitSpawn.PrefabGUID, trader.TraderItems);
-				unit.IsImmaterial = true;
-				unit.IsInvulnerable = true;
-				unit.IsRooted = true;
-				unit.IsTargetable = false;
-				unit.DrawsAggro = false;
-				unit.KnockbackResistance = true;
-				unit.MaxHealth = 10000;
-				UnitFactory.SpawnUnit(unit, spawnPosition);
-				/*UnitFactory.SpawnUnit(unit, trader.UnitSpawn.Location.ToFloat3());*/
-			}
-		}
+		UnitFactory.SpawnMerchant(merchantName, spawnPosition);
 	}
 }
