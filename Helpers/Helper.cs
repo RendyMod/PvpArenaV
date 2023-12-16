@@ -26,6 +26,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using PvpArena.GameModes;
 using Il2CppSystem.Security.Cryptography;
+using ProjectM.Gameplay.Systems;
 
 namespace PvpArena.Helpers;
 
@@ -38,14 +39,21 @@ public static partial class Helper
 
 	public static System.Random random = new System.Random();
 
-	public static void RevivePlayer(Player player)
+	public static void RevivePlayer(Player player, float3? pos = null)
 	{
 		var sbs = VWorld.Server.GetExistingSystem<ServerBootstrapSystem>();
 		var bufferSystem = VWorld.Server.GetExistingSystem<EntityCommandBufferSystem>();
 		var buffer = bufferSystem.CreateCommandBuffer();
 
 		Nullable_Unboxed<float3> spawnLoc = new();
-		spawnLoc.value = player.Position;
+		if (pos.HasValue)
+		{
+			spawnLoc.value = pos.Value;
+		}
+		else
+		{
+			spawnLoc.value = player.Position;
+		}
 		spawnLoc.has_value = true;
 		var health = player.Character.Read<Health>();
 		if (Helper.HasBuff(player, Prefabs.Buff_General_Vampire_Wounded_Buff))
@@ -179,14 +187,21 @@ public static partial class Helper
 		return false;
 	}
 
+	public static void SoftKillPlayer(Player player)
+	{
+		Helper.BuffPlayer(player, Prefabs.Buff_General_Vampire_Wounded_Buff, out var buffEntity);
+	}
 
+    //used to kill something via damage if it has health, otherwise destroys it. It is better to destroy using DestroyEntity
+	public static void KillOrDestroyEntity(Entity entity)
+	{
+		StatChangeUtility.KillOrDestroyEntity(VWorld.Server.EntityManager, entity, entity, entity, 0, true);
+	}
+
+    //used to remove things from existence -- doesn't trigger on-death logic (but will trigger on-destroy logic)
 	public static void DestroyEntity(Entity entity)
 	{
-		if (entity.Has<CanFly>() && !entity.Has<PlayerCharacter>())
-		{
-			entity.Remove<CanFly>(); //this prevents a unit from being respawned when killed this way
-		}
-		StatChangeUtility.KillOrDestroyEntity(VWorld.Server.EntityManager, entity, entity, entity, 0, true);
+		DestroyUtility.CreateDestroyEvent(VWorld.Server.EntityManager, entity, DestroyReason.Default, DestroyDebugReason.None);
 	}
 
 	public static void RespawnPlayer(Player player, float3 pos)
@@ -260,7 +275,8 @@ public static partial class Helper
         public bool RemoveConsumables = false;
         public bool RemoveShapeshifts = false;
         public bool ResetCooldowns = true;
-        public HashSet<PrefabGUID> BuffsToIgnore = new HashSet<PrefabGUID>();
+		public bool RemoveMinions = false;
+		public HashSet<PrefabGUID> BuffsToIgnore = new HashSet<PrefabGUID>();
 
         public static ResetOptions Default => new ResetOptions();
         public static ResetOptions FreshMatch = new ResetOptions
@@ -272,6 +288,46 @@ public static partial class Helper
         };
     }
 
+	private static void DestroyPlayerSummonsAndProjectiles(Player player)
+	{
+		var projectileEntities = Helper.GetEntitiesByComponentTypes<HitColliderCast, SpellModArithmetic>();
+		foreach (var entity in projectileEntities)
+		{
+			var owner = entity.Read<EntityOwner>().Owner;
+			if (owner == player.Character)
+			{
+				if (entity.Has<CreateGameplayEventsOnDestroy>())
+				{
+					var buffer = entity.ReadBuffer<CreateGameplayEventsOnDestroy>();
+					buffer.Clear();
+				}
+				Helper.DestroyEntity(entity);
+			}
+		}
+		projectileEntities.Dispose();
+
+		var minionEntities = Helper.GetEntitiesByComponentTypes<Minion>();
+		foreach (var entity in minionEntities)
+		{
+			var owner = entity.Read<EntityOwner>().Owner;
+			if (owner == player.Character)
+			{
+				if (entity.Has<CreateGameplayEventsOnDestroy>())
+				{
+					var buffer = entity.ReadBuffer<CreateGameplayEventsOnDestroy>();
+					buffer.Clear();
+				}
+				if (entity.Has<CreateGameplayEventOnDeath>())
+				{
+					var buffer = entity.ReadBuffer<CreateGameplayEventOnDeath>();
+					buffer.Clear();
+				}
+				Helper.DestroyEntity(entity);
+			}
+		}
+		minionEntities.Dispose();
+	}
+
 	public static void Reset(this Player player, ResetOptions resetOptions = null)
 	{
         resetOptions ??= ResetOptions.Default;
@@ -280,10 +336,14 @@ public static partial class Helper
 		{
             ResetCooldown(player.Character);
 		}
+		if (resetOptions.RemoveMinions)
+		{
+			DestroyPlayerSummonsAndProjectiles(player);
+		}
         ClearExtraBuffs(player.Character, resetOptions);
         //delay so that removing gun e / heart strike doesnt dmg you
-        var action = new ScheduledAction(HealEntity, new object[] { player.Character });
-		ActionScheduler.ScheduleAction(action, 3);
+        var action = () => HealEntity(player.Character);
+		ActionScheduler.RunActionOnceAfterFrames(action, 3);
 
         GameEvents.RaisePlayerReset(player);
     }
@@ -350,6 +410,48 @@ public static partial class Helper
 		entity.Write(health);
 	}
 
+	public static int HealEntity(Entity entity, int amount)
+	{
+		Health health = entity.Read<Health>();
+		var originalHealth = health.Value;
+		if (health.Value + amount > health.MaxHealth)
+		{
+			health.Value = health.MaxHealth;
+		}
+		else
+		{
+			health.Value += amount;
+		}
+		
+		if (health.MaxRecoveryHealth + amount > health.MaxHealth)
+		{
+			health.MaxRecoveryHealth = health.MaxHealth;
+		}
+		else
+		{
+			health.MaxRecoveryHealth += amount;
+		}
+
+		entity.Write(health);
+		return (int)(health.Value - originalHealth);
+	}
+
+	public static void HealPlayer(Player player, int amount)
+	{
+		var amountHealed = HealEntity(player.Character, amount);
+		if (amountHealed > 0)
+		{
+			if (amountHealed < amount)
+			{
+				MakeSCT(player, Prefabs.SCT_Type_MAX, amountHealed);
+			}
+			else
+			{
+				MakeSCT(player, Prefabs.SCT_Type_Healing, amountHealed);
+			}
+		}
+	}
+
 	// Adds Blood Moon visual Effect + Witch + Rage on Toggle
 	public static void ToggleBuffsOnPlayer(Player player)
 	{
@@ -382,14 +484,14 @@ public static partial class Helper
 
 	public static void KillPreviousEntities(string category)
 	{
-		var entities = Helper.GetEntitiesByComponentTypes<CanFly>(true);
+		var entities = Helper.GetNonPlayerSpawnedEntities(true);
 		foreach (var entity in entities)
 		{
 			if (!entity.Has<PlayerCharacter>())
 			{
 				if (UnitFactory.TryGetSpawnedUnitFromEntity(entity, out SpawnedUnit spawnedUnit))
 				{
-					if (spawnedUnit.Unit.Category == category)
+					if (spawnedUnit.Unit.GameMode == category)
 					{
 						Helper.DestroyEntity(entity);
 					}
@@ -441,6 +543,11 @@ public static partial class Helper
 		}
 	}
 
+	public static void RemoveBuildImpairBuffFromPlayer(Player player)
+	{
+		Helper.RemoveBuff(player, Prefabs.Buff_Gloomrot_SentryOfficer_TurretCooldown);
+	}
+
 	public static void ControlUnit(Player player, Entity unit)
 	{
 		Helper.BuffPlayer(player, Prefabs.Admin_Observe_Invisible_Buff, out var buffEntity);
@@ -474,7 +581,7 @@ public static partial class Helper
 			{
 				position = controlledEntity.Read<LocalToWorld>().Position;
 			}
-			Helper.DestroyEntity(controlledEntity);
+			Helper.KillOrDestroyEntity(controlledEntity);
 		}
 		
 		ControlUnit(player, player.Character);
@@ -537,4 +644,25 @@ public static partial class Helper
                 return originalPosition; // Default case to handle unexpected mode
         }
     }
+
+	public static void BecomeEntity(Player player, PrefabGUID prefabGuid)
+	{
+		Helper.BuffPlayer(player, Prefabs.Admin_Observe_Invisible_Buff, out var buffEntity, Helper.NO_DURATION);
+		PrefabSpawnerService.SpawnWithCallback(prefabGuid, player.Position, (e) =>
+		{
+			Helper.ControlUnit(player, e);
+			if (e.Has<UnitLevel>())
+			{
+				var level = e.Read<UnitLevel>();
+				level.Level = 200;
+				e.Write(level);
+				e.Write(player.Character.Read<Team>());
+				e.Write(player.Character.Read<TeamReference>());
+				Helper.BuffEntity(e, Helper.CustomBuff4, out var buffEntity1, Helper.NO_DURATION);
+				var aggroConsumer = e.Read<AggroConsumer>();
+				aggroConsumer.Active.Value = false;
+				e.Write(aggroConsumer);
+			}
+		}, 0, -1);
+	}
 }

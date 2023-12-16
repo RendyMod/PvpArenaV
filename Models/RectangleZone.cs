@@ -67,9 +67,34 @@ public class RectangleZone
 		return false;
 	}
 
+	// Overloaded Contains method for Player with an expansion parameter
+	public bool Contains(Player player, float expansion)
+	{
+		return Contains(player.Position, expansion);
+	}
+
+	// Overloaded Contains method for float3 position with an expansion parameter
+	public bool Contains(float3 position, float expansion)
+	{
+		var x = position.x;
+		var z = position.z;
+		return x >= Left - expansion && x <= Right + expansion && z >= Bottom - expansion && z <= Top + expansion;
+	}
+
+	// Overloaded Contains method for Entity with an expansion parameter
+	public bool Contains(Entity entity, float expansion)
+	{
+		if (entity.Has<LocalToWorld>())
+		{
+			var localToWorld = entity.Read<LocalToWorld>();
+			return Contains(localToWorld.Position, expansion);
+		}
+		return false;
+	}
+
 
 	//assumes you are facing north and that are you are standing in the bottom-left square
-	public static RectangleZone GetZoneByCurrentCoordinates(Player player, int tilesUp, int tilesRight)
+	public static RectangleZone GetZoneByCurrentCoordinates(Player player, int tilesRight, int tilesUp)
 	{
 		// Assuming player.Position.x and player.Position.z give the X and Z coordinates
 		var playerX = player.Position.x;

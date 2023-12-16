@@ -42,12 +42,17 @@ public static class Listener
 					if (lastVersion == 0)
 					{
 						listener.OnNewMatchFound(entity);
+						listener.OnUpdate(entity);
 					}
 					else
 					{
 						listener.OnNewMatchRemoved(entity);
 					}
 					_entityVersion[entity] = currentVersion;
+				}
+				else
+				{
+					listener.OnUpdate(entity);
 				}
 			}
 
@@ -62,4 +67,5 @@ public interface EntityQueryListener
 {
 	public void OnNewMatchFound(Entity entity);
 	public void OnNewMatchRemoved(Entity entity);
+	public void OnUpdate(Entity entity);
 }

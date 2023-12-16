@@ -7,6 +7,7 @@ using PvpArena.Services;
 using PvpArena.Models;
 using System.Collections.Generic;
 using System;
+using PvpArena.GameModes;
 
 namespace PvpArena.Patches;
 
@@ -26,7 +27,7 @@ public static class BuildingPermissions
 				if (!player.IsAdmin && !AuthorizedBuilders.ContainsKey(player))
 				{
 					player.ReceiveMessage($"You do not have building permissions".Error());
-					VWorld.Server.EntityManager.DestroyEntity(entity);
+					entity.Destroy();
 				}
 			}
 			catch (Exception e)
@@ -44,11 +45,7 @@ public static class BuildingPermissions
 			{
 				var fromCharacter = entity.Read<FromCharacter>();
 				Player player = PlayerService.GetPlayerFromUser(fromCharacter.User);
-				if (!player.IsAdmin && !AuthorizedBuilders.ContainsKey(player))
-				{
-					player.ReceiveMessage($"You do not have building permissions".Error());
-					VWorld.Server.EntityManager.DestroyEntity(entity);
-				}
+				GameEvents.RaisePlayerPlacedStructure(player, entity);
 			}
 			catch (Exception e)
 			{
@@ -68,7 +65,7 @@ public static class BuildingPermissions
 				if (!player.IsAdmin && !AuthorizedBuilders.ContainsKey(player))
 				{
 					player.ReceiveMessage($"You do not have building permissions".Error());
-					VWorld.Server.EntityManager.DestroyEntity(entity);
+					entity.Destroy();
 				}
 			}
 			catch (Exception e)
@@ -89,7 +86,7 @@ public static class BuildingPermissions
 				if (!player.IsAdmin && !AuthorizedBuilders.ContainsKey(player))
 				{
 					player.ReceiveMessage($"You do not have building permissions".Error());
-					VWorld.Server.EntityManager.DestroyEntity(entity);
+					entity.Destroy();
 				}
 			}
 			catch (Exception e)

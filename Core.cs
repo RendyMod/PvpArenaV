@@ -6,6 +6,7 @@ using Bloodstone.API;
 using Il2CppInterop.Runtime;
 using ProjectM;
 using ProjectM.CastleBuilding;
+using ProjectM.Debugging;
 using ProjectM.Gameplay.Clan;
 using ProjectM.Network;
 using PvpArena.Configs;
@@ -15,6 +16,7 @@ using PvpArena.GameModes.CaptureThePancake;
 using PvpArena.GameModes.Dodgeball;
 using PvpArena.GameModes.Domination;
 using PvpArena.GameModes.Matchmaking1v1;
+using PvpArena.GameModes.Moba;
 using PvpArena.GameModes.Prison;
 using PvpArena.GameModes.PrisonBreak;
 using PvpArena.GameModes.Troll;
@@ -23,6 +25,7 @@ using PvpArena.Models;
 using PvpArena.Patches;
 using PvpArena.Persistence.MySql;
 using PvpArena.Persistence.MySql.AllDatabases;
+using PvpArena.Persistence.MySql.MainDatabase;
 using PvpArena.Persistence.MySql.PlayerDatabase;
 using PvpArena.Services;
 using Unity.Entities;
@@ -54,6 +57,9 @@ public static class Core
 	public static DodgeballGameMode dodgeballGameMode;
 	public static PrisonBreakGameMode prisonBreakGameMode;
 	public static NoHealingLimitGameMode noHealingLimitGameMode;
+	public static MobaGameMode mobaGameMode;
+	public static TrollGameMode trollGameMode;
+
 	public static bool HasInitialized = false;
 	public static SQLHandler sqlHandler;
 	public static DebugEventsSystem debugEventsSystem = VWorld.Server.GetExistingSystem<DebugEventsSystem>();
@@ -66,7 +72,10 @@ public static class Core
 	public static TraderSyncSystem traderSyncSystem = VWorld.Server.GetExistingSystem<TraderSyncSystem>();
 	public static ServerBootstrapSystem serverBootstrapSystem = VWorld.Server.GetExistingSystem<ServerBootstrapSystem>();
 	public static GameDataSystem gameDataSystem = VWorld.Server.GetExistingSystem<GameDataSystem>();
-	
+	public static ModificationSystem modificationSystem = VWorld.Server.GetExistingSystem<ModificationSystem>();
+	public static GameplayEventDebuggingSystem gameplayEventDebuggingSystem = VWorld.Server.GetExistingSystem<GameplayEventDebuggingSystem>();
+	public static GameplayEventsSystem gameplayEventsSystem = VWorld.Server.GetExistingSystem<GameplayEventsSystem>();
+
 	public static void Initialize()
 	{
 		if (HasInitialized) return;
@@ -86,21 +95,35 @@ public static class Core
 		PrisonBreakConfig.Load();
 
 		matchmaking1V1DataRepository = new PlayerMatchmaking1v1DataStorage(PvpArenaConfig.Config.ServerDatabase);
-		pointsDataRepository = new PlayerPointsStorage(PvpArenaConfig.Config.ServerDatabase);
-		banDataRepository = new PlayerBanInfoStorage(PvpArenaConfig.Config.ServerDatabase);
-		muteDataRepository = new PlayerMuteInfoStorage(PvpArenaConfig.Config.ServerDatabase);
-		imprisonDataRepository = new PlayerImprisonInfoStorage(PvpArenaConfig.Config.ServerDatabase);
-		playerConfigOptionsRepository = new PlayerConfigOptionsStorage(PvpArenaConfig.Config.ServerDatabase);
-		playerBulletHellDataRepository = new PlayerBulletHellDataStorage(PvpArenaConfig.Config.ServerDatabase);
-        defaultJewelStorage = new DefaultJewelDataStorage(PvpArenaConfig.Config.MainDatabase, PvpArenaConfig.Config.ServerDatabase);
-        defaultJewelStorage.LoadAllJewelDataAsync();
-        defaultLegendaryWeaponStorage = new DefaultLegendaryWeaponDataStorage(PvpArenaConfig.Config.MainDatabase, PvpArenaConfig.Config.ServerDatabase);
+		matchmaking1V1DataRepository.LoadDataAsync();
+
+		pointsDataRepository = new PlayerPointsStorage(PvpArenaConfig.Config.MainDatabase);
+		pointsDataRepository.LoadDataAsync();
+
+		banDataRepository = new PlayerBanInfoStorage(PvpArenaConfig.Config.MainDatabase);
+		banDataRepository.LoadDataAsync();
+
+		muteDataRepository = new PlayerMuteInfoStorage(PvpArenaConfig.Config.MainDatabase);
+		muteDataRepository.LoadDataAsync();
+
+		imprisonDataRepository = new PlayerImprisonInfoStorage(PvpArenaConfig.Config.MainDatabase);
+		imprisonDataRepository.LoadDataAsync();
+
+		playerConfigOptionsRepository = new PlayerConfigOptionsStorage(PvpArenaConfig.Config.MainDatabase);
+		playerConfigOptionsRepository.LoadDataAsync();
+
+		playerBulletHellDataRepository = new PlayerBulletHellDataStorage(PvpArenaConfig.Config.MainDatabase);
+		playerBulletHellDataRepository.LoadDataAsync();
+
+		defaultJewelStorage = new DefaultJewelDataStorage(PvpArenaConfig.Config.MainDatabase, PvpArenaConfig.Config.ServerDatabase);
+		defaultJewelStorage.LoadAllJewelDataAsync();
+
+		defaultLegendaryWeaponStorage = new DefaultLegendaryWeaponDataStorage(PvpArenaConfig.Config.MainDatabase, PvpArenaConfig.Config.ServerDatabase);
 		defaultLegendaryWeaponStorage.LoadAllLegendaryDataAsync();
+
 		matchmakingArenaStorage = new MatchmakingArenasDataStorage(PvpArenaConfig.Config.MainDatabase);
 		matchmaking1v1ArenaLocations = matchmakingArenaStorage.LoadAllArenasAsync().Result;
 		
-		
-
 		EntityQueryOptions options = EntityQueryOptions.Default;
 
 		EntityQueryDesc queryDesc = new EntityQueryDesc
@@ -118,23 +141,22 @@ public static class Core
 		{
 			All = new ComponentType[]
 			{
-				new ComponentType(Il2CppType.Of<HitColliderCast>(), ComponentType.AccessMode.ReadWrite)
+				new ComponentType(Il2CppType.Of<TargetAoE>(), ComponentType.AccessMode.ReadWrite)
 			},
 			Options = options
 		};
 		query = VWorld.Server.EntityManager.CreateEntityQuery(queryDesc);
-		Listener.AddListener(query, new AoeListener());
+		Listener.AddListener(query, new TargetAoeListener());
 
-		matchmaking1V1DataRepository.LoadDataAsync();
-		pointsDataRepository.LoadDataAsync();
-		banDataRepository.LoadDataAsync();
-		muteDataRepository.LoadDataAsync();
-		imprisonDataRepository.LoadDataAsync();
-		playerConfigOptionsRepository.LoadDataAsync();
-		playerBulletHellDataRepository.LoadDataAsync();
+
 
 		defaultGameMode = new DefaultGameMode();
 		defaultGameMode.Initialize();
+
+		if (PvpArenaConfig.Config.MatchmakingEnabled)
+		{
+			MatchmakingService.Initialize();
+		}
 
 		matchmaking1v1GameMode = new Matchmaking1v1GameMode();
 		matchmaking1v1GameMode.Initialize();
@@ -157,8 +179,12 @@ public static class Core
 
 		noHealingLimitGameMode = new NoHealingLimitGameMode();
 
+		trollGameMode = new TrollGameMode();
+
 		DummyHandler.Initialize();
 		PlayerSpawnHandler.Initialize();
+
+		mobaGameMode = new MobaGameMode();
 
 		if (PvpArenaConfig.Config.PointSystemEnabled)
 		{
@@ -176,7 +202,7 @@ public static class Core
         matchmaking1v1GameMode.Dispose();
         if (captureThePancakeGameMode != null)
         {
-            CaptureThePancakeHelper.EndMatch();
+            MobaHelper.EndMatch();
         }
 		if (dominationGameMode != null)
 		{
@@ -189,6 +215,10 @@ public static class Core
 		if (prisonBreakGameMode != null)
 		{
 			PrisonBreakHelper.EndMatch();
+		}
+		if (mobaGameMode != null)
+		{
+			MobaHelper.EndMatch();
 		}
 		
         spectatingGameMode.Dispose();

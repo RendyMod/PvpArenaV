@@ -23,6 +23,14 @@ public static class KitCommands
 		sender.ReceiveMessage("Gave:".Success()+" Legendaries".White());
 	}
 
+	[Command("kit jewels", description: "Gives default jewels", usage: ".kit jewels", aliases: new string[] { "kit jewels" }, adminOnly: false, includeInHelp: false, category: "Kits")]
+	public static void JewelKitCommand(Player sender)
+	{
+		Helper.GiveDefaultJewels(sender);
+
+		sender.ReceiveMessage("Gave:".Success() + " Jewels".White());
+	}
+
 	[Command("kit gear", description: "Gives a kit of gear and necklaces", usage:".kit gear", adminOnly: false, includeInHelp:true, category:"Kits")]
 	public static void GearKitGearCommand (Player sender)
 	{

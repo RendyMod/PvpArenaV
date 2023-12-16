@@ -19,19 +19,34 @@ namespace PvpArena.GameModes;
 
 public class DefaultGameMode : BaseGameMode
 {
-	public override Player.PlayerState GameModeType => Player.PlayerState.Normal;
+	public override Player.PlayerState PlayerGameModeType => Player.PlayerState.Normal;
+	public override string UnitGameModeType => "default";
+
 	public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
 	{
 		ResetCooldowns = true,
 		RemoveShapeshifts = false,
 		RemoveConsumables = false,
+		RemoveMinions = true,
 		BuffsToIgnore = new HashSet<PrefabGUID>
 		{
 			Helper.TrollBuff
 		}
 	};
 
-	private static List<PrefabGUID> ShapeshiftsToModify = new List<PrefabGUID>
+    public static Helper.ResetOptions TeamfightResetOptions { get; set; } = new Helper.ResetOptions
+    {
+        ResetCooldowns = true,
+        RemoveShapeshifts = false,
+        RemoveConsumables = false,
+        RemoveMinions = false,
+        BuffsToIgnore = new HashSet<PrefabGUID>
+        {
+            Helper.TrollBuff
+        }
+    };
+
+    private static List<PrefabGUID> ShapeshiftsToModify = new List<PrefabGUID>
 	{
 		Prefabs.AB_Shapeshift_Wolf_Buff,
 		Prefabs.AB_Shapeshift_Wolf_Skin01_Buff,
@@ -92,27 +107,35 @@ public class DefaultGameMode : BaseGameMode
 
 	public override void Initialize()
 	{
-		BaseInitialize();
 		GameEvents.OnPlayerDowned += HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath += HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift += HandleOnShapeshift;
 		GameEvents.OnPlayerStartedCasting += HandleOnPlayerStartedCasting;
-		GameEvents.OnPlayerUsedConsumable += HandleOnConsumableUse;
 		GameEvents.OnPlayerBuffed += HandleOnPlayerBuffed;
 		GameEvents.OnPlayerDamageReported += HandleOnPlayerDamageReported;
 		GameEvents.OnPlayerReset += HandleOnPlayerReset;
+		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
+		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
+		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
+		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
+		GameEvents.OnPlayerPlacedStructure += HandleOnPlayerPlacedStructure;
+		GameEvents.OnPlayerPurchasedItem += HandleOnPlayerPurchasedItem;
 	}
 	public override void Dispose()
 	{
-		BaseDispose();
 		GameEvents.OnPlayerDowned -= HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath -= HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift -= HandleOnShapeshift;
 		GameEvents.OnPlayerStartedCasting -= HandleOnPlayerStartedCasting;
-		GameEvents.OnPlayerUsedConsumable -= HandleOnConsumableUse;
 		GameEvents.OnPlayerBuffed -= HandleOnPlayerBuffed;
 		GameEvents.OnPlayerDamageReported -= HandleOnPlayerDamageReported;
 		GameEvents.OnPlayerReset -= HandleOnPlayerReset;
+		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
+		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
+		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
+		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
+		GameEvents.OnPlayerPlacedStructure -= HandleOnPlayerPlacedStructure;
+		GameEvents.OnPlayerPurchasedItem -= HandleOnPlayerPurchasedItem;
 	}
 
 	private static HashSet<string> AllowedCommands = new HashSet<string>
@@ -122,9 +145,16 @@ public class DefaultGameMode : BaseGameMode
 
 	public override void HandleOnPlayerDowned(Player player, Entity killer)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 
-		player.Reset(ResetOptions);
+        if (player.Clan.Exists()) //if they might be in a teamfight then we don't want to remove summons just because they died
+        {
+            player.Reset(TeamfightResetOptions);
+        }
+		else
+        {
+            player.Reset(ResetOptions);
+        }
 		if (Helper.BuffPlayer(player, Prefabs.Witch_PigTransformation_Buff, out var buffEntity, 3))
 		{
 			buffEntity.Add<BuffModificationFlagData>();
@@ -145,41 +175,26 @@ public class DefaultGameMode : BaseGameMode
 			}
 		}
 	}
-	public override void HandleOnPlayerDeath(Player player, DeathEvent deathEvent)
-	{
-		if (player.CurrentState != this.GameModeType) return;
 
-		var pos = player.Position;
-		Helper.RespawnPlayer(player, pos);
-		player.Reset(ResetOptions);
-		var blood = player.Character.Read<Blood>();
-		Helper.SetPlayerBlood(player, blood.BloodType, blood.Quality);
-	}
-
-	public override void HandleOnPlayerChatCommand(Player player, CommandAttribute command)
-	{
-		if (player.CurrentState != this.GameModeType) return;
-
-	}
 	public override void HandleOnShapeshift(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 
 
 		var enterShapeshiftEvent = eventEntity.Read<EnterShapeshiftEvent>();
 		if (enterShapeshiftEvent.Shapeshift == Prefabs.AB_Shapeshift_BloodMend_Group)
 		{
-			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
+			eventEntity.Destroy();
 			player.Reset(DefaultGameMode.ResetOptions);
 		}
 		else if (enterShapeshiftEvent.Shapeshift == Prefabs.AB_Shapeshift_ShareBlood_ExposeVein_Group)
 		{
-			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
+			eventEntity.Destroy();
 			Helper.ToggleBloodOnPlayer(player);
 		}
 		else if (enterShapeshiftEvent.Shapeshift == Prefabs.AB_Shapeshift_BloodHunger_BloodSight_Group)
 		{
-			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
+			eventEntity.Destroy();
 			Helper.ToggleBuffsOnPlayer(player);
 		}
 		else if (Shapeshifts.ContainsKey(enterShapeshiftEvent.Shapeshift))
@@ -192,7 +207,7 @@ public class DefaultGameMode : BaseGameMode
 					AbilityUtilitiesServer.TryInstantiateAbilityGroup(VWorld.Server.EntityManager, Core.prefabCollectionSystem.PrefabLookupMap, player.Character, shapeshift.Key, false, out Entity abilityGroupEntity);
 					abilityBarShared.ServerInterruptCounter++;
 					player.Character.Write(abilityBarShared);
-					VWorld.Server.EntityManager.DestroyEntity(eventEntity);
+					eventEntity.Destroy();
 					if (Helper.BuffPlayer(player, shapeshift.Value, out var buffEntity, Helper.NO_DURATION, false)) //in order to skip the slow cast / slow movement we just apply the shapeshift buff directly
 					{
 						Helper.FixIconForShapeshiftBuff(player, buffEntity, abilityGroupEntity.Read<PrefabGUID>());
@@ -203,19 +218,14 @@ public class DefaultGameMode : BaseGameMode
 		}
 		else
 		{
-			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
+			eventEntity.Destroy();
 			player.ReceiveMessage("That form is disabled in this mode".Error());
 		}
-	}
-	public override void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
-	{
-		if (player.CurrentState != this.GameModeType) return;
-
 	}
 
 	public virtual void HandleOnPlayerStartedCasting(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 
         var abilityCastStartedEvent = eventEntity.Read<AbilityCastStartedEvent>();
 		if (abilityCastStartedEvent.AbilityGroup.Index <= 0) return;
@@ -249,7 +259,7 @@ public class DefaultGameMode : BaseGameMode
 
 	public virtual void HandleOnPlayerBuffed(Player player, Entity buffEntity)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 
 		var prefabGuid = buffEntity.Read<PrefabGUID>();
 		if (prefabGuid == Prefabs.Witch_PigTransformation_Buff)
@@ -288,19 +298,52 @@ public class DefaultGameMode : BaseGameMode
 
 	public void HandleOnPlayerDamageReported(Player source, Entity target, PrefabGUID ability, DamageInfo damageInfo)
 	{
-		if (target.Has<PlayerCharacter>() || UnitFactory.HasCategory(target, "dummy"))
+		if (source.CurrentState != this.PlayerGameModeType) return;
+
+		if (target.Has<PlayerCharacter>() || UnitFactory.HasGameMode(target, "dummy"))
 		{
 			DamageRecorderService.RecordDamageDone(source, ability, damageInfo);
 		}
 	}
 
-	public void HandleOnPlayerReset(Player player)
+	public virtual void HandleOnPlayerReset(Player player)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 
 		var sctEntity = Helper.GetPrefabEntityByPrefabGUID(Prefabs.ScrollingCombatTextMessage);
 		ScrollingCombatTextMessage.Create(VWorld.Server.EntityManager, Core.entityCommandBufferSystem.CreateCommandBuffer(), sctEntity, 0, Prefabs.SCT_Type_MAX, player.Position, player.Character, player.Character);
 		Helper.BuffPlayer(player, Prefabs.AB_Shapeshift_NormalForm_Buff, out var buffEntity);
+	}
+
+	public override void HandleOnPlayerPurchasedItem(Player player, Entity eventEntity)
+	{
+		if (player.CurrentState != this.PlayerGameModeType) return;
+
+		if (!eventEntity.Exists()) return;
+		var purchaseEvent = eventEntity.Read<TraderPurchaseEvent>();
+		Entity trader = Core.networkIdSystem._NetworkIdToEntityMap[purchaseEvent.Trader];
+		if (UnitFactory.HasGameMode(trader, "moba"))
+		{
+			eventEntity.Destroy();
+		};
+		var costBuffer = trader.ReadBuffer<TradeCost>();
+		var cost = -1 * (costBuffer[purchaseEvent.ItemIndex].Amount);
+		if (cost > 0)
+		{
+			if (player.PlayerPointsData.TotalPoints >= cost)
+			{
+				player.PlayerPointsData.TotalPoints -= cost;
+				Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { player.PlayerPointsData });
+				player.ReceiveMessage($"Purchased for {cost.ToString().Emphasize()} {"VPoints".Warning()}. New total points: {player.PlayerPointsData.TotalPoints.ToString().Warning()}".Success());
+			}
+			else
+			{
+				eventEntity.Destroy();
+				player.ReceiveMessage($"Not enough {"VPoints".Warning()} to purchase! {player.PlayerPointsData.TotalPoints.ToString().Warning()} / {cost}".Error());
+			}
+		}
+		
+		base.HandleOnPlayerPurchasedItem(player, eventEntity);
 	}
 
 	public static new HashSet<string> GetAllowedCommands()

@@ -16,13 +16,13 @@ using PvpArena.Services;
 using static PvpArena.Factories.UnitFactory;
 using ProjectM.CastleBuilding;
 using System.Linq;
-using PvpArena.GameModes.Domination.PvpArena.Models;
 
 namespace PvpArena.GameModes.Domination;
 
 public class DominationGameMode : BaseGameMode
 {
-	public override Player.PlayerState GameModeType => Player.PlayerState.Domination;
+	public override Player.PlayerState PlayerGameModeType => Player.PlayerState.Domination;
+	public override string UnitGameModeType => "domination";
 	public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
 	{
 		ResetCooldowns = false,
@@ -105,6 +105,7 @@ public class DominationGameMode : BaseGameMode
 			CapturePointIndexToNames[index] = capturePointConfig.Description;
 			CapturePointIndexToLights[index] = new List<Entity>();
 			index++;
+            capturePoint.IsActive = true;
 		}
 
 		var dyableEntities = Helper.GetEntitiesByComponentTypes<CastleHeartConnection, DyeableCastleObject>(true);
@@ -120,7 +121,6 @@ public class DominationGameMode : BaseGameMode
 				}
 			}
 		}
-		BaseInitialize();
 		GameEvents.OnPlayerRespawn += HandleOnPlayerRespawn;
 		GameEvents.OnPlayerDowned += HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath += HandleOnPlayerDeath;
@@ -132,6 +132,11 @@ public class DominationGameMode : BaseGameMode
 		GameEvents.OnPlayerLeftClan += HandleOnPlayerLeftClan;
 		GameEvents.OnUnitBuffed += HandleOnUnitBuffed;
 		GameEvents.OnGameFrameUpdate += HandleOnGameFrameUpdate;
+		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
+		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
+		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
+		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
+		GameEvents.OnPlayerPlacedStructure += HandleOnPlayerPlacedStructure;
 
 		foreach (var timer in Timers)
 		{
@@ -165,7 +170,6 @@ public class DominationGameMode : BaseGameMode
 	public override void Dispose()
 	{
 		MatchActive = false;
-		BaseDispose();
 		GameEvents.OnPlayerRespawn -= HandleOnPlayerRespawn;
 		GameEvents.OnPlayerDowned -= HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath -= HandleOnPlayerDeath;
@@ -177,6 +181,12 @@ public class DominationGameMode : BaseGameMode
 		GameEvents.OnPlayerLeftClan += HandleOnPlayerLeftClan;
 		GameEvents.OnUnitBuffed -= HandleOnUnitBuffed;
 		GameEvents.OnGameFrameUpdate -= HandleOnGameFrameUpdate;
+		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
+		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
+		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
+		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
+		GameEvents.OnPlayerPlacedStructure -= HandleOnPlayerPlacedStructure;
+
 		Teams.Clear();
 		playerKills.Clear();
 		playerDeaths.Clear();
@@ -197,7 +207,7 @@ public class DominationGameMode : BaseGameMode
 	}
 	public override void HandleOnPlayerDowned(Player player, Entity killer)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 		if (killer.Exists())
 		{
@@ -272,7 +282,7 @@ public class DominationGameMode : BaseGameMode
 	}
 	public override void HandleOnPlayerDeath(Player player, DeathEvent deathEvent)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 		if (!BuffUtility.HasBuff(VWorld.Server.EntityManager, player.Character, Prefabs.Buff_General_Vampire_Wounded_Buff))
 		{
@@ -324,8 +334,8 @@ public class DominationGameMode : BaseGameMode
 			{
 				if (!BuffUtility.TryGetBuff(VWorld.Server.EntityManager, player.Character, CapturePointIndexToBuffs[capturePoint.PointIndex], out var buffEntity))
 				{
-					var action = new ScheduledAction(Helper.BuffPlayer, new object[] { player, CapturePointIndexToBuffs[capturePoint.PointIndex], buffEntity, Helper.NO_DURATION, true, true });
-					ActionScheduler.ScheduleAction(action, 2);
+					var action = () => { Helper.BuffPlayer(player, CapturePointIndexToBuffs[capturePoint.PointIndex], out var buffEntity, Helper.NO_DURATION, true); };
+					ActionScheduler.RunActionOnceAfterFrames(action, 2);
 				}
 			}
 		}
@@ -365,22 +375,9 @@ public class DominationGameMode : BaseGameMode
 
 	}
 
-	public void HandleOnGameModeBegin(Player player)
-	{
-		if (player.CurrentState != GameModeType) return;
-	}
-	public void HandleOnGameModeEnd(Player player)
-	{
-		if (player.CurrentState != GameModeType) return;
-	}
-	public override void HandleOnPlayerChatCommand(Player player, CommandAttribute command)
-	{
-		if (player.CurrentState != GameModeType) return;
-
-	}
 	public override void HandleOnShapeshift(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 		var enterShapeshiftEvent = eventEntity.Read<EnterShapeshiftEvent>();
 		if (!shapeshiftToShapeshift.ContainsKey(enterShapeshiftEvent.Shapeshift))
@@ -394,9 +391,9 @@ public class DominationGameMode : BaseGameMode
 			eventEntity.Write(enterShapeshiftEvent);
 		}
 	}
-	public override void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
+	public void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 		if (item.ItemType != Prefabs.Item_Consumable_GlassBottle_BloodRosePotion_T02)
 		{
@@ -408,7 +405,7 @@ public class DominationGameMode : BaseGameMode
 
 	public void HandleOnPlayerBuffed(Player player, Entity buffEntity)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 		var prefabGuid = buffEntity.Read<PrefabGUID>();
 		if (prefabGuid == Prefabs.AB_Feed_02_Bite_Abort_Trigger)
@@ -443,7 +440,7 @@ public class DominationGameMode : BaseGameMode
 	{
 		if (TryGetSpawnedUnitFromEntity(unit, out SpawnedUnit spawnedUnit))
 		{
-			if (spawnedUnit.Unit.Category != "domination")
+			if (spawnedUnit.Unit.GameMode != "domination")
 			{
 				return;
 			}
@@ -458,10 +455,10 @@ public class DominationGameMode : BaseGameMode
 
 	public override void HandleOnPlayerConnected(Player player)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 
-		Helper.DestroyEntity(player.Character);
+		Helper.KillOrDestroyEntity(player.Character);
 		if (player.MatchmakingTeam == 1)
 		{
 			Helper.RespawnPlayer(player, DominationConfig.Config.Team1PlayerRespawn.ToFloat3());
@@ -474,7 +471,7 @@ public class DominationGameMode : BaseGameMode
 
 	public void HandleOnPlayerInvitedToClan(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 		player.ReceiveMessage("You may not invite players to your clan while in Domination".Error());
@@ -482,7 +479,7 @@ public class DominationGameMode : BaseGameMode
 
 	public void HandleOnPlayerKickedFromClan(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 		player.ReceiveMessage("You may not kick players from your clan while in Domination".Error());
@@ -490,7 +487,7 @@ public class DominationGameMode : BaseGameMode
 
 	public void HandleOnPlayerLeftClan(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 		player.ReceiveMessage("You may not leave your clan while in Domination".Error());
@@ -513,7 +510,7 @@ public class DominationGameMode : BaseGameMode
 
 	public void HandleOnPlayerChatCommand(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 
 	}
@@ -629,7 +626,7 @@ public class DominationGameMode : BaseGameMode
 		var newTeam = Teams[newTeamIndex];
 		foreach (var player in newTeam)
 		{
-			Helper.BuffPlayer(player, CapturePointIndexToBuffs[pointIndex], out var buffEntity, Helper.NO_DURATION, true, true);
+			Helper.BuffPlayer(player, CapturePointIndexToBuffs[pointIndex], out var buffEntity, Helper.NO_DURATION, true);
 		}
 
 		foreach (var team in Teams.Values)

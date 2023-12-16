@@ -10,6 +10,10 @@ using PvpArena.Factories;
 using PvpArena.Helpers;
 using static DamageRecorderService;
 using System;
+using PvpArena.Data;
+using System.Collections.Generic;
+using PvpArena.Models;
+using Unity.Entities;
 
 namespace PvpArena.Patches;
 
@@ -27,35 +31,32 @@ public static class DealDamageSystemPatch
 				var dealDamageEvent = entity.Read<DealDamageEvent>();
 				if (dealDamageEvent.Target.Exists())
 				{
-					if (UnitFactory.HasCategory(dealDamageEvent.Target, "dummy"))
-					{
-						if (Helper.TryGetBuff(dealDamageEvent.Target, Helper.CustomBuff4, out var buffEntity))
-						{
-							var age = buffEntity.Read<Age>();
-							age.Value = 0;
-							buffEntity.Write(age);
-						}
-						else
-						{
-							Helper.BuffEntity(dealDamageEvent.Target, Helper.CustomBuff4, out buffEntity, Dummy.ResetTime);
-						}
-					}
 					if (dealDamageEvent.SpellSource.Exists())
 					{
 						var owner = dealDamageEvent.SpellSource.Read<EntityOwner>().Owner;
-						if (owner.Exists() && owner.Has<PlayerCharacter>())
+						if (owner.Exists())
 						{
-							var player = PlayerService.GetPlayerFromCharacter(owner);
-							GameEvents.RaisePlayerDealtDamage(player, entity);
-						}
-						else if (dealDamageEvent.Target.Has<PlayerCharacter>())
-						{
-							var player = PlayerService.GetPlayerFromCharacter(dealDamageEvent.Target);
-							GameEvents.RaisePlayerReceivedDamage(player, entity);
-						}
-						else if (dealDamageEvent.Target.Has<CastleHeartConnection>())
-						{
-							VWorld.Server.EntityManager.DestroyEntity(entity);
+							if (owner.Has<EntityOwner>())
+							{
+								var minionOwner = owner.Read<EntityOwner>().Owner;
+								if (minionOwner.Exists() && minionOwner.Has<PlayerCharacter>())
+								{
+									owner = minionOwner;
+								}
+							}
+							if (owner.Has<PlayerCharacter>())
+							{
+								var player = PlayerService.GetPlayerFromCharacter(owner);
+								GameEvents.RaisePlayerDealtDamage(player, entity);
+							}
+							else
+							{
+								GameEvents.RaiseUnitDealtDamage(owner, entity);
+								if (entity.Exists() && dealDamageEvent.Target.Has<CastleHeartConnection>())
+								{
+									entity.Destroy();
+								}
+							}
 						}
 					}
 				}
@@ -72,6 +73,8 @@ public static class DealDamageSystemPatch
 [HarmonyPatch(typeof(AiDamageTakenEventSystem), nameof(AiDamageTakenEventSystem.OnUpdate))]
 public static class AiDamageTakenEventSystemPatch
 {
+	//minions that spawn from other minions don't naturally preserve their link to the grandparent that spawned them, so we manually track it
+	public static Dictionary<Entity, Entity> SummonToGrandparentPlayerCharacter = new();
 	public static void Prefix(AiDamageTakenEventSystem __instance)
 	{		
 		var entities = __instance.__OnUpdate_LambdaJob1_entityQuery.ToEntityArray(Allocator.Temp);
@@ -81,38 +84,58 @@ public static class AiDamageTakenEventSystemPatch
 			{
 				var statChangeEvent = entity.Read<StatChangeEvent>();
 				var source = statChangeEvent.Source;
-				if (source.Has<AbilityOwner>())
+				if (source.Exists() && source.Has<EntityOwner>())
 				{
 					if (statChangeEvent.StatType == StatType.Health)
 					{
 						var damageDealerEntity = source.Read<EntityOwner>().Owner;
-						if (damageDealerEntity.Exists() && damageDealerEntity.Has<PlayerCharacter>())
+						if (damageDealerEntity.Exists())
 						{
-							var damageDealerPlayer = PlayerService.GetPlayerFromCharacter(source.Read<EntityOwner>().Owner);
-							var targetEntity = statChangeEvent.Entity;
-							if (targetEntity.Exists())
+							if (damageDealerEntity.Has<EntityOwner>())
 							{
-								var totalDamage = statChangeEvent.Change;
-								float damageShielded = 0;
-								float critDamage = 0;
-								if (Math.Abs(statChangeEvent.OriginalChange) > Math.Abs(statChangeEvent.Change))
+								var owner = damageDealerEntity.Read<EntityOwner>().Owner;
+								if (owner.Exists()) //if it has a parent
 								{
-									totalDamage = statChangeEvent.OriginalChange; //include shielded damage
-									damageShielded = Math.Abs(statChangeEvent.OriginalChange) - Math.Abs(statChangeEvent.Change);
+									damageDealerEntity = owner;
 								}
-								else if (Math.Abs(statChangeEvent.Change) > Math.Abs(statChangeEvent.OriginalChange))
-								{
-									critDamage = Math.Abs(statChangeEvent.Change) - Math.Abs(statChangeEvent.OriginalChange);
+								else if (SummonToGrandparentPlayerCharacter.TryGetValue(damageDealerEntity, out owner))
+								{ 
+									damageDealerEntity = owner;
 								}
-								var damageInfo = new DamageInfo
+							}
+							if (damageDealerEntity.Has<PlayerCharacter>())
+							{
+								var damageDealerPlayer = PlayerService.GetPlayerFromCharacter(damageDealerEntity);
+								var targetEntity = statChangeEvent.Entity;
+								if (targetEntity.Exists())
 								{
-									TotalDamage = Math.Abs(totalDamage),
-									CritDamage = Math.Abs(critDamage),
-									DamageAbsorbed = Math.Abs(damageShielded)
-								};
-								GameEvents.RaisePlayerDamageReported(damageDealerPlayer, targetEntity, source.Read<PrefabGUID>(), damageInfo);
+									var totalDamage = statChangeEvent.Change;
+									float damageShielded = 0;
+									float critDamage = 0;
+									if (Math.Abs(statChangeEvent.OriginalChange) > Math.Abs(statChangeEvent.Change))
+									{
+										totalDamage = statChangeEvent.OriginalChange; //include shielded damage
+										damageShielded = Math.Abs(statChangeEvent.OriginalChange) - Math.Abs(statChangeEvent.Change);
+									}
+									else if (Math.Abs(statChangeEvent.Change) > Math.Abs(statChangeEvent.OriginalChange))
+									{
+										critDamage = Math.Abs(statChangeEvent.Change) - Math.Abs(statChangeEvent.OriginalChange);
+									}
+									if (totalDamage > 0) continue;
+									var damageInfo = new DamageInfo
+									{
+										TotalDamage = Math.Abs(totalDamage),
+										CritDamage = Math.Abs(critDamage), //this isn't reliable, dmg can be higher without crit
+										DamageAbsorbed = Math.Abs(damageShielded)
+									};
+									if (damageInfo.TotalDamage > 0)
+									{
+										GameEvents.RaisePlayerDamageReported(damageDealerPlayer, targetEntity, source.Read<PrefabGUID>(), damageInfo);
+									}
+								}
 							}
 						}
+
 					}
 				}
 			}

@@ -8,9 +8,8 @@ using ProjectM;
 namespace PvpArena.Factories;
 public static class ModificationIdFactory
 {
-	public static BurstableIdGenerator modificationIdGenerator = BurstableIdGenerator.Create();
 	public static ModificationId NewId()
 	{
-		return new ModificationId(modificationIdGenerator.NewId());
+		return Core.modificationSystem.ModificationIDs.NewModificationId();
 	}
 }

@@ -21,7 +21,6 @@ internal static class JewelCommands
 		string spellName, mods;
 		float power;
 		ParseInputs(input1, input2, input3, input4, input5, input6, input7, out spellName, out mods, out power);
-
 		if (input1 == "?") 
 		{
 			sender.ReceiveMessage(("Jewel example:".Colorify(ExtendedColor.ServerColor) + " .j bloodrite 123").Emphasize());
@@ -46,15 +45,14 @@ internal static class JewelCommands
 			sender.ReceiveMessage("No duplicate mods allowed.".Error());
 			return;
 		}
-
-		var jss = VWorld.Server.GetExistingSystem<JewelSpawnSystem>();
+		
 		SchoolData jewelSchoolData = JewelData.abilityToSchoolDictionary[condensedName];;
 
 		if (mods == "?")
 		{
 			sender.ReceiveMessage($"Mods for {properName.Colorify(jewelSchoolData.lightColor)}".Colorify(jewelSchoolData.color));
 			int i = 1;
-			foreach (KeyValuePair<PrefabGUID, string> kvp in JewelData.SpellMods[condensedName])
+			foreach (var kvp in JewelData.SpellMods[condensedName])
 			{
 				var hexValue = i.ToString("X");
 				sender.ReceiveMessage($"{hexValue.Colorify(jewelSchoolData.color)} - {kvp.Value}".White());
@@ -66,17 +64,17 @@ internal static class JewelCommands
 			var mod1 = Convert.ToInt32(mods[0].ToString(), 16) - 1;
 			var mod2 = Convert.ToInt32(mods[1].ToString(), 16) - 1;
 			var mod3 = Convert.ToInt32(mods[2].ToString(), 16) - 1;
-			if (mod1 < 0 || mod1 > JewelData.SpellMods[condensedName].Count)
+			if (mod1 < 0 || mod1 >= JewelData.SpellMods[condensedName].Count)
 			{
 				sender.ReceiveMessage("You specified a mod that doesn't exist.".Error());
 				return;
 			}
-			if (mod2 < 0 || mod2 > JewelData.SpellMods[condensedName].Count)
+			if (mod2 < 0 || mod2 >= JewelData.SpellMods[condensedName].Count)
 			{
 				sender.ReceiveMessage("You specified a mod that doesn't exist.".Error());
 				return;
 			}
-			if (mod3 < 0 || mod3 > JewelData.SpellMods[condensedName].Count)
+			if (mod3 < 0 || mod3 >= JewelData.SpellMods[condensedName].Count)
 			{
 				sender.ReceiveMessage("You specified a mod that doesn't exist.".Error());
 				return;

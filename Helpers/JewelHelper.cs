@@ -235,13 +235,15 @@ public static partial class Helper
 
 	public static void GiveDefaultJewels(Player player)
 	{
+		var steamId = player.SteamID;
+		// Generate jewels for the character.
 		foreach (var jewel in JewelData.abilityToPrefabDictionary)
 		{
 			string mods = Core.defaultJewelStorage.GetModsForSpell(jewel.Key, player.SteamID);
 			Helper.GenerateJewelViaEvent(player, jewel.Key, mods);
 		}
-		var scheduledAction = new ScheduledAction(EquipJewels, new object[] { player });
-		ActionScheduler.ScheduleAction(scheduledAction, 2);
+		var action = () => EquipJewels(player);
+		ActionScheduler.RunActionOnceAfterFrames(action, 2);
 	}
 
 	public static void EquipJewels(Player player)

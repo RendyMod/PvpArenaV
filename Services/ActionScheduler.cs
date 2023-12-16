@@ -9,7 +9,12 @@ using Il2CppInterop.Runtime;
 using ProjectM;
 using ProjectM.Network;
 using ProjectM.Shared;
+using PvpArena.Commands.Debug;
+using PvpArena.Data;
+using PvpArena.GameModes;
+using PvpArena.Helpers;
 using Unity.Entities;
+using Unity.Transforms;
 using UnityEngine;
 
 namespace PvpArena.Services;
@@ -19,32 +24,31 @@ public static class ActionScheduler
 {
 	public static int CurrentFrameCount = 0;
 	public static ConcurrentQueue<Action> actionsToExecuteOnMainThread = new ConcurrentQueue<Action>();
-	private static List<ScheduledAction> scheduledActions = new List<ScheduledAction>();
 	private static List<Timer> activeTimers = new List<Timer>();
 	
 	public static void Postfix()
 	{
-		CurrentFrameCount++;
-		// Execute scheduled actions for the current frame
-		for (int i = scheduledActions.Count - 1; i >= 0; i--)
+		GameEvents.RaiseGameFrameUpdate();
+		
+		if (CurrentFrameCount % 30 == 0) //move this into game mode actions later
 		{
-			if (scheduledActions[i].ScheduledFrame <= CurrentFrameCount)
+			foreach (var player in PlayerService.OnlinePlayers.Keys)
 			{
-				scheduledActions[i].Execute();
-				scheduledActions.RemoveAt(i);
+				if (!player.HasControlledEntity())
+				{
+					GameEvents.RaisePlayerHasNoControlledEntity(player);
+					Helper.ControlOriginalCharacter(player);
+					Helper.RemoveBuff(player, Prefabs.Admin_Observe_Invisible_Buff);
+				}
 			}
 		}
+		
+		CurrentFrameCount++;
 
 		while (actionsToExecuteOnMainThread.TryDequeue(out Action action))
 		{
 			action?.Invoke();
 		}
-	}
-
-	public static void ScheduleAction(ScheduledAction action, int frameDelay)
-	{
-		action.ScheduledFrame = CurrentFrameCount + frameDelay;
-		scheduledActions.Add(action);
 	}
 
 	public static Timer RunActionEveryInterval(Action action, double intervalInSeconds)
@@ -72,6 +76,27 @@ public static class ActionScheduler
 		return timer;
 	}
 
+	public static Timer RunActionOnceAfterFrames(Action action, int frameDelay)
+	{
+		int startFrame = CurrentFrameCount;
+		Timer timer = null;
+
+		timer = new Timer(_ =>
+		{
+			if (CurrentFrameCount - startFrame >= frameDelay)
+			{
+				// Enqueue the action to be executed on the main thread
+				actionsToExecuteOnMainThread.Enqueue(() =>
+				{
+					action.Invoke();  // Execute the action
+				});
+				timer?.Dispose();
+			}
+		}, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(8));
+
+		return timer;
+	}
+
 	public static void RunActionOnMainThread(Action action)
 	{
 		// Enqueue the action to be executed on the main thread
@@ -79,36 +104,5 @@ public static class ActionScheduler
 		{
 			action.Invoke();  // Execute the action
 		});
-	}
-
-	public static List<ScheduledAction> GetScheduledActions()
-	{
-		return scheduledActions;
-	}
-}
-
-public class ScheduledAction
-{
-	public int ScheduledFrame { get; set; }
-	public Delegate Callback { get; set; }
-	public object[] CallbackArgs { get; set; }
-
-
-	public ScheduledAction(Delegate callback, params object[] callbackArgs)
-	{
-		Callback = callback;
-		CallbackArgs = callbackArgs;
-	}
-
-	public void Execute()
-	{
-		try
-        {
-			Callback?.DynamicInvoke(CallbackArgs);
-		}
-		catch (Exception e)
-        {
-			Unity.Debug.Log(e.ToString());
-        }
 	}
 }

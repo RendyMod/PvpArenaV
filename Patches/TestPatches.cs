@@ -30,6 +30,13 @@ using static ProjectM.SpawnRegionSpawnSystem;
 using Unity.Physics.Authoring;
 using static ProjectM.HitColliderCast;
 using PvpArena.Helpers;
+using Discord.Audio.Streams;
+using System.Linq;
+using MS.Internal.Xml.XPath;
+using UnityEngine.UIElements;
+using PvpArena.Factories;
+using PvpArena.GameModes.Moba;
+using ProjectM.CastleBuilding.Teleporters;
 
 namespace PvpArena.Patches;
 
@@ -258,6 +265,96 @@ public static class Create_ServerControlsPositionSystemPatch
 		
 	}
 }*/
+
+
+/*
+[HarmonyPatch(typeof(GatherAggroCandidatesSystem), nameof(GatherAggroCandidatesSystem.OnUpdate))]
+public static class GatherAggroCandidatesSystemPatch
+{
+	
+	public static void Prefix(GatherAggroCandidatesSystem __instance)
+	{
+		__instance._Query.LogComponentTypes();
+		__instance.__OnUpdate_LambdaJob0_entityQuery.LogComponentTypes();
+	}
+}
+*/
+
+
+/*[HarmonyPatch(typeof(GatherAggroCandidatesSystem), nameof(GatherAggroCandidatesSystem.OnUpdate))]
+public static class GatherAggroCandidatesSystemPatch
+{
+	public static void Prefix(GatherAggroCandidatesSystem __instance)
+	{
+		
+		//__instance.__OnUpdate_LambdaJob0_entityQuery.LogComponentTypes();
+	}
+
+}*/
+
+
+/*[HarmonyPatch(typeof(CastleTeleporterConnectSystem), nameof(CastleTeleporterConnectSystem.OnUpdate))]
+public static class CastleTeleporterConnectSystemPatch
+{
+	public static void Prefix(CastleTeleporterConnectSystem __instance)
+	{
+
+		__instance.__OnUpdate_LambdaJob0_entityQuery.LogComponentTypes();
+	}
+
+}*/
+
+/*[HarmonyPatch(typeof(CreateGameplayEventOnSpawnSystem), nameof(CreateGameplayEventOnSpawnSystem.OnUpdate))]
+public static class CreateGameplayEventOnSpawnSystemPatch
+{
+	public static void Prefix(CreateGameplayEventOnSpawnSystem __instance)
+	{
+	}
+}
+
+[HarmonyPatch(typeof(CreateGameplayEventOnTickSystem), nameof(CreateGameplayEventOnTickSystem.OnUpdate))]
+public static class CreateGameplayEventOnTickSystemPatch
+{
+	public static void Prefix(CreateGameplayEventOnTickSystem __instance)
+	{
+		var entities = __instance.__OnUpdate_LambdaJob0_entityQuery.ToEntityArray(Allocator.Temp);
+		foreach (var entity in entities)
+		{
+			var buffer = entity.ReadBuffer<CreateGameplayEventsOnTick>();
+			buffer.Clear();
+		}
+	}
+
+}
+*/
+
+[HarmonyPatch(typeof(LinkMinionToOwnerOnSpawnSystem), nameof(LinkMinionToOwnerOnSpawnSystem.OnUpdate))]
+public static class LinkMinionToOwnerOnSpawnSystemPatch
+{
+	public static void Prefix(LinkMinionToOwnerOnSpawnSystem __instance)
+	{
+		var entities = __instance.__OnUpdate_LambdaJob0_entityQuery.ToEntityArray(Allocator.Temp);
+		foreach (var entity in entities)
+		{
+			var owner = entity.Read<EntityOwner>().Owner;
+			if (owner.Exists())
+			{
+				if (owner.Has<EntityOwner>())
+				{
+					var grandParent = owner.Read<EntityOwner>().Owner;
+					if (grandParent.Exists())
+					{
+						if (grandParent.Has<PlayerCharacter>())
+						{
+							AiDamageTakenEventSystemPatch.SummonToGrandparentPlayerCharacter[entity] = grandParent;
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
 
 //
 //AbilitySpawnSystem

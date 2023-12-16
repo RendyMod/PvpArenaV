@@ -147,7 +147,7 @@ public static class CaptureThePancakeHelper
 
 			if (structureSpawn.Type.ToLower() == "shard chest" && structureSpawn.SpawnDelay > 60)
 			{
-				action = () =>
+				var chestSpawnNotificationAction = () =>
 				{
 					foreach (var team in CaptureThePancakeGameMode.Teams.Values)
 					{
@@ -158,7 +158,7 @@ public static class CaptureThePancakeHelper
 					}
 				};
 
-				timer = ActionScheduler.RunActionOnceAfterDelay(action, structureSpawn.SpawnDelay - 30);
+				timer = ActionScheduler.RunActionOnceAfterDelay(chestSpawnNotificationAction, structureSpawn.SpawnDelay - 30);
 				timers.Add(timer);
 			}
 		}
@@ -216,31 +216,18 @@ public static class CaptureThePancakeHelper
 
 	public static void KillPreviousEntities()
 	{
-		var entities = Helper.GetEntitiesByComponentTypes<CanFly>(true);
+		var entities = Helper.GetNonPlayerSpawnedEntities(true);
 		foreach (var entity in entities)
 		{
 			if (!entity.Has<PlayerCharacter>())
 			{
-				if (UnitFactory.TryGetSpawnedUnitFromEntity(entity, out SpawnedUnit spawnedUnit))
+				if (UnitFactory.HasGameMode(entity, "pancake"))
 				{
-					if (spawnedUnit.Unit.Category == "pancake")
-					{
-						Helper.DestroyEntity(entity);
-					}
-				}
-				else
-				{
-					if (UnitFactory.HasCategory(entity, "pancake"))
-					{
-						Helper.DestroyEntity(entity);
-					}
-/*					else if (entity.Has<CanFly>() && entity.Read<PrefabGUID>() == Prefabs.Resource_PlayerDeathContainer_Drop)
-					{
-						Helper.DestroyEntity(entity);
-					}*/
+					Helper.DestroyEntity(entity);
 				}
 			}
 		}
+		entities.Dispose();
 		var relics = Helper.GetEntitiesByComponentTypes<SpawnSequenceForEntity, ItemPickup, PlaySequenceOnPickup>(true);
 		foreach (var relic in relics)
 		{
@@ -249,6 +236,7 @@ public static class CaptureThePancakeHelper
 				Helper.DestroyEntity(relic);
 			}
 		}
+		relics.Dispose();
 	}
 
 	public static void DropItemsIntoBag(Player player, List<PrefabGUID> items, int quantity = 1)
@@ -280,8 +268,8 @@ public static class CaptureThePancakeHelper
 		{
 			Helper.AddItemToInventory(player.Character, Prefabs.Item_Consumable_Salve_Vermin, 1, out Entity entity);
 		}
-		Helper.RemoveItemFromInventory(player, Prefabs.Item_Consumable_Canteen_BloodRoseBrew_T01);
-		Helper.RemoveItemFromInventory(player, Prefabs.Item_Consumable_GlassBottle_BloodRosePotion_T02);
+		Helper.CompletelyRemoveItemFromInventory(player, Prefabs.Item_Consumable_Canteen_BloodRoseBrew_T01);
+		Helper.CompletelyRemoveItemFromInventory(player, Prefabs.Item_Consumable_GlassBottle_BloodRosePotion_T02);
 	}
 
 	public static void ClaimEyesOfTwilight(Player p1, Player p2)
@@ -297,6 +285,7 @@ public static class CaptureThePancakeHelper
 			userOwner.Owner = players[i].User;
 			entity.Write(userOwner);
 		}
+		entities.Dispose();
 	}
 
 	public static void StartMatch(Player team1LeaderPlayer, Player team2LeaderPlayer)
@@ -306,7 +295,6 @@ public static class CaptureThePancakeHelper
 		var team2Players = team2LeaderPlayer.GetClanMembers();
 		Core.captureThePancakeGameMode.Initialize(team1Players, team2Players);
 		SpawnStructures(team1LeaderPlayer, team2LeaderPlayer);
-		Action action;
 		
 		foreach (var team1Player in team1Players)
 		{
@@ -315,13 +303,13 @@ public static class CaptureThePancakeHelper
 			team1Player.Reset(BaseGameMode.ResetOptions);
 			Helper.SetDefaultBlood(team1Player, CaptureThePancakeConfig.Config.DefaultBlood.ToLower());
 			GiveVerminSalvesIfNotPresent(team1Player);
-			action = () => team1Player.Teleport(CaptureThePancakeConfig.Config.Team1PlayerRespawn.ToFloat3());
-			ActionScheduler.RunActionOnceAfterDelay(action, .1);
+			var teleportPlayerAction = () => team1Player.Teleport(CaptureThePancakeConfig.Config.Team1PlayerRespawn.ToFloat3());
+			ActionScheduler.RunActionOnceAfterDelay(teleportPlayerAction, .1);
 			team1Player.ReceiveMessage($"The match will start in {"10".Emphasize()} seconds. {"Get ready!".Emphasize()}".White());
 			try
 			{
-				Helper.RemoveItemFromInventory(team1Player, Prefabs.Item_Building_Relic_Monster);
-				Helper.RemoveItemFromInventory(team1Player, Prefabs.Item_Building_Relic_Manticore);
+				Helper.CompletelyRemoveItemFromInventory(team1Player, Prefabs.Item_Building_Relic_Monster);
+				Helper.CompletelyRemoveItemFromInventory(team1Player, Prefabs.Item_Building_Relic_Manticore);
 			}
 			catch
 			{
@@ -336,13 +324,13 @@ public static class CaptureThePancakeHelper
 			team2Player.Reset(BaseGameMode.ResetOptions);
 			Helper.SetDefaultBlood(team2Player, CaptureThePancakeConfig.Config.DefaultBlood.ToLower());
 			GiveVerminSalvesIfNotPresent(team2Player);
-			action = () => team2Player.Teleport(CaptureThePancakeConfig.Config.Team2PlayerRespawn.ToFloat3());
-			ActionScheduler.RunActionOnceAfterDelay(action, .1);
+			var teleportPlayerAction = () => team2Player.Teleport(CaptureThePancakeConfig.Config.Team2PlayerRespawn.ToFloat3());
+			ActionScheduler.RunActionOnceAfterDelay(teleportPlayerAction, .1);
 			team2Player.ReceiveMessage($"The match will start in {"10".Emphasize()} seconds. {"Get ready!".Emphasize()}".White());
 			try
 			{
-				Helper.RemoveItemFromInventory(team2Player, Prefabs.Item_Building_Relic_Monster);
-				Helper.RemoveItemFromInventory(team2Player, Prefabs.Item_Building_Relic_Manticore);
+				Helper.CompletelyRemoveItemFromInventory(team2Player, Prefabs.Item_Building_Relic_Monster);
+				Helper.CompletelyRemoveItemFromInventory(team2Player, Prefabs.Item_Building_Relic_Manticore);
 			}
 			catch
 			{
@@ -350,7 +338,7 @@ public static class CaptureThePancakeHelper
 			}
 		}
 
-		action = () => { StartMatchCountdown(); };
+		var action = () => { StartMatchCountdown(); };
 
 		Timer timer = ActionScheduler.RunActionOnceAfterDelay(action, 5);
 		CaptureThePancakeGameMode.Timers.Add(timer);
@@ -393,7 +381,7 @@ public static class CaptureThePancakeHelper
 				unitToSpawn.IsRooted = true;
 			}
 			unitToSpawn.MaxHealth = unitSettings.Health;
-			unitToSpawn.Category = "pancake";
+			unitToSpawn.GameMode = "pancake";
 			unitToSpawn.RespawnTime = unitSettings.RespawnTime;
 			unitToSpawn.SpawnDelay = unitSettings.SpawnDelay;
 			if (unitSettings.SpawnDelay > 30)
@@ -424,8 +412,9 @@ public static class CaptureThePancakeHelper
 			var relics = Helper.GetEntitiesByComponentTypes<Relic>();
 			foreach (var relic in relics)
 			{
-				Helper.DestroyEntity(relic);
+				Helper.KillOrDestroyEntity(relic);
 			}
+			relics.Dispose();
 			foreach (var timer in CaptureThePancakeGameMode.Timers)
 			{
 				if (timer != null)
@@ -439,8 +428,8 @@ public static class CaptureThePancakeHelper
 			{
 				foreach (var player in team)
 				{
-					Helper.RemoveItemFromInventory(player, Prefabs.Item_Building_Relic_Monster);
-					Helper.RemoveItemFromInventory(player, Prefabs.Item_Building_Relic_Manticore);
+					Helper.CompletelyRemoveItemFromInventory(player, Prefabs.Item_Building_Relic_Monster);
+					Helper.CompletelyRemoveItemFromInventory(player, Prefabs.Item_Building_Relic_Manticore);
 					player.CurrentState = Player.PlayerState.Normal;
 					player.MatchmakingTeam = 0;
 					player.Reset(BaseGameMode.ResetOptions);

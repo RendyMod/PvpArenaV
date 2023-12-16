@@ -20,21 +20,25 @@ using PvpArena.Factories;
 using Unity.Collections;
 using PvpArena.GameModes.Troll;
 using PvpArena.GameModes.PrisonBreak;
+using ProjectM.Gameplay.Scripting;
+using ProjectM.Pathfinding;
+using ProjectM.Behaviours;
+using static ProjectM.Gameplay.Systems.StatChangeMutationSystem;
+using ProjectM.Gameplay.Systems;
+using Epic.OnlineServices.P2P;
+using ProjectM.Shared;
+using System.Linq;
 
 namespace PvpArena.Commands.Debug;
 internal class TestCommands
 {
-
+	public static Entity MapIcon;
 	[Command("test", description: "Used for debugging", adminOnly: true)]
 	public void TestCommand(Player sender)
 	{
-		foreach (var player in PlayerService.UserCache.Values)
-		{
-			if (player.Character.Exists() && !player.Character.Has<CharacterVoiceActivity>())
-			{
-				player.Character.Add<CharacterVoiceActivity>();
-			}
-		}
+
+		
+		sender.ReceiveMessage("done");
 	}
 
 	[Command("become", description: "Used for debugging", adminOnly: true)]
@@ -64,12 +68,12 @@ internal class TestCommands
 	[Command("test2", description: "Used for debugging", adminOnly: true)]
 	public void Test2Command(Player sender, Player player = null)
 	{
-		var target = sender;
-		if (player != null)
+		if (Helper.TryGetBuff(sender, Prefabs.AB_Blood_BloodRite_Immaterial, out var buffEntity))
 		{
-			target = player;
+			var lifetime = buffEntity.Read<LifeTime>();
+			lifetime.Duration = 1;
+			buffEntity.Write(lifetime);
 		}
-		Helper.ControlOriginalCharacter(target);
 	}
 
 	[Command("test3", description: "Used for debugging", adminOnly: true)]
@@ -318,8 +322,8 @@ internal class TestCommands
 		}
 	}
 
-	[Command(name: "log-zone", description: "Gets the zone assuming you are at the bottom left facing north", usage: ".get-zone", adminOnly: true, includeInHelp: false)]
-	public void GetZoneCommand(Player player, int x, int z)
+	[Command(name: "log-zone", description: "Gets the zone assuming you are at the bottom left facing north, right then up", usage: ".get-zone", adminOnly: true, includeInHelp: false)]
+	public void LogZoneCommand(Player player, int x, int z)
 	{
 		player.ReceiveMessage($"{RectangleZone.GetZoneByCurrentCoordinates(player, x, z)}");
 		Plugin.PluginLog.LogInfo($"{RectangleZone.GetZoneByCurrentCoordinates(player, x, z)}");

@@ -14,6 +14,7 @@ using ProjectM.Gameplay.Scripting;
 using ProjectM.Hybrid;
 using ProjectM.Network;
 using ProjectM.Pathfinding;
+using ProjectM.Scripting;
 using ProjectM.Sequencer;
 using PvpArena.Configs;
 using PvpArena.Data;
@@ -27,6 +28,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Properties.Generated;
 using Unity.Transforms;
+using UnityEngine.Jobs;
 using UnityEngine.Rendering.HighDefinition;
 using static ProjectM.DeathEventListenerSystem;
 using static ProjectM.SpawnBuffsAuthoring.SpawnBuffElement_Editor;
@@ -83,7 +85,7 @@ public static class UnitFactory
 						SpawnUnit(spawnedUnit.Unit, spawnedUnit.SpawnPosition, spawnedUnit.Player);
 					};
 					timer = ActionScheduler.RunActionOnceAfterDelay(action, spawnedUnit.Unit.RespawnTime);
-					timersByCategory[spawnedUnit.Unit.Category].Add(timer);
+					timersByCategory[spawnedUnit.Unit.GameMode].Add(timer);
 				}
 			}
 		}
@@ -95,7 +97,7 @@ public static class UnitFactory
 		if (unitEntity.Has<ResistanceData>() && unitEntity.Has<CanFly>())
 		{
 			var resistanceData = unitEntity.Read<ResistanceData>();
-			var hash = (int)(resistanceData.FireResistance_RedcuedIgiteChancePerRating / 1000);
+			var hash = (int)(resistanceData.FireResistance_RedcuedIgiteChancePerRating);
 			return HashToUnit.TryGetValue(hash, out unit);
 		}
 		unit = default;
@@ -107,11 +109,11 @@ public static class UnitFactory
 		Action spawnAction = () =>
 		{
 			SpawnedUnit spawnedUnit = new SpawnedUnit(unit, position, player);
-			var hash = position.GetHashCode() / 1000;
-			HashToUnit[hash] = spawnedUnit;
 
 			PrefabSpawnerService.SpawnWithCallback(unit.PrefabGuid, position, (Action<Entity>)(e =>
 			{
+				var hash = e.GetHashCode();
+				HashToUnit[hash] = spawnedUnit;
 				StoreMetaDataOnUnit(unit, e, position, player);
 				SetHealth(unit, e);
 				if (Helper.BuffEntity(e, Helper.CustomBuff3, out Entity buffEntity, (float)Helper.NO_DURATION, true))
@@ -123,11 +125,11 @@ public static class UnitFactory
 							Level = unit.Level
 						});
 					}
-					
-					/*if (unit.AggroRadius != -1)
+
+					if (unit.AggroRadius != -1)
 					{
 						ModifyAggroRadius(unit, buffEntity); //this increases the boss range, but keeps players in combat :(
-					}*/
+					}
 					AddBuffModifications(unit, buffEntity);
 					if (unit.KnockbackResistance)
 					{
@@ -163,7 +165,7 @@ public static class UnitFactory
 		if (unit.SpawnDelay >= 0)
 		{
 			var timer = ActionScheduler.RunActionOnceAfterDelay(() => GameEvents.RaiseDelayedSpawnEvent(unit, 0), unit.SpawnDelay);
-			AddTimerToCategory(timer, unit.Category);
+			AddTimerToCategory(timer, unit.GameMode);
 			if (unit.SpawnDelay > 30)
 			{
 				GameEvents.RaiseDelayedSpawnEvent(unit, unit.SpawnDelay);
@@ -171,7 +173,7 @@ public static class UnitFactory
 			if (unit.SpawnDelay > 60)
 			{
 				timer = ActionScheduler.RunActionOnceAfterDelay(() => GameEvents.RaiseDelayedSpawnEvent(unit, 30), unit.SpawnDelay - 30);
-				AddTimerToCategory(timer, unit.Category);
+				AddTimerToCategory(timer, unit.GameMode);
 			}
 		}
 
@@ -179,7 +181,7 @@ public static class UnitFactory
 		{	
 			// Schedule the spawn action after the specified delay
 			var timer = ActionScheduler.RunActionOnceAfterDelay(spawnAction, unit.SpawnDelay);
-			AddTimerToCategory(timer, unit.Category);
+			AddTimerToCategory(timer, unit.GameMode);
 		}
 		else
 		{
@@ -187,6 +189,121 @@ public static class UnitFactory
 			spawnAction.Invoke();
 		}
 	}
+
+	public static void SpawnUnitWithCallback(Unit unit, float3 position, Action<Entity> postActions, Player player = null)
+	{
+		Action spawnAction = () =>
+		{
+			SpawnedUnit spawnedUnit = new SpawnedUnit(unit, position, player);
+
+			PrefabSpawnerService.SpawnWithCallback(unit.PrefabGuid, position, (Action<Entity>)(e =>
+			{
+				var hash = e.GetHashCode();
+				HashToUnit[hash] = spawnedUnit;
+				StoreMetaDataOnUnit(unit, e, position, player);
+				SetHealth(unit, e);
+				if (unit.MaxDistanceFromPreCombatPosition != -1)
+				{
+					var aggro = e.Read<AggroConsumer>();
+					aggro.MaxDistanceFromPreCombatPosition = unit.MaxDistanceFromPreCombatPosition;
+					e.Write(aggro);
+				}
+				if (Helper.BuffEntity(e, Helper.CustomBuff3, out Entity buffEntity, (float)Helper.NO_DURATION, true))
+				{
+					if (unit.Level != -1 && e.Has<UnitLevel>())
+					{
+						e.Write(new UnitLevel()
+						{
+							Level = unit.Level
+						});
+					}
+
+					if (unit.AggroRadius != -1)
+					{
+						ModifyAggroRadius(unit, buffEntity); //this increases the boss range, but keeps players in combat :(
+					}
+					AddBuffModifications(unit, buffEntity);
+					if (unit.KnockbackResistance)
+					{
+						GiveKnockbackResistance(unit, e, buffEntity);
+					}
+					if (!unit.DrawsAggro)
+					{
+						DisableAggro(buffEntity);
+					}
+					unit.Modify(e, buffEntity);
+
+					if (e.Has<BloodConsumeSource>() && !e.Has<VBloodUnit>())
+					{
+						var bloodConsumeSource = e.Read<BloodConsumeSource>();
+						bloodConsumeSource.CanBeConsumed = false;
+						e.Write(bloodConsumeSource);
+					}
+
+					if (unit.SoftSpawn && unit.SpawnDelay > 0)
+					{
+						Helper.BuffEntity(e, Prefabs.Buff_General_VampireMount_Dead, out var softSpawnBuff, unit.SpawnDelay);
+						Helper.ModifyBuff(softSpawnBuff, BuffModificationTypes.Immaterial | BuffModificationTypes.Invulnerable | BuffModificationTypes.TargetSpellImpaired | BuffModificationTypes.MovementImpair | BuffModificationTypes.RelocateImpair | BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.AbilityCastImpair | BuffModificationTypes.BehaviourImpair);
+					}
+				}
+				else
+				{
+					unit.Modify(e);
+				}
+				UnitToEntity[unit] = e;
+				postActions(e);
+			}), 0, -1, true);
+		};
+
+		if (unit.SpawnDelay >= 0)
+		{
+			var timer = ActionScheduler.RunActionOnceAfterDelay(() => GameEvents.RaiseDelayedSpawnEvent(unit, 0), unit.SpawnDelay);
+			AddTimerToCategory(timer, unit.GameMode);
+			if (unit.SpawnDelay > 30)
+			{
+				GameEvents.RaiseDelayedSpawnEvent(unit, unit.SpawnDelay);
+			}
+			if (unit.SpawnDelay > 60)
+			{
+				timer = ActionScheduler.RunActionOnceAfterDelay(() => GameEvents.RaiseDelayedSpawnEvent(unit, 30), unit.SpawnDelay - 30);
+				AddTimerToCategory(timer, unit.GameMode);
+			}
+		}
+
+		if (unit.SpawnDelay >= 0 && !unit.SoftSpawn)
+		{
+			// Schedule the spawn action after the specified delay
+			var timer = ActionScheduler.RunActionOnceAfterDelay(spawnAction, unit.SpawnDelay);
+			AddTimerToCategory(timer, unit.GameMode);
+		}
+		else
+		{
+			// Execute immediately if no delay is specified
+			spawnAction.Invoke();
+		}
+	}
+
+	public static void SpawnMerchant(string merchantName, float3 spawnPosition)
+	{
+		foreach (var trader in TradersConfig.Config.Traders)
+		{
+			if (trader.UnitSpawn.Description.ToLower() == merchantName.ToLower())
+			{
+				var unit = new Factories.Trader(trader.UnitSpawn.PrefabGUID, trader.TraderItems);
+				unit.IsImmaterial = true;
+				unit.IsInvulnerable = true;
+				unit.IsRooted = true;
+				unit.IsTargetable = false;
+				unit.DrawsAggro = false;
+				unit.KnockbackResistance = true;
+				unit.MaxHealth = 10000;
+				unit.GameMode = merchantName.ToLower();
+				UnitFactory.SpawnUnit(unit, spawnPosition);
+				/*UnitFactory.SpawnUnit(unit, trader.UnitSpawn.Location.ToFloat3());*/
+			}
+		}
+	}
+
 
 	private static void AddTimerToCategory(Timer timer, string category)
 	{
@@ -256,8 +373,8 @@ public static class UnitFactory
 		e.Add<ResistanceData>();
 		var resistanceData = e.Read<ResistanceData>();
 		resistanceData.FireResistance_DamageReductionPerRating = unit.Team;
-		resistanceData.FireResistance_RedcuedIgiteChancePerRating = position.GetHashCode(); //going to use position to identify spawn point 
-		resistanceData.GarlicResistance_IncreasedExposureFactorPerRating = StringToFloatHash(unit.Category);
+		resistanceData.FireResistance_RedcuedIgiteChancePerRating = e.GetHashCode(); //going to use position to identify spawn point 
+		resistanceData.GarlicResistance_IncreasedExposureFactorPerRating = StringToFloatHash(unit.GameMode);
         resistanceData.HolyResistance_DamageAbsorbPerRating = position.x;
         resistanceData.HolyResistance_DamageReductionPerRating = position.y;
         resistanceData.SilverResistance_DamageReductionPerRating = position.z;
@@ -342,7 +459,7 @@ public static class UnitFactory
 		e.Write(health);
 	}
 
-	public static bool HasCategory(Entity entity, string category)
+	public static bool HasGameMode(Entity entity, string category)
 	{
 		if (entity.Has<CanFly>() && entity.Has<ResistanceData>())
 		{
@@ -372,8 +489,9 @@ public class Unit
 	protected bool isInvisible = false;
 	protected bool isInvulnerable = false;
 	protected bool dynamicCollision = false;
+	protected float maxDistanceFromPreCombatPosition = -1;
 	protected bool worldCollision = true;
-	protected string category = "";
+	protected string gameMode = "";
 	protected int spawnDelay = -1;
 	protected bool softSpawn = false;
 	protected bool announceSpawn = false;
@@ -391,9 +509,10 @@ public class Unit
 	public float RespawnTime { get => respawnTime; set => respawnTime = value; }
 	public bool DrawsAggro { get => drawsAggro; set => drawsAggro = value; }
 	public bool DynamicCollision { get => dynamicCollision; set => dynamicCollision = value; }
+	public float MaxDistanceFromPreCombatPosition { get => maxDistanceFromPreCombatPosition; set => maxDistanceFromPreCombatPosition = value; }
 	public bool MapCollision { get => worldCollision; set => worldCollision = value; }
 	public bool IsTargetable { get => isTargetable; set => isTargetable = value; }
-	public string Category { get => category; set => category = value; }
+	public string GameMode { get => gameMode; set => gameMode = value; }
 	public bool AnnounceSpawn { get => announceSpawn; set => announceSpawn = value; }
 	public int SpawnDelay { get => spawnDelay; set => spawnDelay = value; }
 	public bool SoftSpawn { get => softSpawn; set => softSpawn = value; }
@@ -438,7 +557,7 @@ public class Boss : Unit
 	public Boss(PrefabGUID prefabGuid, int team = 10, int level = -1) : base(prefabGuid, team, level)
 	{
 		isImmaterial = false;
-		aggroRadius = 15;
+		aggroRadius = -1;
 		knockbackResistance = true;
 		isRooted = false;
 		drawsAggro = false;
@@ -493,7 +612,7 @@ public class Dummy : Unit
 		isRooted = true;
 		dynamicCollision = true;
 		knockbackResistance = false;
-        category = "dummy";
+        gameMode = "dummy";
         PrefabGuid = prefabGuid;
 		Aggro = aggro;
 	}
@@ -507,7 +626,7 @@ public class Dummy : Unit
         isRooted = true;
 		dynamicCollision = true;
 		knockbackResistance = false;
-        category = "dummy";
+        gameMode = "dummy";
     }
 
     public override void Modify(Entity e, Entity buffEntity)
@@ -541,11 +660,32 @@ public class Turret : Unit
 	public Turret(PrefabGUID prefabGuid, int team = 10, int level = -1) : base(prefabGuid, team, level)
 	{
 		isImmaterial = true;
-		aggroRadius = 15;
 		knockbackResistance = false;
 		isRooted = true;
 		drawsAggro = false;
 		isTargetable = false;
+	}
+}
+
+public class BaseTurret : Unit
+{
+	public static PrefabGUID PrefabGUID = Prefabs.CHAR_Gloomrot_SentryTurret;
+	public BaseTurret(PrefabGUID prefabGuid, int team = 10, int level = -1) : base(prefabGuid, team, level)
+	{
+		isImmaterial = false;
+		knockbackResistance = true;
+		isRooted = true;
+		drawsAggro = true;
+		isTargetable = false;
+		aggroRadius = 3f;
+		maxDistanceFromPreCombatPosition = 20;
+	}
+
+	public override void Modify(Entity e)
+	{
+		base.Modify(e);
+		Helper.BuffEntity(e, Prefabs.AB_Gloomrot_SentryTurret_BunkerDown_Buff, out var buffEntity, Helper.NO_DURATION);
+		Helper.ModifyBuff(buffEntity, BuffModificationTypes.None, true);
 	}
 }
 
@@ -700,7 +840,11 @@ public class ObjectiveHorse : Horse
 	public override void Modify(Entity e, Entity buffEntity)
 	{
 		base.Modify(e, buffEntity);
-		Helper.BuffEntity(e, Prefabs.AB_Interact_Siege_Structure_T01_PlayerBuff, out var siegeBuffEntity, Helper.NO_DURATION);
+		if (Helper.BuffEntity(e, Prefabs.AB_Interact_Siege_Structure_T01_PlayerBuff, out var siegeBuffEntity, Helper.NO_DURATION))
+		{
+			var gameplayEventListenersBuffer = siegeBuffEntity.ReadBuffer<GameplayEventListeners>();
+			gameplayEventListenersBuffer.Clear();
+		}
 		var resistanceData = e.Read<ResistanceData>();
 		var team = (int)Math.Floor(resistanceData.FireResistance_DamageReductionPerRating);
 		PrefabGUID icon;

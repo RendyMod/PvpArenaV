@@ -47,9 +47,9 @@ public class Plugin : BasePlugin, IRunOnInitialized
 			Core.Dispose();
 			Harmony?.UnpatchSelf();
 		}
-		catch
+		catch (Exception e)
 		{
-			Plugin.PluginLog.LogInfo("Ran into error while unloading");
+			Plugin.PluginLog.LogInfo($"Ran into error while unloading: {e.ToString()}");
 		}
 		return true;
 	}
@@ -103,6 +103,9 @@ public class Plugin : BasePlugin, IRunOnInitialized
 		{
 			Prefabs.AB_Consumable_RoseTea_T02_AbilityGroup,
 			Prefabs.AB_Consumable_RoseTea_T01_AbilityGroup,
+			Prefabs.AB_Consumable_SpellBrew_T01_AbilityGroup,
+			Prefabs.AB_Consumable_SpellBrew_T02_AbilityGroup,
+			Prefabs.AB_Consumable_PhysicalBrew_T01_AbilityGroup, //for some reason rage potions work differently then witch potions
 		};
 		Entity prefabEntity;
 		foreach (var ability in abilitiesToRemoveMovementMods)
@@ -114,8 +117,13 @@ public class Plugin : BasePlugin, IRunOnInitialized
 		prefabEntity = Helper.GetPrefabEntityByPrefabGUID(Prefabs.TM_Castle_Fence_Iron02);
 		prefabEntity.Remove<Immortal>();
 
-		prefabEntity = Helper.GetPrefabEntityByPrefabGUID(Prefabs.Item_Consumable_Salve_Vermin);
+		prefabEntity = Helper.GetPrefabEntityByPrefabGUID(Prefabs.Item_Consumable_GlassBottle_PhysicalBrew_T02);
 		var itemData = prefabEntity.Read<ItemData>();
+		itemData.RemoveOnConsume = false;
+		prefabEntity.Write(itemData);
+
+		prefabEntity = Helper.GetPrefabEntityByPrefabGUID(Prefabs.Item_Consumable_Salve_Vermin);
+		itemData = prefabEntity.Read<ItemData>();
 		itemData.RemoveOnConsume = false;
 		prefabEntity.Write(itemData);
 
@@ -181,7 +189,7 @@ public class Plugin : BasePlugin, IRunOnInitialized
 			Prefabs.CHAR_Trader_Dunley_RareGoods_T02,
 			Prefabs.CHAR_Cursed_Witch_Exploding_Mosquito,
 			Prefabs.CHAR_Militia_Longbowman
-	};
+		};
 		entities = Helper.GetEntitiesByComponentTypes<AggroConsumer>(true);
 		PreventUnitSpawns(entities, PrefabsToIgnore);
 		entities.Dispose();
@@ -201,6 +209,25 @@ public class Plugin : BasePlugin, IRunOnInitialized
 			itemEntity.Write(equippableData);
 		}
 		entities.Dispose();
+
+		entities = Helper.GetPrefabEntitiesByComponentTypes<DropTableDataBuffer>();
+		foreach (var entity in entities)
+		{
+			var prefabDropTableBuffer = entity.ReadBuffer<DropTableDataBuffer>();
+			prefabDropTableBuffer.Clear();
+		}
+		entities.Dispose();
+
+		prefabEntity = Helper.GetPrefabEntityByPrefabGUID(Prefabs.DT_Unit_Demon);
+		var dropTableBuffer = prefabEntity.ReadBuffer<DropTableDataBuffer>();
+		dropTableBuffer.Clear();
+		dropTableBuffer.Add(new()
+		{
+			DropRate = 100,
+			ItemGuid = Prefabs.Item_Building_Siege_Golem_T02,
+			ItemType = DropItemType.Item,
+			Quantity = 1
+		});
 	}
 
 	private static void PreventUnitSpawns(NativeArray<Entity> entities, List<PrefabGUID> PrefabsToIgnore)
@@ -237,8 +264,8 @@ public class Plugin : BasePlugin, IRunOnInitialized
 			return;
 		}
 		Core.Initialize();
-		var action = new ScheduledAction(HandleDebugSettings);
-		ActionScheduler.ScheduleAction(action, 30);
+		var action = () => HandleDebugSettings();
+		ActionScheduler.RunActionOnceAfterDelay(action, 1);
 
 		var radialZoneSystem_Holy_Server = VWorld.Server.GetExistingSystem<RadialZoneSystem_Holy_Server>();
 		var radialZoneSystem_Garlic_Server = VWorld.Server.GetExistingSystem<RadialZoneSystem_Garlic_Server>();
@@ -253,25 +280,22 @@ public class Plugin : BasePlugin, IRunOnInitialized
 		var dropInInventoryOnSpawn = VWorld.Server.GetExistingSystem<DropInInventoryOnSpawnSystem>();
 		var unitSpawnerReactSystem = VWorld.Server.GetExistingSystem<UnitSpawnerReactSystem>();
 		var pavementBonusSystem = VWorld.Server.GetExistingSystem<PavementBonusSystem>();
-		
+		var patrolMoveSystem = VWorld.Server.GetExistingSystem<PatrolMoveSystem>();
 
 		radialZoneSystem_Holy_Server.Enabled = false;
 		radialZoneSystem_Garlic_Server.Enabled = false;
 		radialZoneSystem_Curse_Server.Enabled = false;
 		respawnAiEventSystem.Enabled = false;
 		resetBloodOnRespawnSystem.Enabled = false; //stops you from going to frailed blood when you die
-		onDeathSystem.Enabled = false; //stops you from dropping your hat when you die
-		playerCombatBuffSystem.Enabled = true; //setting to false totally removes pve in combat buff, but also can mess up hp regen
+		onDeathSystem.Enabled = true; //stops you from dropping your hat when you die
+		playerCombatBuffSystem.Enabled = false; //setting to false totally removes pve in combat buff, but also can mess up hp regen
 		spawnRegionSpawnSystem.Enabled = false;
 		initializeNewSpawnChainSystem.Enabled = true;
 		dropInInventoryOnSpawn.Enabled = false;
 		unitSpawnerReactSystem.Enabled = true;
 		pavementBonusSystem.Enabled = false;
+		patrolMoveSystem.Enabled = false;
 		/*createGameplayEventsOnDeathSystem.Enabled = true;*/
-		if (PvpArenaConfig.Config.MatchmakingEnabled)
-		{
-			MatchmakingService.Start();
-		}
 
 		ModifyPrefabs();
 

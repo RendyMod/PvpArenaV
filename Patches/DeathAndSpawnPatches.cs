@@ -36,6 +36,7 @@ public static class DeathAndSpawnPatches
 				}
 				else
 				{
+					AiDamageTakenEventSystemPatch.SummonToGrandparentPlayerCharacter.Remove(deathEvent.Died);
 					GameEvents.RaiseUnitDeath(deathEvent.Died, deathEvent);
 				}
 			}
@@ -141,3 +142,39 @@ public static class SpawnCharacterSystemPatch
 	}
 }
 
+
+[HarmonyPatch(typeof(KillEventSystem), nameof(KillEventSystem.OnUpdate))]
+public static class KillEventSystemPatch
+{
+	public static void Prefix(KillEventSystem __instance)
+	{
+		var entities = __instance._Query.ToEntityArray(Allocator.Temp);
+		foreach (var entity in entities)
+		{
+			var fromCharacter = entity.Read<FromCharacter>();
+			var player = PlayerService.GetPlayerFromUser(fromCharacter.User);
+			player.ReceiveMessage("Unstuck is disabled in this game mode.".Error());
+			entity.Destroy();
+		}
+		entities.Dispose();
+	}
+}
+
+[HarmonyPatch(typeof(OnDeathSystem), nameof(OnDeathSystem.DropInventoryOnDeath))]
+public static class OnDeathSystemPatch
+{
+	public static bool Prefix(OnDeathSystem __instance)
+	{
+		return false;
+	}
+}
+
+
+[HarmonyPatch(typeof(OnDeathSystem), nameof(OnDeathSystem.YieldEssenceOnDeath))]
+public static class OnDeathSystemPatch2
+{
+	public static bool Prefix(OnDeathSystem __instance)
+	{
+		return false;
+	}
+}

@@ -12,14 +12,14 @@ namespace PvpArena.Commands;
 
 partial class BuffCommands
 {
-	[Command("add-buff", description: "Buff a player with a prefab name or guid", usage: ".add-buff buffGuid, player, duration, persistsThroughDeath, effectsOnStart", adminOnly: true)]
-	public void BuffCommand (Player sender, PrefabGUID buffGuid, Player player = null, int duration = Helper.NO_DURATION, bool persistsThroughDeath = false, bool effectsOnStart = true)
+	[Command("add-buff", description: "Buff a player with a prefab name or guid", usage: ".add-buff buffGuid, player, duration, persistsThroughDeath, effectsOnStart", aliases: new string[] { "buff" }, adminOnly: true)]
+	public void BuffCommand (Player sender, PrefabGUID buffGuid, Player player = null, float duration = Helper.NO_DURATION, bool persistsThroughDeath = false)
 	{
 		var Player = player != null ? player : sender;
 
 		try
 		{
-			Helper.BuffPlayer(Player, buffGuid, out var buffEntity, duration, persistsThroughDeath, effectsOnStart);
+			Helper.BuffPlayer(Player, buffGuid, out var buffEntity, duration, persistsThroughDeath);
 			sender.ReceiveMessage("Added buff.".Success());
 		}
 		catch (Exception e)
@@ -29,7 +29,7 @@ partial class BuffCommands
 		}
 	}
 
-	[Command("remove-buff", description: "Removes a buff", adminOnly: true)]
+	[Command("remove-buff", description: "Removes a buff", aliases: new string[] { "unbuff", "debuff" }, adminOnly: true)]
 	public void UnbuffCommand (Player sender, PrefabGUID buffGuid, Player player = null)
 	{
 		var Player = player != null ? player : sender;
@@ -52,10 +52,10 @@ partial class BuffCommands
 	}
 
 	[Command("buff-target", description: "Used for debugging", adminOnly: true)]
-	public static void BuffHoveredTargetCommand(Player sender, PrefabGUID buffGuid, int duration = Helper.DEFAULT_DURATION, bool persistsThroughDeath = false, bool hasStartEffects = true)
+	public static void BuffHoveredTargetCommand(Player sender, PrefabGUID buffGuid, float duration = Helper.DEFAULT_DURATION, bool persistsThroughDeath = false)
 	{
 		Entity entity = Helper.GetHoveredEntity(sender.User);
-		Helper.BuffEntity(entity, buffGuid, out var buffEntity, Helper.NO_DURATION, persistsThroughDeath, hasStartEffects);
+		Helper.BuffEntity(entity, buffGuid, out var buffEntity, Helper.NO_DURATION, persistsThroughDeath);
 		Helper.ModifyBuff(buffEntity, BuffModificationTypes.None);
 		buffEntity.Add<DestroyBuffOnDamageTaken>();
 		

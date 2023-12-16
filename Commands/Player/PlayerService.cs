@@ -5,6 +5,7 @@ using PvpArena.Helpers;
 using PvpArena.Models;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -24,6 +25,18 @@ namespace PvpArena.Services
 		public abstract class PlayerData
 		{
 			public abstract ulong SteamID { get; set; }
+		}
+
+		public static Player GetAnyPlayer()
+		{
+			if (OnlinePlayers.Count > 0)
+			{
+				return OnlinePlayers.Keys.FirstOrDefault();
+			}
+			else
+			{
+				return UserCache.Values.FirstOrDefault();
+			}
 		}
 
 		public static Player GetAnyEnemyPlayer(Player player)

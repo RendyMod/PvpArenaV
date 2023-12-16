@@ -64,7 +64,7 @@ public static class JewelData
 		new PrefabData(Prefabs.AB_Blood_BloodRite_AbilityGroup, "AB_Blood_BloodRite_AbilityGroup", "Blood Rite"),
 		new PrefabData(Prefabs.AB_Blood_SanguineCoil_AbilityGroup, "AB_Blood_SanguineCoil_AbilityGroup",
 			"Sanguine Coil"),
-		new PrefabData(Prefabs.AB_Blood_Shadowbolt_AbilityGroup, "AB_Blood_Shadowbolt_AbilityGroup", "Shadow Bolt"),
+		new PrefabData(Prefabs.AB_Blood_Shadowbolt_AbilityGroup, "AB_Blood_Shadowbolt_AbilityGroup", "Shadowbolt"),
 		new PrefabData(Prefabs.AB_Chaos_Aftershock_Group, "AB_Chaos_Aftershock_Group", "Aftershock"),
 		new PrefabData(Prefabs.AB_Chaos_Barrier_AbilityGroup, "AB_Chaos_Barrier_AbilityGroup", "Chaos Barrier"),
 		new PrefabData(Prefabs.AB_Chaos_PowerSurge_AbilityGroup, "AB_Chaos_PowerSurge_AbilityGroup", "Power Surge"),

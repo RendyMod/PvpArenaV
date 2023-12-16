@@ -1,6 +1,7 @@
 
 using ProjectM;
 using ProjectM.CastleBuilding;
+using ProjectM.Gameplay.Scripting;
 using PvpArena;
 using PvpArena.Data;
 using PvpArena.Helpers;

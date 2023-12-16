@@ -38,13 +38,18 @@ public static class BuffDebugSystemPatch
 			{				
 				try
 				{
-					var Character = entity.Read<EntityOwner>().Owner;
-					if (Character.Has<PlayerCharacter>())
+					var prefabGuid = entity.Read<PrefabGUID>();
+					var buffTarget = entity.Read<EntityOwner>().Owner;
+					var buff = entity.Read<Buff>();
+					if (buff.Target.Exists())
 					{
-						var player = PlayerService.GetPlayerFromCharacter(Character);
+						buffTarget = buff.Target;
+					}
+					if (buffTarget.Has<PlayerCharacter>())
+					{
+						var player = PlayerService.GetPlayerFromCharacter(buffTarget);
 						GameEvents.RaisePlayerBuffed(player, entity);
-
-						var prefabGuid = entity.Read<PrefabGUID>();
+						
 						if (prefabGuid == Prefabs.Item_EquipBuff_Shared_General)
 						{
 							var buffer = entity.ReadBuffer<ModifyUnitStatBuff_DOTS>();
@@ -54,7 +59,25 @@ public static class BuffDebugSystemPatch
 					}
 					else
 					{
-						GameEvents.RaiseUnitBuffed(Character, entity);
+						if (prefabGuid == Helper.CustomBuff4)
+						{
+							Helper.ApplyStatModifier(entity, new ModifyUnitStatBuff_DOTS
+							{
+								Id = ModificationIdFactory.NewId(),
+								ModificationType = ModificationType.Set,
+								StatType = UnitStatType.AttackSpeed,
+								Value = 5
+							}, true);
+							Helper.ApplyStatModifier(entity, new ModifyUnitStatBuff_DOTS
+							{
+								Id = ModificationIdFactory.NewId(),
+								ModificationType = ModificationType.Set,
+								StatType = UnitStatType.CooldownModifier,
+								Value = 0
+							}, false);
+						}
+
+						GameEvents.RaiseUnitBuffed(buffTarget, entity);
 					}
 				}
 				catch (Exception e)
@@ -78,17 +101,22 @@ public static class BuffDebugSystemPatch
 			{
 				try
 				{
-					var owner = entity.Read<EntityOwner>().Owner;
-					if (owner.Exists())
+					var buffTarget = entity.Read<EntityOwner>().Owner;
+					var buff = entity.Read<Buff>();
+					if (buff.Target.Exists())
 					{
-						if (owner.Has<PlayerCharacter>())
+						buffTarget = buff.Target;
+					}
+					if (buffTarget.Exists())
+					{
+						if (buffTarget.Has<PlayerCharacter>())
 						{
-							var player = PlayerService.GetPlayerFromCharacter(owner);
+							var player = PlayerService.GetPlayerFromCharacter(buffTarget);
 							GameEvents.RaisePlayerBuffRemoved(player, entity);
 						}
 						else
 						{
-							GameEvents.RaiseUnitBuffRemoved(owner, entity);
+							GameEvents.RaiseUnitBuffRemoved(buffTarget, entity);
 						}
 					}
 				}

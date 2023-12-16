@@ -36,11 +36,12 @@ namespace PvpArena.GameModes.CaptureThePancake;
 
 public class CaptureThePancakeGameMode : BaseGameMode
 {
-    public override Player.PlayerState GameModeType => Player.PlayerState.CaptureThePancake;
-	public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
+    public override Player.PlayerState PlayerGameModeType => Player.PlayerState.CaptureThePancake;
+    public override string UnitGameModeType => "pancake";
+    public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
 	{
 		RemoveConsumables = false,
-		RemoveShapeshifts = false,
+		RemoveShapeshifts = true,
 		ResetCooldowns = false
 	};
 	private static bool MatchActive = false;
@@ -146,8 +147,6 @@ public class CaptureThePancakeGameMode : BaseGameMode
 	public override void Initialize()
 	{
 		MatchActive = true;
-		BaseInitialize();
-		GameEvents.OnPlayerRespawn += HandleOnPlayerRespawn;
 		GameEvents.OnPlayerDowned += HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath += HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift += HandleOnShapeshift;
@@ -163,10 +162,17 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		GameEvents.OnUnitBuffed += HandleOnUnitBuffed;
 		GameEvents.OnUnitDeath += HandleOnUnitDeath;
 		GameEvents.OnGameFrameUpdate += HandleOnGameFrameUpdate;
-		GameEvents.OnPlayerDamageReceived += HandleOnPlayerDamageReceived;
         GameEvents.OnDelayedSpawn += HandleOnDelayedSpawnEvent;
         GameEvents.OnPlayerStartedCasting += HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerDamageReported += HandleOnPlayerDamageReported;
+		GameEvents.OnPlayerProjectileCreated += HandleOnPlayerProjectileCreated;
+		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
+		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
+		GameEvents.OnUnitDamageDealt += HandleOnUnitDamageDealt;
+		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
+		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
+		GameEvents.OnPlayerPlacedStructure += HandleOnPlayerPlacedStructure;
+		GameEvents.OnPlayerInteracted += HandleOnPlayerInteracted;
 
 		stopwatch.Start();
 	}
@@ -194,8 +200,6 @@ public class CaptureThePancakeGameMode : BaseGameMode
 	public override void Dispose()
 	{
 		MatchActive = false;
-		BaseDispose();
-		GameEvents.OnPlayerRespawn -= HandleOnPlayerRespawn;
 		GameEvents.OnPlayerDowned -= HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath -= HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift -= HandleOnShapeshift;
@@ -211,10 +215,17 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		GameEvents.OnUnitBuffed -= HandleOnUnitBuffed;
 		GameEvents.OnUnitDeath -= HandleOnUnitDeath;
 		GameEvents.OnGameFrameUpdate -= HandleOnGameFrameUpdate;
-		GameEvents.OnPlayerDamageReceived -= HandleOnPlayerDamageReceived;
         GameEvents.OnDelayedSpawn -= HandleOnDelayedSpawnEvent;
         GameEvents.OnPlayerStartedCasting -= HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerDamageReported -= HandleOnPlayerDamageReported;
+		GameEvents.OnPlayerProjectileCreated -= HandleOnPlayerProjectileCreated;
+		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
+		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
+		GameEvents.OnUnitDamageDealt -= HandleOnUnitDamageDealt;
+		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
+		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
+		GameEvents.OnPlayerPlacedStructure -= HandleOnPlayerPlacedStructure;
+		GameEvents.OnPlayerInteracted -= HandleOnPlayerInteracted;
 
 		Teams.Clear();
 		foreach (var shardBuffs in TeamToShardBuffsMap.Values)
@@ -223,7 +234,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		}
         foreach (var kvp in UnitFactory.UnitToEntity)
         {
-            if (kvp.Key.Category == "pancake")
+            if (kvp.Key.GameMode == "pancake")
             {
                 UnitFactory.UnitToEntity.Remove(kvp.Key);
             }
@@ -252,7 +263,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 	public override void HandleOnPlayerDowned(Player player, Entity killer)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 
 		if (killer.Exists())
 		{
@@ -307,27 +318,6 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		{
 			playerDeaths[player] = 1;
 		}
-	}
-
-	private string CreatePlayerDownedMessage(Player victim, Player killer, Player observer)
-	{
-		bool isVictimTeammate = victim.MatchmakingTeam == observer.MatchmakingTeam;
-		string coloredVictimName = isVictimTeammate ? $"{victim.Name.FriendlyTeam()}" : $"{victim.Name.EnemyTeam()}".White();
-
-		if (killer != null)
-		{
-			bool isKillerTeammate = killer.MatchmakingTeam == observer.MatchmakingTeam;
-			string coloredKillerName = isKillerTeammate ? $"{killer.Name.FriendlyTeam()}" : $"{killer.Name.EnemyTeam()}".White();
-			return $"{coloredKillerName} killed {coloredVictimName}".White();
-		}
-		else
-		{
-			return $"{coloredVictimName} died to {"PvE".NeutralTeam()}".White();
-		}
-	}
-	public override void HandleOnPlayerDeath(Player player, DeathEvent deathEvent)
-	{
-		if (player.CurrentState != this.GameModeType) return;
 
 		//clear out any queued up respawn actions since we will recreate them now that the player has died (in case they killed themselves twice in a row before the initial respawn actions finished)
 		if (PlayerRespawnTimers.TryGetValue(player, out var respawnActions))
@@ -347,39 +337,72 @@ public class CaptureThePancakeGameMode : BaseGameMode
 			respawnActions.Clear();
 		}
 
-		if (!BuffUtility.HasBuff(VWorld.Server.EntityManager, player.Character, Prefabs.Buff_General_Vampire_Wounded_Buff))
-		{
-			if (playerDeaths.ContainsKey(player))
-			{
-				playerDeaths[player]++;
-			}
-			else
-			{
-				playerDeaths[player] = 1;
-			}
-			foreach (var team in Teams.Values)
-			{
-				foreach (var teamPlayer in team)
-				{
-					bool isTeammate = player.MatchmakingTeam == teamPlayer.MatchmakingTeam;
-					string coloredVictimName = isTeammate ? $"{player.Name.FriendlyTeam()}" : $"{player.Name.EnemyTeam()}";
-					var message = $"{coloredVictimName} killed themselves".White();
-					teamPlayer.ReceiveMessage(message);
-				}
-			}
-		}
-
-
 		DropShardsOnDeathIfApplicable(player);
 
-		Action respawnPlayerAction = () =>
+		float3 pos = default;
+		if (player.MatchmakingTeam == 1)
 		{
-			Helper.RespawnPlayer(player, player.Position);
+			pos = CaptureThePancakeConfig.Config.Team1PlayerRespawn.ToFloat3();
+		}
+		else if (player.MatchmakingTeam == 2)
+		{
+			pos = CaptureThePancakeConfig.Config.Team2PlayerRespawn.ToFloat3();
+		}
+
+		Action removeSpectatorModeAction = () =>
+		{
+			player.Reset(ResetOptions);
+			Helper.RemoveBuff(player, Prefabs.AB_Shapeshift_Mist_Buff);
+			if (Helper.BuffPlayer(player, Prefabs.Buff_General_Phasing, out var buffEntity, 3))
+			{
+				Helper.ApplyStatModifier(buffEntity, BuffModifiers.FastRespawnMoveSpeed);
+				Helper.RemoveBuffModifications(buffEntity, BuffModificationTypes.Immaterial);
+			}
 		};
-		var timer = ActionScheduler.RunActionOnceAfterDelay(respawnPlayerAction, 2.9);
+
+		Action bringSpectatorBackToBaseRootedAction = () =>
+		{
+			player.Teleport(pos);
+			if (Helper.BuffPlayer(player, Helper.CustomBuff2, out var buffEntity, 3))
+			{
+				Helper.ModifyBuff(buffEntity, BuffModificationTypes.MovementImpair | BuffModificationTypes.Immaterial);
+			}
+			var timer = ActionScheduler.RunActionOnceAfterDelay(removeSpectatorModeAction, 3);
+			PlayerRespawnTimers[player].Add(timer);
+
+			foreach (var buff in TeamToShardBuffsMap[player.MatchmakingTeam])
+			{
+				if (!Helper.BuffPlayer(player, buff, out buffEntity, Helper.NO_DURATION))
+				{
+					var action = () => { Helper.BuffPlayer(player, buff, out var buffEntity, Helper.NO_DURATION, true); };
+					ActionScheduler.RunActionOnceAfterFrames(action, 2); //some buffs need delays or they won't be applied
+				}
+			}
+		};
+
+		player.Reset(ResetOptions);
+		var respawnDelay = CalculateRespawnDelay();
+		PlayerRespawnTimers[player].Add(Helper.MakeGhostlySpectator(player, respawnDelay));
+
+		var timer = ActionScheduler.RunActionOnceAfterDelay(bringSpectatorBackToBaseRootedAction, respawnDelay - 3);
 		PlayerRespawnTimers[player].Add(timer);
-		Helper.BuffPlayer(player, Prefabs.AB_Scarecrow_Idle_Buff, out var buffEntity2, Helper.NO_DURATION, true); //used to hide the player's bar over their character
-		Helper.RemoveBuff(player, Prefabs.Buff_General_VampirePvPDeathDebuff);
+	}
+
+	private string CreatePlayerDownedMessage(Player victim, Player killer, Player observer)
+	{
+		bool isVictimTeammate = victim.MatchmakingTeam == observer.MatchmakingTeam;
+		string coloredVictimName = isVictimTeammate ? $"{victim.Name.FriendlyTeam()}" : $"{victim.Name.EnemyTeam()}".White();
+
+		if (killer != null)
+		{
+			bool isKillerTeammate = killer.MatchmakingTeam == observer.MatchmakingTeam;
+			string coloredKillerName = isKillerTeammate ? $"{killer.Name.FriendlyTeam()}" : $"{killer.Name.EnemyTeam()}".White();
+			return $"{coloredKillerName} killed {coloredVictimName}".White();
+		}
+		else
+		{
+			return $"{coloredVictimName} died to {"PvE".NeutralTeam()}".White();
+		}
 	}
 
 	private static void DropShardsOnDeathIfApplicable(Player player)
@@ -391,38 +414,25 @@ public class CaptureThePancakeGameMode : BaseGameMode
 			if (hasManticoreShard && hasMonsterShard)
 			{
 				CaptureThePancakeHelper.DropItemsIntoBag(player, new List<PrefabGUID> { Prefabs.Item_Building_Relic_Monster, Prefabs.Item_Building_Relic_Manticore });
-				Helper.RemoveItemFromInventory(player, Prefabs.Item_Building_Relic_Monster);
-				Helper.RemoveItemFromInventory(player, Prefabs.Item_Building_Relic_Manticore);
+				Helper.CompletelyRemoveItemFromInventory(player, Prefabs.Item_Building_Relic_Monster);
+				Helper.CompletelyRemoveItemFromInventory(player, Prefabs.Item_Building_Relic_Manticore);
 			}
 			else if (hasManticoreShard)
 			{
 				CaptureThePancakeHelper.DropItemsIntoBag(player, new List<PrefabGUID> { Prefabs.Item_Building_Relic_Manticore });
-				Helper.RemoveItemFromInventory(player, Prefabs.Item_Building_Relic_Manticore);
+				Helper.CompletelyRemoveItemFromInventory(player, Prefabs.Item_Building_Relic_Manticore);
 			}
 			else if (hasMonsterShard)
 			{
 				CaptureThePancakeHelper.DropItemsIntoBag(player, new List<PrefabGUID> { Prefabs.Item_Building_Relic_Monster });
-				Helper.RemoveItemFromInventory(player, Prefabs.Item_Building_Relic_Monster);
+				Helper.CompletelyRemoveItemFromInventory(player, Prefabs.Item_Building_Relic_Monster);
 			}
 		}
 	}
 
-	public void HandleOnGameModeBegin(Player player)
-	{
-		if (player.CurrentState != this.GameModeType) return;
-	}
-	public void HandleOnGameModeEnd(Player player)
-	{
-		if (player.CurrentState != this.GameModeType) return;
-	}
-	public override void HandleOnPlayerChatCommand(Player player, CommandAttribute command)
-	{
-		if (player.CurrentState != this.GameModeType) return;
-
-	}
 	public override void HandleOnShapeshift(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 
 		var enterShapeshiftEvent = eventEntity.Read<ProjectM.Network.EnterShapeshiftEvent>();
 		if (!shapeshiftToShapeshift.ContainsKey(enterShapeshiftEvent.Shapeshift))
@@ -436,15 +446,14 @@ public class CaptureThePancakeGameMode : BaseGameMode
 			eventEntity.Write(enterShapeshiftEvent);
 		}
 	}
-	public override void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
+	public void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 		if (item.ItemType == Prefabs.Item_Consumable_GlassBottle_BloodRosePotion_T02 || item.ItemType == Prefabs.Item_Consumable_Canteen_BloodRoseBrew_T01)
 		{
-			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
+			eventEntity.Destroy();
 			player.ReceiveMessage("You can't drink those during a pancake match!".Error());
 		}
-		//BuffClanMembersOnConsume(player, item);
 	}
 
 	public static void HandleSubdueChannelingTargetDebuff(Player player, Entity buffEntity)
@@ -507,7 +516,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 				{
 					var unit = new ObjectiveHorse(unitSpawn.Team);
 					unit.MaxHealth = unitSpawn.Health;
-					unit.Category = "pancake";
+					unit.GameMode = "pancake";
 					UnitFactory.SpawnUnit(unit, unitSpawn.Location.ToFloat3(), Teams[unitSpawn.Team][0]);
 					break;
 				}
@@ -622,7 +631,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 	public void HandleOnPlayerBuffed(Player player, Entity buffEntity)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 
 		var prefabGuid = buffEntity.Read<PrefabGUID>();
 		var buff = buffEntity.Read<Buff>();
@@ -671,21 +680,10 @@ public class CaptureThePancakeGameMode : BaseGameMode
         }
     }
 
-
-    public void HandleOnUnitBuffed(Entity unit, Entity buffEntity)
+	public void HandleOnUnitBuffed(Entity unit, Entity buffEntity)
 	{
-		if (TryGetSpawnedUnitFromEntity(unit, out SpawnedUnit spawnedUnit))
-		{
-			if (spawnedUnit.Unit.Category != "pancake")
-			{
-				return;
-			}
-		}
-		else
-		{
-			return;
-		}
-
+        if (!UnitFactory.HasGameMode(unit, UnitGameModeType)) return;
+        if (!TryGetSpawnedUnitFromEntity(unit, out SpawnedUnit spawnedUnit)) return;
 
 		var buffPrefabGUID = buffEntity.Read<PrefabGUID>();
 		if (unit.Read<PrefabGUID>() == Prefabs.CHAR_Gloomrot_Purifier_VBlood)
@@ -715,33 +713,11 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		{
 			Helper.BuffEntity(unit.Read<EntityOwner>().Owner, Prefabs.AB_LightningStrike_RodHit_EmpowerTankBuff, out var buffEntity2, Helper.NO_DURATION); //perma charge lightning rod turrets	
 		}
-		/*		if (buffEntity.Read<PrefabGUID>() == Prefabs.AB_Interact_Siege_Structure_T01_PlayerBuff)
-				{
-					PrefabGUID icon;
-					if (UnitFactory.TryGetSpawnedUnitFromEntity(unit, out var spawnedUnit))
-					{
-						if (spawnedUnit.Unit.Team == 1)
-						{
-							icon = Prefabs.MapIcon_CharmedUnit;
-						}
-						else
-						{
-							icon = Prefabs.MapIcon_Crypt;
-						}
-						var buffer = buffEntity.ReadBuffer<AttachMapIconsToEntity>();
-						for (var i = 0; i < buffer.Length; i++)
-						{
-							var attachMapIconsToEntity = buffer[i];
-							attachMapIconsToEntity.Prefab = icon;
-							buffer[i] = attachMapIconsToEntity;
-						}
-					}
-				}*/
 	}
 
 	public override void HandleOnPlayerConnected(Player player)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 
 
 		if (player.MatchmakingTeam == 1)
@@ -756,15 +732,16 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 	public override void HandleOnPlayerDisconnected(Player player)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 
-		Helper.DestroyEntity(player.Character);
-		base.HandleOnPlayerDisconnected(player);
-	}
+        Helper.SoftKillPlayer(player);
+        var action = () => player.Teleport(new float3(0, 0, 0));
+		ActionScheduler.RunActionOnceAfterFrames(action, 2);
+    }
 
 	public void HandleOnPlayerWillLoseGallopBuff(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 
 		if (!(shouldRemoveGallopBuff.TryGetValue(player, out var value) && value))
 		{
@@ -774,7 +751,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 	public void HandleOnPlayerMounted(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 		shouldRemoveGallopBuff[player] = false; //flag gallop buff for destruction once they dismount
 
 		Helper.RemoveAllShieldBuffs(player);
@@ -802,14 +779,14 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 	public void HandleOnPlayerDismounted(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 
 		shouldRemoveGallopBuff[player] = true; // when they re-mount, re-flag gallop buff to not be destroyed
 	}
 
 	public void HandleOnPlayerInvitedToClan(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 		player.ReceiveMessage("You may not invite players to your clan while in Capture the Pancake".Error());
@@ -817,7 +794,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 	public void HandleOnPlayerKickedFromClan(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 		player.ReceiveMessage("You may not kick players from your clan while in Capture the Pancake".Error());
@@ -825,7 +802,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 	public void HandleOnPlayerLeftClan(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 		player.ReceiveMessage("You may not leave your clan while in Capture the Pancake".Error());
@@ -834,10 +811,10 @@ public class CaptureThePancakeGameMode : BaseGameMode
 	public void HandleOnUnitDeath(Entity unitEntity, DeathEvent deathEvent)
 	{
 		if (!MatchActive) return;
+        if (!UnitFactory.HasGameMode(unitEntity, UnitGameModeType)) return;
 
-		if (TryGetSpawnedUnitFromEntity(unitEntity, out var spawnedUnit))
+        if (TryGetSpawnedUnitFromEntity(unitEntity, out var spawnedUnit))
 		{
-			if (spawnedUnit.Unit.Category != "pancake") return;
 			if (spawnedUnit.Unit.PrefabGuid == Prefabs.CHAR_Gloomrot_Purifier_VBlood)
 			{
 				if (spawnedUnit.Unit.Team == 1)
@@ -897,18 +874,9 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		}
 	}
 
-
-
-	public void HandleOnPlayerChatCommand(Player player, Entity eventEntity)
-	{
-		if (player.CurrentState != this.GameModeType) return;
-
-
-	}
-
 	public override void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType, int slotIndex)
 	{
-		if (!player.IsInCaptureThePancake()) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 
 		var prefabEntity = Helper.GetPrefabEntityByPrefabGUID(itemType);
 		
@@ -920,7 +888,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 	public override void HandleOnPlayerDamageDealt(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 
 		if (!eventEntity.Exists()) return;
 
@@ -931,7 +899,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		var isStructure = damageDealtEvent.Target.Has<CastleHeartConnection>();
 		if (UnitFactory.TryGetSpawnedUnitFromEntity(damageDealtEvent.Target, out var unit))
 		{
-			if (unit.Unit.Category == "pancake")
+			if (unit.Unit.GameMode == "pancake")
 			{
 				isSpawnedByGameMode = true;
 			}
@@ -950,23 +918,26 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		}
 	}
 
-	public void HandleOnPlayerDamageReceived(Player player, Entity eventEntity)
+	public override void HandleOnUnitDamageDealt(Entity unit, Entity eventEntity)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+        if (!UnitFactory.HasGameMode(unit, UnitGameModeType)) return;
 
-		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
+        var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
 		var source = damageDealtEvent.SpellSource.Read<EntityOwner>().Owner;
-
-		if (source.Read<PrefabGUID>() == Prefabs.CHAR_Gloomrot_Purifier_VBlood)
+		var target = damageDealtEvent.Target;
+		if (target.Exists() && target.Has<PlayerCharacter>())
 		{
-			damageDealtEvent.MaterialModifiers.PlayerVampire *= 1.5f;
-			eventEntity.Write(damageDealtEvent);
+			if (source.Read<PrefabGUID>() == Prefabs.CHAR_Gloomrot_Purifier_VBlood)
+			{
+				damageDealtEvent.MaterialModifiers.PlayerVampire *= 1.5f;
+				eventEntity.Write(damageDealtEvent);
+			}
 		}
 	}
 
     public void HandleOnPlayerStartedCasting(Player player, Entity eventEntity)
     {
-        if (player.CurrentState != this.GameModeType) return;
+        if (player.CurrentState != this.PlayerGameModeType) return;
 
 
         var abilityCastStartedEvent = eventEntity.Read<AbilityCastStartedEvent>();
@@ -999,7 +970,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 	public void HandleOnDelayedSpawnEvent(Unit unit, int timeToSpawn)
     {
-        if (unit.Category != "pancake") return;
+        if (unit.GameMode != "pancake") return;
 
 		if (timeToSpawn <= 0)
         {
@@ -1033,83 +1004,14 @@ public class CaptureThePancakeGameMode : BaseGameMode
         }
     }
 
-
-    public void HandleOnPlayerRespawn(Player player)
-	{
-        if (player.CurrentState != this.GameModeType) return;
-
-		float3 pos = default;
-		if (player.MatchmakingTeam == 1)
-		{
-			pos = CaptureThePancakeConfig.Config.Team1PlayerRespawn.ToFloat3();
-		}
-		else if (player.MatchmakingTeam == 2)
-		{
-			pos = CaptureThePancakeConfig.Config.Team2PlayerRespawn.ToFloat3();
-		}
-
-		var respawnDelay = CalculateRespawnDelay();
-
-
-
-		Action respawnPlayerActionPart2 = () =>
-		{
-			player.Reset(ResetOptions);
-			Helper.RemoveBuff(player, Prefabs.AB_Shapeshift_Mist_Buff);
-			if (Helper.BuffPlayer(player, Prefabs.Buff_General_Phasing, out var buffEntity, 3))
-			{
-				Helper.ApplyStatModifier(buffEntity, BuffModifiers.FastRespawnMoveSpeed);
-				Helper.RemoveBuffModifications(buffEntity, BuffModificationTypes.Immaterial);
-				buffEntity.Add<DestroyBuffOnDamageTaken>();
-			}
-		};
-
-		Action respawnPlayerActionPart1 = () =>
-		{
-			player.Teleport(pos);
-			Helper.RemoveBuff(player, Prefabs.AB_Scarecrow_Idle_Buff);
-			if (Helper.BuffPlayer(player, Helper.CustomBuff2, out var buffEntity, 3))
-			{
-				Helper.ModifyBuff(buffEntity, BuffModificationTypes.MovementImpair | BuffModificationTypes.Immaterial);
-			}
-			var timer = ActionScheduler.RunActionOnceAfterDelay(respawnPlayerActionPart2, 3);
-			PlayerRespawnTimers[player].Add(timer);
-		};
-
-		if (Helper.BuffPlayer(player, Prefabs.AB_Shapeshift_Mist_Buff, out var buffEntity, respawnDelay))
-		{
-			Helper.CompletelyRemoveAbilityBarFromBuff(buffEntity);
-			Helper.FixIconForShapeshiftBuff(player, buffEntity, Prefabs.AB_Shapeshift_Mist_Group);
-			Helper.ModifyBuff(buffEntity, BuffModificationTypes.Invulnerable | BuffModificationTypes.Immaterial | BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.AbilityCastImpair | BuffModificationTypes.PickupItemImpaired | BuffModificationTypes.TargetSpellImpaired, true);
-		}
-
-		if (Helper.BuffPlayer(player, Prefabs.Buff_General_HideCorpse, out var invisibleBuff, respawnDelay))
-		{
-			Helper.ModifyBuff(invisibleBuff, BuffModificationTypes.None, true);
-		}
-		
-
-		var timer = ActionScheduler.RunActionOnceAfterDelay(respawnPlayerActionPart1, respawnDelay - 3);
-		PlayerRespawnTimers[player].Add(timer);
-
-		var blood = player.Character.Read<Blood>();
-		Helper.SetPlayerBlood(player, blood.BloodType, blood.Quality);
-		foreach (var buff in TeamToShardBuffsMap[player.MatchmakingTeam])
-		{
-			if (!Helper.BuffPlayer(player, buff, out buffEntity, Helper.NO_DURATION))
-			{
-				var action = new ScheduledAction(Helper.BuffPlayer, new object[] { player, buff, buffEntity, Helper.NO_DURATION, true, true });
-				ActionScheduler.ScheduleAction(action, 2); //some buffs need delays or they won't be applied
-			}
-		}
-	}
-
 	public void HandleOnPlayerDamageReported(Player source, Entity target, PrefabGUID ability, DamageInfo damageInfo)
 	{
+		if (source.CurrentState != PlayerGameModeType) return;
+
 		if (!target.Has<PlayerCharacter>()) return;
 
 		var targetPlayer = PlayerService.GetPlayerFromCharacter(target);
-		if (source.CurrentState != GameModeType || targetPlayer.CurrentState != GameModeType) return;
+		if (source.CurrentState != PlayerGameModeType || targetPlayer.CurrentState != PlayerGameModeType) return;
 
 		if (!PlayerDamageDealt.ContainsKey(source)) 
 		{
@@ -1123,8 +1025,36 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		PlayerDamageReceived[targetPlayer] += damageInfo.TotalDamage;
 	}
 
+	public void HandleOnPlayerProjectileCreated(Player player, Entity projectile)
+	{
+		if (player.CurrentState != PlayerGameModeType) return;
 
-	public void HandleOnGameFrameUpdate()
+		var prefabGuid = projectile.Read<PrefabGUID>();
+		if (prefabGuid == Prefabs.AB_Subdue_Projectile)
+		{
+			var buffer = projectile.ReadBuffer<HitColliderCast>();
+			for (var i = 0; i < buffer.Length; i++)
+			{
+				var hitCollider = buffer[i];
+				hitCollider.IgnoreImmaterial = true;
+				buffer[i] = hitCollider;
+			}
+		}
+	}
+
+	public void HandleOnPlayerInteracted(Player player, Interactor interactor)
+	{
+		if (player.CurrentState != PlayerGameModeType) return;
+
+		if (interactor.Target.Has<Mountable>() && !Team.IsAllies(interactor.Target.Read<Team>(), player.Character.Read<Team>()))
+		{
+			interactor.Target = player.Character;
+			player.Character.Write(interactor);
+		}
+	}
+
+
+public void HandleOnGameFrameUpdate()
 	{
 		//check for shard captures
 		foreach (var team in Teams.Values)
@@ -1165,7 +1095,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 	{
 		if (Helper.PlayerHasItemInInventories(player, shardData.ItemPrefabGUID))
 		{
-            Helper.RemoveItemFromInventory(player, shardData.ItemPrefabGUID);
+            Helper.CompletelyRemoveItemFromInventory(player, shardData.ItemPrefabGUID);
 			var friendlyTeam = GetFriendlyTeam(player);
 			var enemyTeam = GetOpposingTeam(player);
 			if (!TeamToShardBuffsMap[player.MatchmakingTeam].Contains(shardData.BuffPrefabGUID))
@@ -1175,7 +1105,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 			foreach (var teamPlayer in friendlyTeam)
 			{
-				Helper.BuffPlayer(teamPlayer, shardData.BuffPrefabGUID, out Entity buffEntity, Helper.NO_DURATION, true, true);
+				Helper.BuffPlayer(teamPlayer, shardData.BuffPrefabGUID, out Entity buffEntity, Helper.NO_DURATION, true);
 				string message = player != teamPlayer ? $"{player.Name} has captured the {shardData.ShardName}!" : $"You have captured the {shardData.ShardName}!";
 				teamPlayer.ReceiveMessage(message.Success());
 			}
@@ -1244,7 +1174,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 	public static new HashSet<string> GetAllowedCommands()
 	{
-		return AllowedCommands;
+		return BaseGameMode.AllowedCommands;
 	}
 
 	public static void ReportStats()

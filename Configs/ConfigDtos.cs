@@ -51,6 +51,14 @@ public class ConfigDtos
 		public int Quantity { get; set; }
 	}
 
+	public class MercenaryCamp
+	{
+		public List<UnitSpawn> UnitSpawns { get; set; } = new();
+		public RectangleZoneDto Zone { get; set; } = new();
+		public int SpawnDelay { get; set; } = 0;
+		public int RespawnTime { get; set; } = 240;
+	}
+
 	public class UnitSpawn
 	{
 		public PrefabGUID PrefabGUID { get; set; }

@@ -214,8 +214,8 @@ public static partial class Helper
 		};
 
 		var query = VWorld.Server.EntityManager.CreateEntityQuery(queryDesc);
-
 		var entities = query.ToEntityArray(Allocator.Temp);
+		query.Dispose();
 		return entities;
 	}
 
@@ -235,8 +235,55 @@ public static partial class Helper
 		};
 
 		var query = VWorld.Server.EntityManager.CreateEntityQuery(queryDesc);
+		var entities = query.ToEntityArray(Allocator.Temp);
+		query.Dispose();
+		return entities;
+	}
+
+	public static NativeArray<Entity> GetPrefabEntitiesByComponentTypes<T1, T2, T3>()
+	{
+		EntityQueryOptions options = EntityQueryOptions.IncludePrefab;
+
+		EntityQueryDesc queryDesc = new EntityQueryDesc
+		{
+			All = new ComponentType[]
+			{
+				new ComponentType(Il2CppType.Of<Prefab>(), ComponentType.AccessMode.ReadWrite),
+				new ComponentType(Il2CppType.Of<T1>(), ComponentType.AccessMode.ReadWrite),
+				new ComponentType(Il2CppType.Of<T2>(), ComponentType.AccessMode.ReadWrite),
+				new ComponentType(Il2CppType.Of<T3>(), ComponentType.AccessMode.ReadWrite)
+			},
+			Options = options
+		};
+
+		var query = VWorld.Server.EntityManager.CreateEntityQuery(queryDesc);
 
 		var entities = query.ToEntityArray(Allocator.Temp);
+		query.Dispose();
+		return entities;
+	}
+
+	public static NativeArray<Entity> GetPrefabEntitiesByComponentTypes<T1, T2, T3, T4>()
+	{
+		EntityQueryOptions options = EntityQueryOptions.IncludePrefab;
+
+		EntityQueryDesc queryDesc = new EntityQueryDesc
+		{
+			All = new ComponentType[]
+			{
+				new ComponentType(Il2CppType.Of<Prefab>(), ComponentType.AccessMode.ReadWrite),
+				new ComponentType(Il2CppType.Of<T1>(), ComponentType.AccessMode.ReadWrite),
+				new ComponentType(Il2CppType.Of<T2>(), ComponentType.AccessMode.ReadWrite),
+				new ComponentType(Il2CppType.Of<T3>(), ComponentType.AccessMode.ReadWrite),
+				new ComponentType(Il2CppType.Of<T4>(), ComponentType.AccessMode.ReadWrite)
+			},
+			Options = options
+		};
+
+		var query = VWorld.Server.EntityManager.CreateEntityQuery(queryDesc);
+
+		var entities = query.ToEntityArray(Allocator.Temp);
+		query.Dispose();
 		return entities;
 	}
 
@@ -251,8 +298,8 @@ public static partial class Helper
 		};
 
 		var query = VWorld.Server.EntityManager.CreateEntityQuery(queryDesc);
-
 		var entities = query.ToEntityArray(Allocator.Temp);
+		query.Dispose();
 		return entities;
 	}
 
@@ -273,6 +320,7 @@ public static partial class Helper
 		var query = VWorld.Server.EntityManager.CreateEntityQuery(queryDesc);
 
 		var entities = query.ToEntityArray(Allocator.Temp);
+		query.Dispose();
 		return entities;
 	}
 
@@ -292,8 +340,8 @@ public static partial class Helper
 		};
 
 		var query = VWorld.Server.EntityManager.CreateEntityQuery(queryDesc);
-
 		var entities = query.ToEntityArray(Allocator.Temp);
+		query.Dispose();
 		return entities;
 	}
 
@@ -314,8 +362,25 @@ public static partial class Helper
 		};
 
 		var query = VWorld.Server.EntityManager.CreateEntityQuery(queryDesc);
-
 		var entities = query.ToEntityArray(Allocator.Temp);
+		query.Dispose();
+		return entities;
+	}
+
+	public static NativeArray<Entity> GetNonPlayerSpawnedEntities(bool includeDisabled = false)
+	{
+		EntityQueryOptions options = includeDisabled ? EntityQueryOptions.IncludeDisabled : EntityQueryOptions.Default;
+
+		EntityQueryDesc queryDesc = new EntityQueryDesc
+		{
+			All = new ComponentType[] { new ComponentType(Il2CppType.Of<CanFly>(), ComponentType.AccessMode.ReadWrite) },
+			None = new ComponentType[] { new ComponentType(Il2CppType.Of<PlayerCharacter>(), ComponentType.AccessMode.ReadWrite) },
+			Options = options
+		};
+
+		var query = VWorld.Server.EntityManager.CreateEntityQuery(queryDesc);
+		var entities = query.ToEntityArray(Allocator.Temp);
+		query.Dispose();
 		return entities;
 	}
 }

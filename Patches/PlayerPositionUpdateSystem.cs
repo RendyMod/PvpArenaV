@@ -1,5 +1,6 @@
 using HarmonyLib;
 using ProjectM;
+using PvpArena.Data;
 using PvpArena.GameModes;
 using PvpArena.Helpers;
 using PvpArena.Services;
@@ -9,16 +10,14 @@ namespace PvpArena.Patches;
 
 
 
-[HarmonyPatch(typeof(UserTranslationCopySystem), nameof(UserTranslationCopySystem.OnUpdate))]
+/*[HarmonyPatch(typeof(UserTranslationCopySystem), nameof(UserTranslationCopySystem.OnUpdate))]
 public static class DetectPlayerEnteredZoneSystem
 {
 	private static long count = 0;
-	public static void Prefix(UserTranslationCopySystem __instance)
+	public static void Postfix(UserTranslationCopySystem __instance)
 	{
-		if (count % 2 == 0)
-		{
-			GameEvents.RaiseGameFrameUpdate();
-		}
+		GameEvents.RaiseGameFrameUpdate();
+		
 		if (count % 30 == 0) //move this into game mode actions later
 		{
 			foreach (var player in PlayerService.OnlinePlayers.Keys)
@@ -27,11 +26,12 @@ public static class DetectPlayerEnteredZoneSystem
 				{
 					GameEvents.RaisePlayerHasNoControlledEntity(player);
 					Helper.ControlOriginalCharacter(player);
+					Helper.RemoveBuff(player, Prefabs.Admin_Observe_Invisible_Buff);
 				}
 			}
 		}
 		count++;
 	}
-}
+}*/
 
 

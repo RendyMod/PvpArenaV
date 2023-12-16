@@ -22,8 +22,8 @@ internal class MuteCommands
 		sender.ReceiveMessage(("You ".Emphasize() + Moderation.BanMuteMessage(false, true, player.Name.Emphasize(), player.SteamID.ToString().Emphasize(), numberOfDays, reason.Emphasize()).White()));
 		player.ReceiveMessage(Moderation.BanMuteMessage(true, true, player.Name, player.SteamID.ToString(), numberOfDays, reason.Emphasize()).White());
 		
-		var action = new ScheduledAction(Helper.KickPlayer, new object[] { player.SteamID });
-		ActionScheduler.ScheduleAction(action, 10);
+		var action = () => Helper.KickPlayer(player.SteamID);
+		ActionScheduler.RunActionOnceAfterFrames(action, 10);
 	}
 
 	[Command("unmute", description: "Mutes a player", adminOnly: true)]
@@ -40,7 +40,7 @@ internal class MuteCommands
 		player.ReceiveMessage("You have been unmuted.".Success() + " Unmuting requires a temporary kick from the server, but you can rejoin!".White());
 		sender.ReceiveMessage($"You unmuted {player.Name.Emphasize()}. (Unmuting requires a rejoin)".White());
 		/*Core.discordBot.SendMessageAsync(sender.Name + $" unmuted {player.Name}.");*/
-		var action = new ScheduledAction(Helper.KickPlayer, new object[] { player.SteamID });
-		ActionScheduler.ScheduleAction(action, 10);
+		var action = () => Helper.KickPlayer(player.SteamID);
+		ActionScheduler.RunActionOnceAfterFrames(action, 10);
 	}
 }
