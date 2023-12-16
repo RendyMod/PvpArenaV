@@ -81,6 +81,10 @@ public static class DamageRecorderService
 					{
 						groupName = name;
 					}
+					else
+					{
+						groupName = prefabGUID.LookupNameString();
+					}
 
 					if (AbilityData.AbilityPrefabToColor.TryGetValue(prefabGUID, out var color))
 					{
