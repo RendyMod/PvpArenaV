@@ -19,7 +19,9 @@ namespace PvpArena.GameModes;
 
 public class DefaultGameMode : BaseGameMode
 {
-	public override Player.PlayerState GameModeType => Player.PlayerState.Normal;
+	public override Player.PlayerState PlayerGameModeType => Player.PlayerState.Normal;
+	public override string UnitGameModeType => "default";
+
 	public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
 	{
 		ResetCooldowns = true,
@@ -143,7 +145,7 @@ public class DefaultGameMode : BaseGameMode
 
 	public override void HandleOnPlayerDowned(Player player, Entity killer)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 
         if (player.Clan.Exists()) //if they might be in a teamfight then we don't want to remove summons just because they died
         {
@@ -176,7 +178,7 @@ public class DefaultGameMode : BaseGameMode
 
 	public override void HandleOnShapeshift(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 
 
 		var enterShapeshiftEvent = eventEntity.Read<EnterShapeshiftEvent>();
@@ -223,7 +225,7 @@ public class DefaultGameMode : BaseGameMode
 
 	public virtual void HandleOnPlayerStartedCasting(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 
         var abilityCastStartedEvent = eventEntity.Read<AbilityCastStartedEvent>();
 		if (abilityCastStartedEvent.AbilityGroup.Index <= 0) return;
@@ -257,7 +259,7 @@ public class DefaultGameMode : BaseGameMode
 
 	public virtual void HandleOnPlayerBuffed(Player player, Entity buffEntity)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 
 		var prefabGuid = buffEntity.Read<PrefabGUID>();
 		if (prefabGuid == Prefabs.Witch_PigTransformation_Buff)
@@ -296,6 +298,8 @@ public class DefaultGameMode : BaseGameMode
 
 	public void HandleOnPlayerDamageReported(Player source, Entity target, PrefabGUID ability, DamageInfo damageInfo)
 	{
+		if (source.CurrentState != this.PlayerGameModeType) return;
+
 		if (target.Has<PlayerCharacter>() || UnitFactory.HasGameMode(target, "dummy"))
 		{
 			DamageRecorderService.RecordDamageDone(source, ability, damageInfo);
@@ -304,7 +308,7 @@ public class DefaultGameMode : BaseGameMode
 
 	public virtual void HandleOnPlayerReset(Player player)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 
 		var sctEntity = Helper.GetPrefabEntityByPrefabGUID(Prefabs.ScrollingCombatTextMessage);
 		ScrollingCombatTextMessage.Create(VWorld.Server.EntityManager, Core.entityCommandBufferSystem.CreateCommandBuffer(), sctEntity, 0, Prefabs.SCT_Type_MAX, player.Position, player.Character, player.Character);
@@ -313,7 +317,7 @@ public class DefaultGameMode : BaseGameMode
 
 	public override void HandleOnPlayerPurchasedItem(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 
 		if (!eventEntity.Exists()) return;
 		var purchaseEvent = eventEntity.Read<TraderPurchaseEvent>();

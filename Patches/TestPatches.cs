@@ -328,5 +328,33 @@ public static class CreateGameplayEventOnTickSystemPatch
 }
 */
 
+[HarmonyPatch(typeof(LinkMinionToOwnerOnSpawnSystem), nameof(LinkMinionToOwnerOnSpawnSystem.OnUpdate))]
+public static class LinkMinionToOwnerOnSpawnSystemPatch
+{
+	public static void Prefix(LinkMinionToOwnerOnSpawnSystem __instance)
+	{
+		var entities = __instance.__OnUpdate_LambdaJob0_entityQuery.ToEntityArray(Allocator.Temp);
+		foreach (var entity in entities)
+		{
+			var owner = entity.Read<EntityOwner>().Owner;
+			if (owner.Exists())
+			{
+				if (owner.Has<EntityOwner>())
+				{
+					var grandParent = owner.Read<EntityOwner>().Owner;
+					if (grandParent.Exists())
+					{
+						if (grandParent.Has<PlayerCharacter>())
+						{
+							AiDamageTakenEventSystemPatch.SummonToGrandparentPlayerCharacter[entity] = grandParent;
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+
 //
 //AbilitySpawnSystem

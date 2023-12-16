@@ -23,8 +23,7 @@ public static class BulletHellManager
 {
 	private static List<BulletHellGameMode> bulletHellGameModes = new List<BulletHellGameMode>();
 	private static List<Player> playerQueue = new List<Player>();
-	public static Dictionary<BulletHellGameMode, List<Timer>> gameModeTimers =
-		new Dictionary<BulletHellGameMode, List<Timer>>();
+	public static Dictionary<BulletHellGameMode, List<Timer>> gameModeTimers = new Dictionary<BulletHellGameMode, List<Timer>>();
 	private static bool HasInitialized = false;
 
 	static BulletHellManager ()
@@ -32,15 +31,14 @@ public static class BulletHellManager
 		Initialize();
 	}
 
-	public static void Initialize ()
+	public static void Initialize()
 	{
 		if (!HasInitialized)
 		{
 			for (var i = 0; i < BulletHellConfig.Config.BulletHellArenas.Count; i++)
 			{
 				var bulletHellArena = BulletHellConfig.Config.BulletHellArenas[i];
-				bulletHellGameModes.Add(new BulletHellGameMode(bulletHellArena.FightZone.ToCircleZone(),
-					bulletHellArena.TemplateUnitSpawn, i));
+				bulletHellGameModes.Add(new BulletHellGameMode(bulletHellArena.FightZone.ToCircleZone(), bulletHellArena.TemplateUnitSpawn, i));
 			}
 		}
 
@@ -90,9 +88,9 @@ public static class BulletHellManager
 	}
 
 
-	public static void QueueForMatch (Player player)
+	public static void QueueForMatch(Player player)
 	{
-		if (playerQueue.Contains(player))
+		if (player.CurrentState == Player.PlayerState.BulletHell || playerQueue.Contains(player))
 		{
 			player.ReceiveMessage("You are already in queue".Error());
 			return;
@@ -103,6 +101,7 @@ public static class BulletHellManager
 		{
 			if (arena.player == null)
 			{
+				player.CurrentState = Player.PlayerState.BulletHell;
 				player.ReceiveMessage("Arena is available. Prepare for match!".Success());
 				foundArena = true;
 				arena.player = player; //mark it as occupied before the delay
@@ -119,7 +118,7 @@ public static class BulletHellManager
 		}
 	}
 
-	public static void LeaveQueue (Player player)
+	public static void LeaveQueue(Player player)
 	{
 		if (playerQueue.Contains(player))
 		{
@@ -132,7 +131,7 @@ public static class BulletHellManager
 		}
 	}
 
-	public static void StartMatch (BulletHellGameMode arena, Player player)
+	public static void StartMatch(BulletHellGameMode arena, Player player)
 	{
 		SpawnUnits(arena);
 		player.CurrentState = Player.PlayerState.BulletHell;
@@ -154,7 +153,7 @@ public static class BulletHellManager
 		arena.Timers.Add(timer);
 	}
 
-	public static void EndMatch (BulletHellGameMode arena)
+	public static void EndMatch(BulletHellGameMode arena)
 	{
 		try
 		{
@@ -238,6 +237,7 @@ public static class BulletHellManager
 				var nextPlayer = playerQueue.First();
 				playerQueue.RemoveAt(0); // Remove the first player from the list
 				arena.player = nextPlayer;
+				player.CurrentState = Player.PlayerState.BulletHell;
 				nextPlayer.ReceiveMessage("Arena is available. Prepare for match!".Success());
 				Action action = () => { StartMatch(arena, nextPlayer); };
 				ActionScheduler.RunActionOnceAfterDelay(action, 2);
@@ -250,7 +250,7 @@ public static class BulletHellManager
 	}
 
 
-	private static void SpawnUnits (BulletHellGameMode arena)
+	private static void SpawnUnits(BulletHellGameMode arena)
 	{
 		var unitSettings = arena.UnitSpawns.UnitSpawn;
 		var quantity = arena.UnitSpawns.Quantity;

@@ -27,6 +27,7 @@ using static ProjectM.Gameplay.Systems.StatChangeMutationSystem;
 using ProjectM.Gameplay.Systems;
 using Epic.OnlineServices.P2P;
 using ProjectM.Shared;
+using System.Linq;
 
 namespace PvpArena.Commands.Debug;
 internal class TestCommands
@@ -35,27 +36,8 @@ internal class TestCommands
 	[Command("test", description: "Used for debugging", adminOnly: true)]
 	public void TestCommand(Player sender)
 	{
-		sender.CurrentState = Player.PlayerState.Troll;
-		sender.Reset(TrollGameMode.ResetOptions);
+
 		
-		if (Helper.BuffPlayer(sender, Helper.TrollBuff, out var buffEntity, Helper.NO_DURATION, true))
-		{
-			buffEntity.Add<DisableAggroBuff>();
-			buffEntity.Write(new DisableAggroBuff
-			{
-				Mode = DisableAggroBuffMode.OthersDontAttackTarget
-			});
-			if (Helper.BuffPlayer(sender, Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Buff, out var grandmaBuffEntity, Helper.NO_DURATION))
-			{
-				var scriptBuffShapeshiftDataShared = grandmaBuffEntity.Read<Script_Buff_Shapeshift_DataShared>();
-				scriptBuffShapeshiftDataShared.DestroyOnAbilityEnd = false;
-				grandmaBuffEntity.Write(scriptBuffShapeshiftDataShared);
-				grandmaBuffEntity.Remove<DestroyOnAbilityCast>();
-				Helper.FixIconForShapeshiftBuff(sender, grandmaBuffEntity, Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Group);
-				Helper.ChangeBuffResistances(grandmaBuffEntity, Prefabs.BuffResistance_UberMobNoKnockbackOrGrab);
-				sender.ReceiveMessage($"You have entered {"troll".Emphasize()} mode.".White());
-			}
-		}
 		sender.ReceiveMessage("done");
 	}
 

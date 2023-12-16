@@ -23,7 +23,8 @@ public class PrisonBreakGameMode : BaseGameMode
 "Top": -325.00,
 "Right": -345.00,
 "Bottom": -355.00*/
-	public override Player.PlayerState GameModeType => Player.PlayerState.PrisonBreak;
+	public override Player.PlayerState PlayerGameModeType => Player.PlayerState.PrisonBreak;
+	public override string UnitGameModeType => "prisonbreak";
 	public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
 	{
 		RemoveConsumables = false,
@@ -130,7 +131,7 @@ public class PrisonBreakGameMode : BaseGameMode
 
 	public override void HandleOnPlayerDowned(Player player, Entity killer)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 		if (killer.Exists())
 		{
@@ -225,7 +226,7 @@ public class PrisonBreakGameMode : BaseGameMode
 
 	public override void HandleOnShapeshift(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 		var enterShapeshiftEvent = eventEntity.Read<EnterShapeshiftEvent>();
 		if (enterShapeshiftEvent.Shapeshift != Prefabs.AB_Shapeshift_BloodMend_Group)
@@ -236,7 +237,7 @@ public class PrisonBreakGameMode : BaseGameMode
 	}
 	public void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 		eventEntity.Destroy();
 		player.ReceiveMessage("You can't drink those in prison!".Error());
@@ -244,7 +245,7 @@ public class PrisonBreakGameMode : BaseGameMode
 
 	public override void HandleOnPlayerDisconnected(Player player)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 		base.HandleOnPlayerDisconnected(player);
 		Helper.SoftKillPlayer(player);
@@ -252,7 +253,7 @@ public class PrisonBreakGameMode : BaseGameMode
 
 	public void HandleOnPlayerInvitedToClan(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 		eventEntity.Destroy();
 		player.ReceiveMessage("You may not invite players to your clan while in prison".Error());

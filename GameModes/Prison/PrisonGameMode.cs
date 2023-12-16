@@ -24,7 +24,8 @@ namespace PvpArena.GameModes.Prison;
 
 public class PrisonGameMode : BaseGameMode
 {
-	public override Player.PlayerState GameModeType => Player.PlayerState.Imprisoned;
+	public override Player.PlayerState PlayerGameModeType => Player.PlayerState.Imprisoned;
+	public override string UnitGameModeType => "prison";
 	public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
 	{
 		ResetCooldowns = true,
@@ -84,7 +85,7 @@ public class PrisonGameMode : BaseGameMode
 
 	public override void HandleOnPlayerDowned(Player player, Entity killer)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 		player.Reset(ResetOptions);
 		var timer = Helper.MakeGhostlySpectator(player);
@@ -106,7 +107,7 @@ public class PrisonGameMode : BaseGameMode
 
 	public override void HandleOnShapeshift(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 		var enterShapeshiftEvent = eventEntity.Read<EnterShapeshiftEvent>();
 		if (enterShapeshiftEvent.Shapeshift == Prefabs.AB_Shapeshift_BloodMend_Group)
@@ -133,7 +134,7 @@ public class PrisonGameMode : BaseGameMode
 
 	public void HandleOnPlayerStartedCasting(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 	}
 
@@ -147,14 +148,14 @@ public class PrisonGameMode : BaseGameMode
 
 	public override void HandleOnPlayerDisconnected(Player player)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 		player.Teleport(PrisonConfig.Config.CellCoordinateList[player.ImprisonInfo.PrisonCellNumber].ToFloat3());
 	}
 
 	public void HandleOnPlayerChatMessage(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 		var chatEvent = eventEntity.Read<ChatMessageEvent>();
 		if (chatEvent.MessageType == ChatMessageType.Global)

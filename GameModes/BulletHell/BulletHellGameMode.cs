@@ -21,12 +21,13 @@ namespace PvpArena.GameModes.BulletHell;
 
 public class BulletHellGameMode : BaseGameMode
 {
-	public override Player.PlayerState GameModeType => Player.PlayerState.BulletHell;
-    public Player player = null;
+	public override Player.PlayerState PlayerGameModeType => Player.PlayerState.BulletHell;
+	public Player player = null;
 	public bool HasStarted = false;
 	public List<Timer> Timers = new List<Timer>();
 	public Stopwatch stopwatch = new Stopwatch();
 	public int ArenaNumber = 0;
+	public override string UnitGameModeType => $"bullethell{ArenaNumber}";
 	public CircleZone FightZone;
 	public TemplateUnitSpawn UnitSpawns = new TemplateUnitSpawn();
 	private long lastReportedInterval = 0;
@@ -41,6 +42,7 @@ public class BulletHellGameMode : BaseGameMode
 		FightZone = fightZone;
 		UnitSpawns = unitSpawns;
 		ArenaNumber = arenaNumber;
+		UnitGameModeType = $"bullethell{ArenaNumber}";
 	}
 
 	public override void Initialize()
@@ -48,7 +50,6 @@ public class BulletHellGameMode : BaseGameMode
 		GameEvents.OnPlayerDowned += HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath += HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift += HandleOnShapeshift;
-		GameEvents.OnPlayerStartedCasting += HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerUsedConsumable += HandleOnConsumableUse;
 		GameEvents.OnUnitProjectileCreated += HandleOnUnitProjectileCreated;
 		GameEvents.OnUnitAoeCreated += HandleOnUnitAoeCreated;
@@ -65,7 +66,6 @@ public class BulletHellGameMode : BaseGameMode
 		GameEvents.OnPlayerDowned -= HandleOnPlayerDowned;
 		GameEvents.OnPlayerDeath -= HandleOnPlayerDeath;
 		GameEvents.OnPlayerShapeshift -= HandleOnShapeshift;
-		GameEvents.OnPlayerStartedCasting -= HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerUsedConsumable -= HandleOnConsumableUse;
 		GameEvents.OnUnitProjectileCreated -= HandleOnUnitProjectileCreated;
 		GameEvents.OnUnitAoeCreated -= HandleOnUnitAoeCreated;
@@ -98,40 +98,24 @@ public class BulletHellGameMode : BaseGameMode
 
 	public override void HandleOnPlayerDowned(Player player, Entity killer)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType || player != this.player) return;
 
 		player.Reset(ResetOptions);
-		if (Helper.BuffPlayer(player, Prefabs.Witch_PigTransformation_Buff, out var buffEntity, 3))
-		{
-			buffEntity.Add<BuffModificationFlagData>();
-			buffEntity.Write(BuffModifiers.PigModifications);
-		}
 		BulletHellManager.EndMatch(this);
 		//end match and tp to training + report time and record score
 	}
 
-	public override void HandleOnShapeshift(Player player, Entity eventEntity)
-	{
-		if (player.CurrentState != GameModeType) return;
-
-	}
 	public void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType || player != this.player) return;
 
 		eventEntity.Destroy();
 		player.ReceiveMessage("You can't drink those during a bullet hell match!".Error());
 	}
 
-	public void HandleOnPlayerStartedCasting(Player player, Entity eventEntity)
-	{
-		if (player.CurrentState != GameModeType) return;
-
-	}
-
 	public override void HandleOnPlayerDisconnected(Player player)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType || player != this.player) return;
 
         BulletHellManager.EndMatch(this);
         base.HandleOnPlayerDisconnected(player);
@@ -172,7 +156,7 @@ public class BulletHellGameMode : BaseGameMode
 
 	public void HandleOnUnitProjectileCreated(Entity unit, Entity projectile)
 	{
-		if (!UnitFactory.HasGameMode(unit, "bullethell")) { return; }
+		if (!UnitFactory.HasGameMode(unit, UnitGameModeType)) return;
 
 		var prefabGuid = projectile.Read<PrefabGUID>();
 		if (prefabGuid == Prefabs.AB_Sorceress_Projectile)
@@ -189,7 +173,7 @@ public class BulletHellGameMode : BaseGameMode
 
 	public void HandleOnUnitAoeCreated(Entity unit, Entity aoe)
 	{
-		if (!UnitFactory.HasGameMode(unit, "bullethell")) { return; }
+		if (!UnitFactory.HasGameMode(unit, UnitGameModeType)) return;
 
 		var prefabGuid = aoe.Read<PrefabGUID>();
 		if (prefabGuid == Prefabs.AB_Sorceress_AoE_Throw)

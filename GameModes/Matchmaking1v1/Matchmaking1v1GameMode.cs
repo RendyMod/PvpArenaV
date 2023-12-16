@@ -20,7 +20,8 @@ namespace PvpArena.GameModes.Matchmaking1v1;
 
 public class Matchmaking1v1GameMode : BaseGameMode
 {
-	public override Player.PlayerState GameModeType => Player.PlayerState.In1v1Matchmaking;
+	public override Player.PlayerState PlayerGameModeType => Player.PlayerState.In1v1Matchmaking;
+	public override string UnitGameModeType => "1v1";
 	public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
 	{
 		ResetCooldowns = true,
@@ -70,7 +71,7 @@ public class Matchmaking1v1GameMode : BaseGameMode
 	}
 	public override void HandleOnPlayerDowned(Player player, Entity killer)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 		player.Reset(Helper.ResetOptions.FreshMatch);
 		if (Helper.BuffPlayer(player, Prefabs.Witch_PigTransformation_Buff, out var buffEntity, 3))
@@ -99,21 +100,21 @@ public class Matchmaking1v1GameMode : BaseGameMode
 
 	public override void HandleOnShapeshift(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 		player.ReceiveMessage($"Shapeshifting is disabled while in a match.".Error());
 	}
 	public void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 	}
 
 	public override void HandleOnPlayerDisconnected(Player player)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 		base.HandleOnPlayerDisconnected(player);
 
 		MatchmakingQueue.MatchManager.EndMatch(MatchmakingHelper.GetOpponentForPlayer(player), player, false);

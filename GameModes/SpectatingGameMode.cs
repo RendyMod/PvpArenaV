@@ -17,7 +17,8 @@ namespace PvpArena.GameModes;
 
 public class SpectatingGameMode : BaseGameMode
 {
-	public override Player.PlayerState GameModeType => Player.PlayerState.Spectating;
+	public override Player.PlayerState PlayerGameModeType => Player.PlayerState.Spectating;
+	public override string UnitGameModeType => "spectate";
 	public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
 	{
 		RemoveConsumables = false,
@@ -64,12 +65,12 @@ public class SpectatingGameMode : BaseGameMode
 
 	public override void HandleOnPlayerDowned(Player player, Entity killer)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 	}
 	public override void HandleOnPlayerDeath(Player player, DeathEvent deathEvent)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 		player.Reset(SpectatingGameMode.ResetOptions);
 		Helper.RespawnPlayer(player, PvpArenaConfig.Config.CustomSpawnLocation.ToFloat3());

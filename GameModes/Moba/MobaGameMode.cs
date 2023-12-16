@@ -50,7 +50,8 @@ public class MercenaryCamp
 
 public class MobaGameMode : BaseGameMode
 {
-	public override Player.PlayerState GameModeType => Player.PlayerState.Moba;
+	public override Player.PlayerState PlayerGameModeType => Player.PlayerState.Moba;
+	public override string UnitGameModeType => "moba";
 	public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
 	{
 		RemoveConsumables = false,
@@ -368,6 +369,9 @@ public class MobaGameMode : BaseGameMode
 					{
 						CapturePointIndexToLights[capturePoint.Point.PointIndex] = new();
 					}
+					var dyable = dyeableEntity.Read<DyeableCastleObject>();
+					dyable.ActiveColorIndex = (byte)9; //white
+					dyeableEntity.Write(dyable);
 					CapturePointIndexToLights[capturePoint.Point.PointIndex].Add(dyeableEntity);
 				}
 			}
@@ -454,6 +458,16 @@ public class MobaGameMode : BaseGameMode
 		TeamUnits.Clear();
 		PlayerToShardBuffsMap.Clear();
 		UnitToMercenaryCamp.Clear();
+
+		foreach (var dyeableEntities in CapturePointIndexToLights.Values)
+		{
+			foreach (var dyeableEntity in dyeableEntities)
+			{
+				var dyable = dyeableEntity.Read<DyeableCastleObject>();
+				dyable.ActiveColorIndex = (byte)9; //white
+				dyeableEntity.Write(dyable);
+			}
+		}
 		CapturePointIndexToLights.Clear();
 
 		foreach (var kvp in UnitFactory.UnitToEntity)
@@ -505,7 +519,7 @@ public class MobaGameMode : BaseGameMode
 
 	public override void HandleOnPlayerDowned(Player player, Entity killer)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 
 
 		var totalCoins = InventoryUtilities.GetItemAmount(VWorld.Server.EntityManager, player.Character, Prefabs.Item_Ingredient_Coin_Copper);
@@ -650,15 +664,15 @@ public class MobaGameMode : BaseGameMode
 	
 	public void HandleOnGameModeBegin(Player player)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 	}
 	public void HandleOnGameModeEnd(Player player)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 	}
 	public override void HandleOnShapeshift(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 
 		var enterShapeshiftEvent = eventEntity.Read<ProjectM.Network.EnterShapeshiftEvent>();
 		if (!shapeshiftToShapeshift.ContainsKey(enterShapeshiftEvent.Shapeshift))
@@ -808,7 +822,7 @@ public class MobaGameMode : BaseGameMode
 
 	public void HandleOnPlayerBuffed(Player player, Entity buffEntity)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 		var prefabGuid = buffEntity.Read<PrefabGUID>();
 		var buff = buffEntity.Read<Buff>();
 		var target = buff.Target;
@@ -838,17 +852,7 @@ public class MobaGameMode : BaseGameMode
 
 	public void HandleOnUnitBuffRemoved(Entity unit, Entity buffEntity)
 	{
-		if (TryGetSpawnedUnitFromEntity(unit, out SpawnedUnit spawnedUnit))
-		{
-			if (spawnedUnit.Unit.GameMode != "moba")
-			{
-				return;
-			}
-		}
-		else
-		{
-			return;
-		}
+		if (!UnitFactory.HasGameMode(unit, UnitGameModeType)) return;
 
 		var prefabGuid = buffEntity.Read<PrefabGUID>();
 		if (prefabGuid == Prefabs.AB_Gloomrot_SentryTurret_BunkerDown_Buff)
@@ -862,32 +866,7 @@ public class MobaGameMode : BaseGameMode
 
 	public void HandleOnUnitBuffed(Entity unit, Entity buffEntity)
 	{
-		if (unit.Has<EntityOwner>())
-		{
-			var owner = unit.Read<EntityOwner>().Owner;
-			if (owner.Exists())
-			{
-				if (owner.Has<PlayerCharacter>())
-				{
-					var player = PlayerService.GetPlayerFromCharacter(owner);
-					if (player.CurrentState != this.GameModeType) return;
-				}
-			}
-		}
-		else
-		{
-			if (TryGetSpawnedUnitFromEntity(unit, out SpawnedUnit spawnedUnit))
-			{
-				if (spawnedUnit.Unit.GameMode != "moba")
-				{
-					return;
-				}
-			}
-			else
-			{
-				return;
-			}
-		}
+		if (!UnitFactory.HasGameMode(unit, UnitGameModeType)) return;
 
 		var buffPrefabGUID = buffEntity.Read<PrefabGUID>();
 		if (unitBuffHandlers.TryGetValue(buffPrefabGUID, out var handler))
@@ -898,7 +877,7 @@ public class MobaGameMode : BaseGameMode
 
 	public override void HandleOnPlayerConnected(Player player)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 
 
 		if (player.MatchmakingTeam == 1)
@@ -913,7 +892,7 @@ public class MobaGameMode : BaseGameMode
 
 	public override void HandleOnPlayerDisconnected(Player player)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 
 		Helper.SoftKillPlayer(player);
 		player.Teleport(new float3(0, 0, 0));
@@ -921,7 +900,7 @@ public class MobaGameMode : BaseGameMode
 
 	public void HandleOnPlayerInvitedToClan(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 
 		eventEntity.Destroy();
 		player.ReceiveMessage("You may not invite players to your clan while in this game mode".Error());
@@ -929,7 +908,7 @@ public class MobaGameMode : BaseGameMode
 
 	public void HandleOnPlayerKickedFromClan(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 
 		eventEntity.Destroy();
 		player.ReceiveMessage("You may not kick players from your clan while in this game mode".Error());
@@ -937,7 +916,7 @@ public class MobaGameMode : BaseGameMode
 
 	public void HandleOnPlayerLeftClan(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 
 		eventEntity.Destroy();
 		player.ReceiveMessage("You may not leave your clan while in this game mode".Error());
@@ -946,6 +925,8 @@ public class MobaGameMode : BaseGameMode
 	public void HandleOnUnitDeath(Entity unitEntity, DeathEvent deathEvent)
 	{
 		if (!MatchActive) return;
+
+		if (!UnitFactory.HasGameMode(unitEntity, UnitGameModeType)) return;
 
 		if (TeamPatrols[1].Contains(unitEntity))
 		{
@@ -959,8 +940,6 @@ public class MobaGameMode : BaseGameMode
 		}
 		if (TryGetSpawnedUnitFromEntity(unitEntity, out var spawnedUnit))
 		{
-			if (!UnitFactory.HasGameMode(unitEntity, "moba")) return;
-
 			var killer = deathEvent.Killer;
 			if (killer.Exists())
 			{
@@ -1074,18 +1053,9 @@ public class MobaGameMode : BaseGameMode
 		}
 	}
 
-
-
-	public void HandleOnPlayerChatCommand(Player player, Entity eventEntity)
-	{
-		if (player.CurrentState != this.GameModeType) return;
-
-
-	}
-
 	public override void HandleOnPlayerDamageDealt(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 		if (!eventEntity.Exists()) return;
 		var dealDamageEvent = eventEntity.Read<DealDamageEvent>();
 		var isStructure = dealDamageEvent.Target.Has<CastleHeartConnection>();
@@ -1104,18 +1074,20 @@ public class MobaGameMode : BaseGameMode
 		}
 	}
 
-	public void HandleOnUnitDamageDealt(Entity unit, Entity eventEntity)
+	public override void HandleOnUnitDamageDealt(Entity unit, Entity eventEntity)
 	{
-		
-		/*if (!UnitFactory.HasCategory(unit, "moba")) return;*/
+		if (!UnitFactory.HasGameMode(unit, UnitGameModeType)) return;
 
 		var dealDamageEvent = eventEntity.Read<DealDamageEvent>();
 		var source = dealDamageEvent.SpellSource;
 		var target = dealDamageEvent.Target;
-		if (Team.IsAllies(target.Read<Team>(), unit.Read<Team>()))
+		if (target.Exists())
 		{
-			eventEntity.Destroy();
-			return;
+			if (Team.IsAllies(target.Read<Team>(), unit.Read<Team>()))
+			{
+				eventEntity.Destroy();
+				return;
+			}
 		}
 
 		if (source.Exists())
@@ -1138,7 +1110,7 @@ public class MobaGameMode : BaseGameMode
 
 	public void HandleOnUnitProjectileCreated(Entity unit, Entity projectile)
 	{
-		if (!UnitFactory.HasGameMode(unit, "moba")) return;
+		if (!UnitFactory.HasGameMode(unit, UnitGameModeType)) return;
 
 		var prefabGuid = projectile.Read<PrefabGUID>();
 		
@@ -1197,7 +1169,7 @@ public class MobaGameMode : BaseGameMode
 
 	public void HandleOnPlayerStartedCasting(Player player, Entity eventEntity)
     {
-        if (player.CurrentState != this.GameModeType) return;
+        if (player.CurrentState != this.PlayerGameModeType) return;
 
 
         var abilityCastStartedEvent = eventEntity.Read<AbilityCastStartedEvent>();
@@ -1269,7 +1241,7 @@ public class MobaGameMode : BaseGameMode
 		if (!target.Has<PlayerCharacter>()) return;
 
 		var targetPlayer = PlayerService.GetPlayerFromCharacter(target);
-		if (source.CurrentState != GameModeType || targetPlayer.CurrentState != GameModeType) return;
+		if (source.CurrentState != PlayerGameModeType || targetPlayer.CurrentState != PlayerGameModeType) return;
 
 		if (!PlayerDamageDealt.ContainsKey(source)) 
 		{
@@ -1440,7 +1412,7 @@ public class MobaGameMode : BaseGameMode
 
 	public static new HashSet<string> GetAllowedCommands()
 	{
-		return BaseGameMode.AllowedCommands;
+		return AllowedCommands;
 	}
 
 	public static void ReportStats()
@@ -1534,7 +1506,7 @@ public class MobaGameMode : BaseGameMode
 
 	public override void HandleOnPlayerPlacedStructure(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 		if (eventEntity.Exists())
 		{
 			var buildTileModelEvent = eventEntity.Read<BuildTileModelEvent>();
@@ -1551,7 +1523,7 @@ public class MobaGameMode : BaseGameMode
 
 	public override void HandleOnPlayerPurchasedItem(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 
 		var purchaseEvent = eventEntity.Read<TraderPurchaseEvent>();
 		Entity trader = Core.networkIdSystem._NetworkIdToEntityMap[purchaseEvent.Trader];

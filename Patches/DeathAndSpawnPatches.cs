@@ -36,6 +36,7 @@ public static class DeathAndSpawnPatches
 				}
 				else
 				{
+					AiDamageTakenEventSystemPatch.SummonToGrandparentPlayerCharacter.Remove(deathEvent.Died);
 					GameEvents.RaiseUnitDeath(deathEvent.Died, deathEvent);
 				}
 			}

@@ -21,7 +21,8 @@ namespace PvpArena.GameModes.Domination;
 
 public class DominationGameMode : BaseGameMode
 {
-	public override Player.PlayerState GameModeType => Player.PlayerState.Domination;
+	public override Player.PlayerState PlayerGameModeType => Player.PlayerState.Domination;
+	public override string UnitGameModeType => "domination";
 	public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
 	{
 		ResetCooldowns = false,
@@ -206,7 +207,7 @@ public class DominationGameMode : BaseGameMode
 	}
 	public override void HandleOnPlayerDowned(Player player, Entity killer)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 		if (killer.Exists())
 		{
@@ -281,7 +282,7 @@ public class DominationGameMode : BaseGameMode
 	}
 	public override void HandleOnPlayerDeath(Player player, DeathEvent deathEvent)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 		if (!BuffUtility.HasBuff(VWorld.Server.EntityManager, player.Character, Prefabs.Buff_General_Vampire_Wounded_Buff))
 		{
@@ -376,7 +377,7 @@ public class DominationGameMode : BaseGameMode
 
 	public override void HandleOnShapeshift(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 		var enterShapeshiftEvent = eventEntity.Read<EnterShapeshiftEvent>();
 		if (!shapeshiftToShapeshift.ContainsKey(enterShapeshiftEvent.Shapeshift))
@@ -392,7 +393,7 @@ public class DominationGameMode : BaseGameMode
 	}
 	public void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 		if (item.ItemType != Prefabs.Item_Consumable_GlassBottle_BloodRosePotion_T02)
 		{
@@ -404,7 +405,7 @@ public class DominationGameMode : BaseGameMode
 
 	public void HandleOnPlayerBuffed(Player player, Entity buffEntity)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 		var prefabGuid = buffEntity.Read<PrefabGUID>();
 		if (prefabGuid == Prefabs.AB_Feed_02_Bite_Abort_Trigger)
@@ -454,7 +455,7 @@ public class DominationGameMode : BaseGameMode
 
 	public override void HandleOnPlayerConnected(Player player)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 
 		Helper.KillOrDestroyEntity(player.Character);
@@ -470,7 +471,7 @@ public class DominationGameMode : BaseGameMode
 
 	public void HandleOnPlayerInvitedToClan(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 		player.ReceiveMessage("You may not invite players to your clan while in Domination".Error());
@@ -478,7 +479,7 @@ public class DominationGameMode : BaseGameMode
 
 	public void HandleOnPlayerKickedFromClan(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 		player.ReceiveMessage("You may not kick players from your clan while in Domination".Error());
@@ -486,7 +487,7 @@ public class DominationGameMode : BaseGameMode
 
 	public void HandleOnPlayerLeftClan(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 		player.ReceiveMessage("You may not leave your clan while in Domination".Error());
@@ -509,7 +510,7 @@ public class DominationGameMode : BaseGameMode
 
 	public void HandleOnPlayerChatCommand(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 
 	}

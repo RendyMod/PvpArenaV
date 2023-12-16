@@ -25,7 +25,7 @@ public abstract class BaseGameMode
 	public virtual void HandleOnPlayerDowned(Player player, Entity killer) { }
 	public virtual void HandleOnPlayerDeath(Player player, DeathEvent deathEvent)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 		player.ReceiveMessage("You died in an unexpected way. Let an admin know what happened!".Warning());
 		Plugin.PluginLog.LogInfo($"{player.Name} has died in an unexpected way. Current game mode: {player.CurrentState}");
 		player.CurrentState = Player.PlayerState.Normal;
@@ -38,7 +38,7 @@ public abstract class BaseGameMode
 	public virtual void HandleOnShapeshift(Player player, Entity eventEntity) { }
 	public virtual void HandleOnPlayerConnected(Player player)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 
 		if (PvpArenaConfig.Config.UseCustomSpawnLocation)
 		{
@@ -47,7 +47,7 @@ public abstract class BaseGameMode
 	}
 	public virtual void HandleOnPlayerDisconnected(Player player)
 	{
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 		player.CurrentState = Player.PlayerState.Normal;
 		player.Reset(Helper.ResetOptions.FreshMatch);
@@ -55,7 +55,7 @@ public abstract class BaseGameMode
 	}
 	public virtual void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType, int slotIndex)
     {
-        if (player.CurrentState != GameModeType) return;
+        if (player.CurrentState != PlayerGameModeType) return;
 
 		var inventoryEntity = player.Character;
 		if (eventEntity.Has<DropInventoryItemEvent>())
@@ -69,7 +69,7 @@ public abstract class BaseGameMode
     }
 	public virtual void HandleOnPlayerDamageDealt(Player player, Entity eventEntity)
     {
-		if (player.CurrentState != GameModeType) return;
+		if (player.CurrentState != PlayerGameModeType) return;
 
 		if (!eventEntity.Exists()) return;
 
@@ -82,8 +82,9 @@ public abstract class BaseGameMode
 		}
 	}
 
-/*	public virtual void HandleOnUnitDamageDealt(Entity unit, Entity eventEntity)
+	public virtual void HandleOnUnitDamageDealt(Entity unit, Entity eventEntity)
 	{
+		if (!UnitFactory.HasGameMode(unit, UnitGameModeType)) return;
 		if (!eventEntity.Exists()) return;
 
 		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
@@ -93,12 +94,11 @@ public abstract class BaseGameMode
 		{
 			eventEntity.Destroy();
 		}
-	}*/
-
+	}
 
 	public virtual void HandleOnPlayerPlacedStructure(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 
 		if (!player.IsAdmin && !BuildingPermissions.AuthorizedBuilders.ContainsKey(player))
 		{
@@ -109,16 +109,17 @@ public abstract class BaseGameMode
 
 	public virtual void HandleOnPlayerPurchasedItem(Player player, Entity eventEntity)
 	{
-		if (player.CurrentState != this.GameModeType) return;
+		if (player.CurrentState != this.PlayerGameModeType) return;
 		if (!eventEntity.Exists()) return;
 
 		var purchaseEvent = eventEntity.Read<TraderPurchaseEvent>();
 		Entity trader = Core.networkIdSystem._NetworkIdToEntityMap[purchaseEvent.Trader];
 		TraderPurchaseSystemPatch.RefillStock(purchaseEvent, trader);
 	}
-    public virtual Player.PlayerState GameModeType { get; }
+    public virtual Player.PlayerState PlayerGameModeType { get; }
+	public virtual string UnitGameModeType { get; set; }
 
-    protected static HashSet<string> AllowedCommands = new HashSet<string>
+	protected static HashSet<string> AllowedCommands = new HashSet<string>
 	{
 		"ping",
 		"help",
