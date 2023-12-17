@@ -319,7 +319,7 @@ public class DefaultGameMode : BaseGameMode
 		if (!eventEntity.Exists()) return;
 		var purchaseEvent = eventEntity.Read<TraderPurchaseEvent>();
 		Entity trader = Core.networkIdSystem._NetworkIdToEntityMap[purchaseEvent.Trader];
-		if (UnitFactory.HasGameMode(trader, "moba"))
+		if (UnitFactory.HasGameMode(trader, "moba")) //don't let regular players buy stuff from the moba traders, or they will waste their vpoints
 		{
 			eventEntity.Destroy();
 		};
