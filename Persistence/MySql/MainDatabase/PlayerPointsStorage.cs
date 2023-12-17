@@ -22,12 +22,22 @@ public class PlayerPointsStorage : MySqlDataStorage<PlayerPoints>
 			{
 				await _connection.OpenAsync();
 				var command = new MySqlCommand(@"
-            INSERT INTO PlayerPoints (SteamID, TotalPoints) 
-            VALUES (@SteamID, @TotalPoints) 
-            ON DUPLICATE KEY UPDATE 
-            TotalPoints = @TotalPoints;", _connection);
+					INSERT INTO PlayerPoints (SteamID, TotalPoints, TotalPoints_EU, TotalPoints_NA, TotalPoints_CN, TotalPoints_BR, TotalPoints_TEST) 
+					VALUES (@SteamID, @TotalPoints, @TotalPoints_EU, @TotalPoints_NA, @TotalPoints_CN, @TotalPoints_BR, @TotalPoints_TEST) 
+					ON DUPLICATE KEY UPDATE 
+					TotalPoints = @TotalPoints,
+					TotalPoints_EU = @TotalPoints_EU,
+					TotalPoints_NA = @TotalPoints_NA,
+					TotalPoints_CN = @TotalPoints_CN,
+					TotalPoints_BR = @TotalPoints_BR,
+					TotalPoints_TEST = @TotalPoints_TEST;", _connection);
 				command.Parameters.AddWithValue("@SteamID", data.SteamID);
 				command.Parameters.AddWithValue("@TotalPoints", data.TotalPoints);
+				command.Parameters.AddWithValue("@TotalPoints_EU", data.TotalPoints_EU);
+				command.Parameters.AddWithValue("@TotalPoints_NA", data.TotalPoints_NA);
+				command.Parameters.AddWithValue("@TotalPoints_CN", data.TotalPoints_CN);
+				command.Parameters.AddWithValue("@TotalPoints_BR", data.TotalPoints_BR);
+				command.Parameters.AddWithValue("@TotalPoints_TEST", data.TotalPoints_TEST);
 				await command.ExecuteNonQueryAsync();
 			}
 		}
@@ -46,7 +56,7 @@ public class PlayerPointsStorage : MySqlDataStorage<PlayerPoints>
 			using (var _connection = new MySqlConnection(connectionString))
 			{
 				await _connection.OpenAsync();
-				var command = new MySqlCommand("SELECT SteamID, TotalPoints FROM PlayerPoints;", _connection);
+				var command = new MySqlCommand("SELECT SteamID, TotalPoints, TotalPoints_EU, TotalPoints_NA, TotalPoints_CN, TotalPoints_BR, TotalPoints_TEST FROM PlayerPoints;", _connection);
 				using (var reader = await command.ExecuteReaderAsync())
 				{
 					while (await reader.ReadAsync())
@@ -54,12 +64,18 @@ public class PlayerPointsStorage : MySqlDataStorage<PlayerPoints>
 						var data = new PlayerPoints
 						{
 							SteamID = reader.GetUInt64("SteamID"),
-							TotalPoints = reader.GetInt32("TotalPoints")
+							TotalPoints = reader.GetInt32("TotalPoints"),
+							TotalPoints_EU = reader.GetInt32("TotalPoints_EU"),
+							TotalPoints_NA = reader.GetInt32("TotalPoints_NA"),
+							TotalPoints_CN = reader.GetInt32("TotalPoints_CN"),
+							TotalPoints_BR = reader.GetInt32("TotalPoints_BR"),
+							TotalPoints_TEST = reader.GetInt32("TotalPoints_TEST")
 						};
 						dataList.Add(data);
 						var action = () =>
 						{
 							var player = PlayerService.GetPlayerFromSteamId(data.SteamID);
+							// Ensure that PlayerService is updated to handle the new point properties
 							player.PlayerPointsData = data;
 						};
 						ActionScheduler.RunActionOnMainThread(action);
@@ -67,9 +83,9 @@ public class PlayerPointsStorage : MySqlDataStorage<PlayerPoints>
 				}
 			}
 		}
-		catch
+		catch (Exception e)
 		{
-			Plugin.PluginLog.LogInfo("Exception during player points data load");
+			Plugin.PluginLog.LogInfo($"Exception during player points data load: {e.ToString()}");
 		}
 
 		return dataList;

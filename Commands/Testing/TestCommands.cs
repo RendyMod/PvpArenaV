@@ -36,8 +36,13 @@ internal class TestCommands
 	[Command("test", description: "Used for debugging", adminOnly: true)]
 	public void TestCommand(Player sender)
 	{
+		sender.ReceiveMessage($"global {sender.PlayerPointsData.TotalPoints}");
+		sender.ReceiveMessage($"eu {sender.PlayerPointsData.TotalPoints_EU}");
+		sender.ReceiveMessage($"na {sender.PlayerPointsData.TotalPoints_NA}");
+		sender.ReceiveMessage($"cn {sender.PlayerPointsData.TotalPoints_CN}");
+		sender.ReceiveMessage($"br {sender.PlayerPointsData.TotalPoints_BR}");
+		sender.ReceiveMessage($"test {sender.PlayerPointsData.TotalPoints_TEST}");
 
-		
 		sender.ReceiveMessage("done");
 	}
 

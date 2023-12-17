@@ -317,21 +317,19 @@ public class DefaultGameMode : BaseGameMode
 		if (player.CurrentState != this.PlayerGameModeType) return;
 
 		if (!eventEntity.Exists()) return;
+
 		var purchaseEvent = eventEntity.Read<TraderPurchaseEvent>();
 		Entity trader = Core.networkIdSystem._NetworkIdToEntityMap[purchaseEvent.Trader];
-		if (UnitFactory.HasGameMode(trader, "moba"))
-		{
-			eventEntity.Destroy();
-		};
+		
 		var costBuffer = trader.ReadBuffer<TradeCost>();
 		var cost = -1 * (costBuffer[purchaseEvent.ItemIndex].Amount);
 		if (cost > 0)
 		{
-			if (player.PlayerPointsData.TotalPoints >= cost)
+			if (player.PlayerPointsData.GetPointsFromCurrentRegion() >= cost)
 			{
-				player.PlayerPointsData.TotalPoints -= cost;
+				player.PlayerPointsData.RemovePointsFromCurrentRegion(cost);
 				Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { player.PlayerPointsData });
-				player.ReceiveMessage($"Purchased for {cost.ToString().Emphasize()} {"VPoints".Warning()}. New total points: {player.PlayerPointsData.TotalPoints.ToString().Warning()}".Success());
+				player.ReceiveMessage($"Purchased for {cost.ToString().Emphasize()} {"VPoints".Warning()}. New total points: {player.PlayerPointsData.GetPointsFromCurrentRegion().ToString().Warning()}".Success());
 			}
 			else
 			{
@@ -339,7 +337,6 @@ public class DefaultGameMode : BaseGameMode
 				player.ReceiveMessage($"Not enough {"VPoints".Warning()} to purchase! {player.PlayerPointsData.TotalPoints.ToString().Warning()} / {cost}".Error());
 			}
 		}
-		
 		base.HandleOnPlayerPurchasedItem(player, eventEntity);
 	}
 
