@@ -45,13 +45,11 @@ public static class TraderPurchaseSystemPatch
 
 		for (int i = 0; i < _entryBuffer.Length; i++)
 		{
-
 			TraderEntry _newEntry = _entryBuffer[i];
 			if (purchaseEvent.ItemIndex == _newEntry.OutputStartIndex)
 			{
 				PrefabGUID _outputItem = _outputBuffer[i].Item;
 				PrefabGUID _inputItem = _inputBuffer[i].Item;
-
 
 				foreach (var traderConfig in TradersConfig.Config.Traders)
 				{

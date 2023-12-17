@@ -74,7 +74,6 @@ public class DodgeballGameMode : BaseGameMode
 		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
 		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
 		GameEvents.OnPlayerPlacedStructure += HandleOnPlayerPlacedStructure;
-
 	}
 
 	public void Initialize(List<Player> team1Players, List<Player> team2Players)
@@ -219,9 +218,9 @@ public class DodgeballGameMode : BaseGameMode
 		Helper.KillOrDestroyEntity(player.Character);
 	}
 
-	public void HandleOnUnitDamageDealt(Entity unit, Entity eventEntity)
+	public override void HandleOnUnitDamageDealt(Entity unit, Entity eventEntity)
 	{
-		if (!UnitFactory.HasGameMode(unit, "pancake")) return;
+		if (!UnitFactory.HasGameMode(unit, UnitGameModeType)) return;
 
 		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
 		if (damageDealtEvent.Target.Exists() && damageDealtEvent.Target.Has<PlayerCharacter>())
@@ -239,25 +238,6 @@ public class DodgeballGameMode : BaseGameMode
 			{
 				eventEntity.Destroy();
 			}
-		}
-		else
-		{
-			eventEntity.Destroy();
-		}
-	}
-
-	public void HandleOnPlayerDamageReceived(Player player, Entity eventEntity)
-	{
-		if (player.CurrentState != this.PlayerGameModeType) return;
-
-		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
-		var spell = damageDealtEvent.SpellSource.Read<PrefabGUID>();
-		float damagePercent;
-		if (spell == Prefabs.EH_Monster_EnergyBeam_Active && !IsGhost[player])
-		{
-			damagePercent = 4f;
-			var damageDealtEventNew = new DealDamageEvent(damageDealtEvent.Target, damageDealtEvent.MainType, damageDealtEvent.MainFactor, damageDealtEvent.ResourceModifier, damageDealtEvent.MaterialModifiers, damageDealtEvent.SpellSource, 0, damagePercent, damageDealtEvent.Modifier, damageDealtEvent.DealDamageFlags);
-			eventEntity.Write(damageDealtEventNew);
 		}
 		else
 		{

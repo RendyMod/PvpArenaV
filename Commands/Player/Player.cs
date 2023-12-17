@@ -269,16 +269,24 @@ public class Player
 	public List<Player> GetClanMembers()
 	{
 		List<Player> clanPlayers = new List<Player>();
-		NativeList<Entity> entities = new NativeList<Entity>(Allocator.Temp);
-		TeamUtility.GetAlliedUsers(VWorld.Server.EntityManager, Character.Read<TeamReference>(), entities);
-		foreach (var entity in entities)
+		if (Clan.Exists())
 		{
-			if (entity.Has<User>())
+			NativeList<Entity> entities = new NativeList<Entity>(Allocator.Temp);
+			TeamUtility.GetClanMembers(VWorld.Server.EntityManager, Clan, entities);
+			foreach (var entity in entities)
 			{
-				Player player = PlayerService.GetPlayerFromUser(entity);
-				clanPlayers.Add(player);
+				if (entity.Has<User>())
+				{
+					Player player = PlayerService.GetPlayerFromUser(entity);
+					clanPlayers.Add(player);
+				}
 			}
 		}
+		else
+		{
+			clanPlayers.Add(this);
+		}
+
 		return clanPlayers;
 	}
 

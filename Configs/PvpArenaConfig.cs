@@ -60,7 +60,8 @@ public static class PvpArenaConfig
 
 	public class PvpArenaConfigData
 	{
-		public bool MatchmakingEnabled { get; set; } = true;
+        public string CurrentRegion { get; set; } = "TEST";
+        public bool MatchmakingEnabled { get; set; } = true;
 		public bool UseCustomSpawnLocation { get; set; } = false;
 		public CoordinateDto CustomSpawnLocation { get; set; } = new CoordinateDto { X = 0, Y = 0, Z = 0 };
 		public string DiscordLink { get; set; } = "https://discord.gg";

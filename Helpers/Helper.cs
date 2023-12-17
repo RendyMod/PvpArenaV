@@ -330,8 +330,10 @@ public static partial class Helper
 
 	public static void Reset(this Player player, ResetOptions resetOptions = null)
 	{
-        resetOptions ??= ResetOptions.Default;
+		if (!player.Character.Exists()) return;
 
+		resetOptions ??= ResetOptions.Default;
+		
         if (resetOptions.ResetCooldowns)
 		{
             ResetCooldown(player.Character);
@@ -364,37 +366,40 @@ public static partial class Helper
 		ScrollingCombatTextMessage.CreateLocal(VWorld.Server.EntityManager, sctEntity, "hello", player.Position, new float3(0,0,0), player.User, 0f, sctPrefab);
 	}
 
-	public static void ResetCooldown(Entity Character)
+	public static void ResetCooldown(Entity character)
 	{
-		var buffer = Character.ReadBuffer<AbilityGroupSlotBuffer>();
-		foreach (var ability in buffer)
+		if (character.Exists())
 		{
-			var abilityGroupSlotEntity = ability.GroupSlotEntity._Entity;
-			if (abilityGroupSlotEntity.Exists())
+			var buffer = character.ReadBuffer<AbilityGroupSlotBuffer>();
+			foreach (var ability in buffer)
 			{
-				var abilityGroupSlotData = abilityGroupSlotEntity.Read<AbilityGroupSlot>();
-				var abilityGroupSlotStateEntity = abilityGroupSlotData.StateEntity._Entity;
-				if (abilityGroupSlotStateEntity.Exists())
+				var abilityGroupSlotEntity = ability.GroupSlotEntity._Entity;
+				if (abilityGroupSlotEntity.Exists())
 				{
-					if (abilityGroupSlotStateEntity.Has<AbilityChargesState>())
+					var abilityGroupSlotData = abilityGroupSlotEntity.Read<AbilityGroupSlot>();
+					var abilityGroupSlotStateEntity = abilityGroupSlotData.StateEntity._Entity;
+					if (abilityGroupSlotStateEntity.Exists())
 					{
-						var abilityChargesState = abilityGroupSlotStateEntity.Read<AbilityChargesState>();
-						var abilityChargesData = abilityGroupSlotStateEntity.Read<AbilityChargesData>();
-						abilityChargesState.CurrentCharges = abilityChargesData.MaxCharges;
-						abilityChargesState.ChargeTime = 0;
-						abilityGroupSlotStateEntity.Write(abilityChargesState);
-					}
-
-					var abilityStateBuffer = abilityGroupSlotStateEntity.ReadBuffer<AbilityStateBuffer>();
-                    
-                    foreach (var state in abilityStateBuffer)
-					{
-						var abilityState = state.StateEntity._Entity;
-						if (abilityState.Exists())
+						if (abilityGroupSlotStateEntity.Has<AbilityChargesState>())
 						{
-							var abilityCooldownState = abilityState.Read<AbilityCooldownState>();
-							abilityCooldownState.CooldownEndTime = 0;
-							abilityState.Write(abilityCooldownState);
+							var abilityChargesState = abilityGroupSlotStateEntity.Read<AbilityChargesState>();
+							var abilityChargesData = abilityGroupSlotStateEntity.Read<AbilityChargesData>();
+							abilityChargesState.CurrentCharges = abilityChargesData.MaxCharges;
+							abilityChargesState.ChargeTime = 0;
+							abilityGroupSlotStateEntity.Write(abilityChargesState);
+						}
+
+						var abilityStateBuffer = abilityGroupSlotStateEntity.ReadBuffer<AbilityStateBuffer>();
+
+						foreach (var state in abilityStateBuffer)
+						{
+							var abilityState = state.StateEntity._Entity;
+							if (abilityState.Exists())
+							{
+								var abilityCooldownState = abilityState.Read<AbilityCooldownState>();
+								abilityCooldownState.CooldownEndTime = 0;
+								abilityState.Write(abilityCooldownState);
+							}
 						}
 					}
 				}

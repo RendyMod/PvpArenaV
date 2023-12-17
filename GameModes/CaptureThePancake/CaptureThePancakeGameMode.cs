@@ -31,6 +31,7 @@ using static ProjectM.SpawnBuffsAuthoring.SpawnBuffElement_Editor;
 using ProjectM.Shared.Systems;
 using static DamageRecorderService;
 using Cpp2IL.Core.Extensions;
+using UnityEngine.Jobs;
 
 namespace PvpArena.GameModes.CaptureThePancake;
 
@@ -100,9 +101,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 	private static Dictionary<PrefabGUID, Action<Player, Entity>> _buffHandlers = new Dictionary<PrefabGUID, Action<Player, Entity>>
 	{
-		{ Prefabs.AB_Subdue_Channeling_Target_Debuff, HandleSubdueChannelingTargetDebuff },
 		{ Prefabs.AB_Subdue_Channeling, HandleSubdueChannelingBuff },
-		{ Prefabs.AB_Subdue_Active_Capture_Buff, HandleSubdueActiveBuff },
 		{ Prefabs.AB_Feed_02_Bite_Abort_Trigger, HandleBiteAbortBuff },
 		{ Prefabs.AB_Interact_Mount_Owner_Buff_Horse, HandleMountBuff },
 		{ Prefabs.AB_Interact_HealingOrb_Buff, HandleHealingOrbBuff },
@@ -456,44 +455,47 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		}
 	}
 
-	public static void HandleSubdueChannelingTargetDebuff(Player player, Entity buffEntity)
+	public static void HandleSubdueChannelingTargetDebuff(Entity unit, Entity buffEntity)
 	{
-		var buff = buffEntity.Read<Buff>();
-		var target = buff.Target;
-		if (target.Exists() && Team.IsAllies(player.Character.Read<Team>(), target.Read<Team>()))
+		var owner = buffEntity.Read<EntityOwner>().Owner;
+		if (owner.Has<PlayerCharacter>())
 		{
-			player.Interrupt();
-			player.ReceiveMessage("That's the wrong pancake!".Error());
-		}
-		else if (target.Exists())
-		{
-			var lifetime = buffEntity.Read<LifeTime>();
-			lifetime.Duration += 5;
-			buffEntity.Write(lifetime);
-			var buffer = buffEntity.ReadBuffer<CreateGameplayEventsOnTimePassed>();
-
-			for (var i = 0; i < buffer.Length; i++)
+			var player = PlayerService.GetPlayerFromCharacter(owner);
+			if (unit.Exists() && Team.IsAllies(player.Character.Read<Team>(), unit.Read<Team>()))
 			{
-				var gameplayEvent = buffer[i];
-				//gameplayEvent.Target = GameplayEventTarget.None;
-				gameplayEvent.Duration += 5;
-				buffer[i] = gameplayEvent;
+				player.Interrupt();
+				player.ReceiveMessage("That's the wrong pancake!".Error());
 			}
-			foreach (var team in Teams.Values)
+			else if (unit.Exists())
 			{
-				foreach (var teamPlayer in team)
+				var lifetime = buffEntity.Read<LifeTime>();
+				lifetime.Duration += 5;
+				buffEntity.Write(lifetime);
+				var buffer = buffEntity.ReadBuffer<CreateGameplayEventsOnTimePassed>();
+
+				for (var i = 0; i < buffer.Length; i++)
 				{
-					bool isAllied = teamPlayer.MatchmakingTeam == player.MatchmakingTeam;
-					string message;
-					if (isAllied)
+					var gameplayEvent = buffer[i];
+					//gameplayEvent.Target = GameplayEventTarget.None;
+					gameplayEvent.Duration += 5;
+					buffer[i] = gameplayEvent;
+				}
+				foreach (var team in Teams.Values)
+				{
+					foreach (var teamPlayer in team)
 					{
-						message = $"{player.Name.FriendlyTeam()} is returning your {"pancake".Emphasize()}! Help them!".White();
+						bool isAllied = teamPlayer.MatchmakingTeam == player.MatchmakingTeam;
+						string message;
+						if (isAllied)
+						{
+							message = $"{player.Name.FriendlyTeam()} is returning your {"pancake".Emphasize()}! Help them!".White();
+						}
+						else
+						{
+							message = $"{player.Name.EnemyTeam()} is returning the enemy's {"pancake".Emphasize()}! Stop them!".White();
+						}
+						teamPlayer.ReceiveMessage(message);
 					}
-					else
-					{
-						message = $"{player.Name.EnemyTeam()} is returning the enemy's {"pancake".Emphasize()}! Stop them!".White();
-					}
-					teamPlayer.ReceiveMessage(message);
 				}
 			}
 		}
@@ -506,19 +508,25 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		buffEntity.Write(lifetime);
 		buffEntity.Add<DestroyBuffOnDamageTaken>();
 	}
-	public static void HandleSubdueActiveBuff(Player player, Entity buffEntity)
+	public static void HandleSubdueActiveBuff(Entity unit, Entity buffEntity)
 	{
-		foreach (var unitSpawn in CaptureThePancakeConfig.Config.UnitSpawns)
+		var owner = buffEntity.Read<EntityOwner>().Owner;
+		if (owner.Has<PlayerCharacter>())
 		{
-			if (unitSpawn.Type.ToLower() == "horse")
+			var player = PlayerService.GetPlayerFromCharacter(owner);
+			foreach (var unitSpawn in CaptureThePancakeConfig.Config.UnitSpawns)
 			{
-				if (unitSpawn.Team != player.MatchmakingTeam)
+				if (unitSpawn.Type.ToLower() == "horse")
 				{
-					var unit = new ObjectiveHorse(unitSpawn.Team);
-					unit.MaxHealth = unitSpawn.Health;
-					unit.GameMode = "pancake";
-					UnitFactory.SpawnUnit(unit, unitSpawn.Location.ToFloat3(), Teams[unitSpawn.Team][0]);
-					break;
+					if (unitSpawn.Team != player.MatchmakingTeam)
+					{
+						unit.Teleport(unitSpawn.Location.ToFloat3());
+						var newUnit = new ObjectiveHorse(unitSpawn.Team);
+						newUnit.MaxHealth = unitSpawn.Health;
+						newUnit.GameMode = "pancake";
+						UnitFactory.SpawnUnit(newUnit, unitSpawn.Location.ToFloat3(), Teams[unitSpawn.Team][0]);
+						break;
+					}
 				}
 			}
 		}
@@ -631,7 +639,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 	public void HandleOnPlayerBuffed(Player player, Entity buffEntity)
 	{
-		if (player.CurrentState != this.PlayerGameModeType) return;
+        if (player.CurrentState != this.PlayerGameModeType) return;
 
 		var prefabGuid = buffEntity.Read<PrefabGUID>();
 		var buff = buffEntity.Read<Buff>();
@@ -645,6 +653,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		{
 			targetPlayer = player;
 		}
+        
 		if (_buffHandlers.TryGetValue(prefabGuid, out var handler))
 		{
 			handler(targetPlayer, buffEntity);
@@ -682,9 +691,8 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 	public void HandleOnUnitBuffed(Entity unit, Entity buffEntity)
 	{
-        if (!UnitFactory.HasGameMode(unit, UnitGameModeType)) return;
-        if (!TryGetSpawnedUnitFromEntity(unit, out SpawnedUnit spawnedUnit)) return;
-
+		if (!UnitFactory.HasGameMode(unit, UnitGameModeType)) return;
+		if (!TryGetSpawnedUnitFromEntity(unit, out SpawnedUnit spawnedUnit)) return;
 		var buffPrefabGUID = buffEntity.Read<PrefabGUID>();
 		if (unit.Read<PrefabGUID>() == Prefabs.CHAR_Gloomrot_Purifier_VBlood)
 		{
@@ -712,6 +720,14 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		else if (unit.Read<PrefabGUID>() == Prefabs.CHAR_Gloomrot_SpiderTank_LightningRod)
 		{
 			Helper.BuffEntity(unit.Read<EntityOwner>().Owner, Prefabs.AB_LightningStrike_RodHit_EmpowerTankBuff, out var buffEntity2, Helper.NO_DURATION); //perma charge lightning rod turrets	
+		}
+		else if (buffPrefabGUID == Prefabs.AB_Subdue_Channeling_Target_Debuff)
+		{
+			HandleSubdueChannelingTargetDebuff(unit, buffEntity);
+		}
+		else if (buffPrefabGUID == Prefabs.AB_Subdue_CaptureBuff_Target)
+		{
+			HandleSubdueActiveBuff(unit, buffEntity);
 		}
 	}
 

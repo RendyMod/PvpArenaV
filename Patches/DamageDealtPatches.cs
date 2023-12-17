@@ -34,6 +34,7 @@ public static class DealDamageSystemPatch
 					if (dealDamageEvent.SpellSource.Exists())
 					{
 						var owner = dealDamageEvent.SpellSource.Read<EntityOwner>().Owner;
+						
 						if (owner.Exists())
 						{
 							if (owner.Has<EntityOwner>())
@@ -56,6 +57,14 @@ public static class DealDamageSystemPatch
 								{
 									entity.Destroy();
 								}
+							}
+						}
+						else
+						{
+							GameEvents.RaiseUnitDealtDamage(dealDamageEvent.SpellSource, entity);
+							if (entity.Exists() && dealDamageEvent.Target.Has<CastleHeartConnection>())
+							{
+								entity.Destroy();
 							}
 						}
 					}

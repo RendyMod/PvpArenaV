@@ -159,6 +159,14 @@ public class TrollGameMode : DefaultGameMode
 	{
 		if (player.CurrentState != this.PlayerGameModeType) return;
 
+		var buffer = projectileEntity.ReadBuffer<HitColliderCast>();
+		for (var i = 0; i < buffer.Length; i++)
+		{
+			var hitColliderCast = buffer[i];
+			hitColliderCast.IgnoreImmaterial = true;
+			buffer[i] = hitColliderCast;
+		}
+
 		var projectile = projectileEntity.Read<Projectile>();
 		projectile.Range = 100;
 		projectileEntity.Write(projectile);

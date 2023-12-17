@@ -35,9 +35,13 @@ public static class DodgeballHelper
 {
 	private static AbilityBar dodgeballAbilityBar = new AbilityBar
 	{
+		Auto = PrefabGUID.Empty,
+		Weapon1 = PrefabGUID.Empty,
 		Weapon2 = Prefabs.AB_Vampire_Spear_Harpoon_Throw_AbilityGroup,
+		Dash = PrefabGUID.Empty,
 		Spell1 = Prefabs.AB_Blood_Shadowbolt_AbilityGroup,
-		Spell2 = Prefabs.AB_Blood_BloodRite_AbilityGroup
+		Spell2 = Prefabs.AB_Blood_BloodRite_AbilityGroup,
+		Ult = PrefabGUID.Empty
 	};
 	public static List<Timer> timers = new List<Timer>();
 
