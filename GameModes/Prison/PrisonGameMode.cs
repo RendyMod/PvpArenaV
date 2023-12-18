@@ -44,7 +44,8 @@ public class PrisonGameMode : DefaultGameMode
 		"points",
 		"lb ranked",
 		"bp",
-		"recount"
+		"recount",
+		"prisontime",
 	};
 
 	public override void Initialize()

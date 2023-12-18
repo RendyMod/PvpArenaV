@@ -74,6 +74,20 @@ internal class PrisonCommands
 					.Error());
 		}
 	}
+	
+	[Command("prisontime", description: "Check Duration of prison time", usage: ".prisontime", adminOnly: false)]
+	public void CheckPrisonTimerCommand (Player sender)
+	{
+		if (sender.IsImprisoned())
+		{
+			var endTime = sender.ImprisonInfo.GetImprisonExpirationDate();
+			sender.ReceiveMessage(($"Your jail time will " + (endTime == null ? "never end." : "end at " + endTime + "." )).Error());
+		}
+		else
+		{
+			sender.ReceiveMessage($"You are not in prison!".Error());
+		}
+	}
 
 	public static Embed EmbedPrisonAnnouncement (Player _player, bool imprisoned = true, int numberOfDays = -1,
 		string reason = "")
