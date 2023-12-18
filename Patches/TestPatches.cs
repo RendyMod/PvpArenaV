@@ -355,6 +355,30 @@ public static class LinkMinionToOwnerOnSpawnSystemPatch
 	}
 }
 
+[HarmonyPatch(typeof(MoveItemBetweenInventoriesSystem), nameof(MoveItemBetweenInventoriesSystem.OnUpdate))]
+public static class MoveItemBetweenInventoriesSystemPatch
+{
+	public static void Prefix(MoveItemBetweenInventoriesSystem __instance)
+	{
+		var entities = __instance._MoveItemBetweenInventoriesEventQuery.ToEntityArray(Allocator.Temp);
+		foreach (var entity in entities)
+		{
+			var fromCharacter = entity.Read<FromCharacter>();
+			var player = PlayerService.GetPlayerFromUser(fromCharacter.User);
+			var moveItemBetweenInventoriesEvent = entity.Read<MoveItemBetweenInventoriesEvent>();
+			if (Core.networkIdSystem._NetworkIdToEntityMap.TryGetValue(moveItemBetweenInventoriesEvent.ToInventory, out var targetInventory))
+			{
+				var targetPrefabGUID = targetInventory.Read<PrefabGUID>();
+				if (!targetInventory.Has<InventoryItem>() && targetPrefabGUID != Prefabs.External_Inventory) //dont block moving into bags or into their own inventory
+				{
+					player.ReceiveMessage("Transferring items is disabled".Error());
+					entity.Destroy();
+				}
+			}
+		}
+		entities.Dispose();
+	}
+}
 
 //
 //AbilitySpawnSystem

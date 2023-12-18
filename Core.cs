@@ -188,7 +188,7 @@ public static class Core
 
 		if (PvpArenaConfig.Config.PointSystemEnabled)
 		{
-			LoginPointsService.SetTimersForOnlinePlayers();
+			LoginPointsService.Initialize();
 		}
 
 		HasInitialized = true;

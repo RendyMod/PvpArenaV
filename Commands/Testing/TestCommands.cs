@@ -36,7 +36,7 @@ internal class TestCommands
 	[Command("test", description: "Used for debugging", adminOnly: true)]
 	public void TestCommand(Player sender)
 	{
-
+		
 		
 		sender.ReceiveMessage("done");
 	}
