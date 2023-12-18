@@ -47,9 +47,6 @@ internal class PrisonCommands
 				$"{imprisonedPlayer.Name.Colorify(ExtendedColor.ClanNameColor)} has been imprisoned {durationMessage}."
 					.Error());
 			imprisonedPlayer.ReceiveMessage($"You have been imprisoned {durationMessage}.".Error());
-			sender.ReceiveMessage(
-				$"{imprisonedPlayer.Name.Colorify(ExtendedColor.ClanNameColor)} has been imprisoned {durationMessage}."
-					.White());
 
 			DiscordBot.SendEmbedAsync(DiscordBotConfig.Config.JailChannel,
 				EmbedPrisonAnnouncement(imprisonedPlayer, true, numberOfDays, reason));
@@ -66,8 +63,6 @@ internal class PrisonCommands
 			Helper.SendSystemMessageToAllClients(
 				$"{imprisonedPlayer.Name.Colorify(ExtendedColor.ClanNameColor)} has been unimprisoned.".Success());
 			imprisonedPlayer.ReceiveMessage($"You have been set free!".Success());
-			sender.ReceiveMessage(
-				$"{imprisonedPlayer.Name.Colorify(ExtendedColor.ClanNameColor)} has been unimprisoned.".White());
 
 			DiscordBot.SendEmbedAsync(DiscordBotConfig.Config.JailChannel,
 				EmbedPrisonAnnouncement(imprisonedPlayer, false));

@@ -360,6 +360,7 @@ public static class MoveItemBetweenInventoriesSystemPatch
 {
 	public static void Prefix(MoveItemBetweenInventoriesSystem __instance)
 	{
+		
 		var entities = __instance._MoveItemBetweenInventoriesEventQuery.ToEntityArray(Allocator.Temp);
 		foreach (var entity in entities)
 		{
@@ -375,6 +376,23 @@ public static class MoveItemBetweenInventoriesSystemPatch
 					entity.Destroy();
 				}
 			}
+		}
+		entities.Dispose();
+	}
+}
+
+[HarmonyPatch(typeof(SmartMergeItemsBetweenInventoriesSystem), nameof(SmartMergeItemsBetweenInventoriesSystem.OnUpdate))]
+public static class SmartMergeItemsBetweenInventoriesSystemPatch
+{
+	public static void Prefix(SmartMergeItemsBetweenInventoriesSystem __instance)
+	{
+		var entities = __instance._EventQuery.ToEntityArray(Allocator.Temp);
+		foreach (var entity in entities)
+		{
+			var fromCharacter = entity.Read<FromCharacter>();
+			var player = PlayerService.GetPlayerFromUser(fromCharacter.User);
+			player.ReceiveMessage("Transferring items is disabled".Error());
+			entity.Destroy();
 		}
 		entities.Dispose();
 	}

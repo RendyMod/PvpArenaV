@@ -22,7 +22,7 @@ using AsmResolver;
 
 namespace PvpArena.GameModes.Prison;
 
-public class PrisonGameMode : BaseGameMode
+public class PrisonGameMode : DefaultGameMode
 {
 	public override Player.PlayerState PlayerGameModeType => Player.PlayerState.Imprisoned;
 	public override string UnitGameModeType => "prison";
@@ -35,7 +35,7 @@ public class PrisonGameMode : BaseGameMode
 
 	public static List<Timer> Timers = new List<Timer>();
 
-	static HashSet<string> AllowedCommands = new HashSet<string>
+	static new HashSet<string> AllowedCommands = new HashSet<string>
 	{
 		"ping",
 		"help",
@@ -49,29 +49,13 @@ public class PrisonGameMode : BaseGameMode
 
 	public override void Initialize()
 	{
-		GameEvents.OnPlayerDowned += HandleOnPlayerDowned;
-		GameEvents.OnPlayerDeath += HandleOnPlayerDeath;
-		GameEvents.OnPlayerShapeshift += HandleOnShapeshift;
-		GameEvents.OnPlayerStartedCasting += HandleOnPlayerStartedCasting;
+        base.Initialize();
 		GameEvents.OnPlayerChatMessage += HandleOnPlayerChatMessage;
-		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
-		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
-		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
-		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
-		GameEvents.OnPlayerPlacedStructure += HandleOnPlayerPlacedStructure;
 	}
 	public override void Dispose()
 	{
-		GameEvents.OnPlayerDowned -= HandleOnPlayerDowned;
-		GameEvents.OnPlayerDeath -= HandleOnPlayerDeath;
-		GameEvents.OnPlayerShapeshift -= HandleOnShapeshift;
-		GameEvents.OnPlayerStartedCasting -= HandleOnPlayerStartedCasting;
+        base.Dispose();
 		GameEvents.OnPlayerChatMessage -= HandleOnPlayerChatMessage;
-		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
-		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
-		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
-		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
-		GameEvents.OnPlayerPlacedStructure -= HandleOnPlayerPlacedStructure;
 
 		foreach (var timer in Timers)
 		{
@@ -81,28 +65,6 @@ public class PrisonGameMode : BaseGameMode
 			}
 		}
 		Timers.Clear();
-	}
-
-	public override void HandleOnPlayerDowned(Player player, Entity killer)
-	{
-		if (player.CurrentState != PlayerGameModeType) return;
-
-		player.Reset(ResetOptions);
-		var timer = Helper.MakeGhostlySpectator(player);
-		Timers.Add(timer);
-		if (killer.Has<PlayerCharacter>())
-		{
-			var KillerPlayer = PlayerService.GetPlayerFromCharacter(killer);
-
-			if (player.ConfigOptions.SubscribeToKillFeed)
-			{
-				player.ReceiveMessage($"You were killed by {KillerPlayer.Name.Error()}.".White());
-			}
-			if (KillerPlayer.ConfigOptions.SubscribeToKillFeed)
-			{
-				KillerPlayer.ReceiveMessage($"You killed {player.Name.Success()}!".White());
-			}
-		}
 	}
 
 	public override void HandleOnShapeshift(Player player, Entity eventEntity)
@@ -130,12 +92,6 @@ public class PrisonGameMode : BaseGameMode
 			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 			player.ReceiveMessage("You can't feel your vampire essence here...".Error());
 		}
-	}
-
-	public void HandleOnPlayerStartedCasting(Player player, Entity eventEntity)
-	{
-		if (player.CurrentState != PlayerGameModeType) return;
-
 	}
 
 	public override void HandleOnPlayerConnected(Player player)
