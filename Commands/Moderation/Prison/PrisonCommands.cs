@@ -81,7 +81,7 @@ internal class PrisonCommands
 		if (sender.IsImprisoned())
 		{
 			var endTime = sender.ImprisonInfo.GetImprisonExpirationDate();
-			sender.ReceiveMessage(($"Your jail time will " + (endTime == null ? "never end." : "end at " + endTime + "." )).Error());
+			sender.ReceiveMessage(($"Your jail time will " + (endTime == null ? "never end. Open a ticket." : "end at " + endTime + "." )).Error());
 		}
 		else
 		{

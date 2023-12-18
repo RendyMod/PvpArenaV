@@ -95,6 +95,9 @@ public class PrisonGameMode : DefaultGameMode
 	{
 		if (!player.ImprisonInfo.IsImprisoned()) return;
 
+		var endTime = player.ImprisonInfo.GetImprisonExpirationDate();
+		player.ReceiveMessage(($"Your jail time will " + (endTime == null ? "never end. Open a ticket." : "end at " + endTime + "." )).Error());
+		
 		player.CurrentState = Player.PlayerState.Imprisoned;
 		player.Teleport(PrisonConfig.Config.CellCoordinateList[player.ImprisonInfo.PrisonCellNumber].ToFloat3());
 	}
