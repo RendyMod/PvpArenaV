@@ -155,7 +155,7 @@ public class PrisonGameMode : DefaultGameMode
 		if (player.CurrentState != PlayerGameModeType) return;
 
 		var chatEvent = eventEntity.Read<ChatMessageEvent>();
-		if (chatEvent.MessageType == ChatMessageType.Global)
+		if (chatEvent.MessageType == ChatMessageType.Global || chatEvent.MessageType == ChatMessageType.Whisper)
 		{
 			eventEntity.Destroy();
 			player.ReceiveMessage("The prison walls are too thick for anyone to hear you.".Error());
