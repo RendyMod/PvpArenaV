@@ -72,12 +72,8 @@ public class PrisonGameMode : DefaultGameMode
 		if (player.CurrentState != PlayerGameModeType) return;
 
 		var enterShapeshiftEvent = eventEntity.Read<EnterShapeshiftEvent>();
-		if (enterShapeshiftEvent.Shapeshift == Prefabs.AB_Shapeshift_BloodMend_Group)
-		{
-			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
-			player.Reset(ResetOptions);
-		}
-		else if (enterShapeshiftEvent.Shapeshift == Prefabs.AB_Shapeshift_ShareBlood_ExposeVein_Group)
+		
+		if (enterShapeshiftEvent.Shapeshift == Prefabs.AB_Shapeshift_ShareBlood_ExposeVein_Group)
 		{
 			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 			Helper.ToggleBloodOnPlayer(player);
@@ -107,6 +103,50 @@ public class PrisonGameMode : DefaultGameMode
 		if (player.CurrentState != PlayerGameModeType) return;
 
 		player.Teleport(PrisonConfig.Config.CellCoordinateList[player.ImprisonInfo.PrisonCellNumber].ToFloat3());
+	}
+
+	
+	public static BuffModificationTypes PrisonDeathModifications = BuffModificationTypes.Invulnerable | BuffModificationTypes.Immaterial | BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.AbilityCastImpair | BuffModificationTypes.MovementImpair | BuffModificationTypes.RotationImpair;
+	public override void HandleOnPlayerDowned(Player player, Entity killer)
+	{
+		if (player.CurrentState != this.PlayerGameModeType) return;
+		
+		if (player.Clan.Exists()) //if they might be in a teamfight then we don't want to remove summons just because they died
+		{
+			player.Reset(TeamfightResetOptions);
+		}
+		else
+		{
+			player.Reset(ResetOptions);
+		}
+		
+		if (Helper.BuffPlayer(player, Prefabs.VampireDeathBuff, out var buffEntity, 2.2f))
+		{
+			Helper.ModifyBuff(buffEntity, PrisonDeathModifications, true);
+		}
+		
+		System.Action teleportBackToCellAction = () =>
+		{
+			player.Teleport(PrisonConfig.Config.CellCoordinateList[player.ImprisonInfo.PrisonCellNumber].ToFloat3());
+		};
+		
+
+		if (killer.Has<PlayerCharacter>())
+		{
+			var KillerPlayer = PlayerService.GetPlayerFromCharacter(killer);
+
+			if (player.ConfigOptions.SubscribeToKillFeed)
+			{
+				player.ReceiveMessage($"You were killed by {KillerPlayer.Name.Error()}.".White());
+			}
+			if (KillerPlayer.ConfigOptions.SubscribeToKillFeed)
+			{
+				KillerPlayer.ReceiveMessage($"You killed {player.Name.Success()}!".White());
+			}
+		}
+		
+		var timer = ActionScheduler.RunActionOnceAfterDelay(teleportBackToCellAction,  2.2f);
+		Timers.Add(timer);
 	}
 
 	public void HandleOnPlayerChatMessage(Player player, Entity eventEntity)
