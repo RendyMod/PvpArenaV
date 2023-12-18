@@ -127,6 +127,7 @@ public class PrisonGameMode : DefaultGameMode
 		
 		System.Action teleportBackToCellAction = () =>
 		{
+			Helper.RemoveBuff(player, Prefabs.VampireDeathBuff);
 			player.Teleport(PrisonConfig.Config.CellCoordinateList[player.ImprisonInfo.PrisonCellNumber].ToFloat3());
 		};
 		
