@@ -45,8 +45,7 @@ public class PlayerPointsStorage : MySqlDataStorage<PlayerPoints>
 		}
 		catch(Exception e)
 		{
-			Plugin.PluginLog.LogInfo("Exception during player points data store");
-			Plugin.PluginLog.LogError(e);
+			Plugin.PluginLog.LogInfo($"Exception during player points data store: {e.ToString()}");
 		}
 	}
 
