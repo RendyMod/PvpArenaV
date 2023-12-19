@@ -25,7 +25,7 @@ public class PlayerPointsStorage : MySqlDataStorage<PlayerPoints>
             INSERT INTO PlayerPoints (SteamID, TotalPoints, LastLoginDate) 
             VALUES (@SteamID, @TotalPoints, @LastLoginDate) 
             ON DUPLICATE KEY UPDATE 
-            TotalPoints = @TotalPoints;", _connection);
+            TotalPoints = @TotalPoints, LastLoginDate = @LastLoginDate;", _connection);
 				command.Parameters.AddWithValue("@SteamID", data.SteamID);
 				command.Parameters.AddWithValue("@TotalPoints", data.TotalPoints);
 				command.Parameters.AddWithValue("@LastLoginDate", data.LastLoginDate);
@@ -57,7 +57,7 @@ public class PlayerPointsStorage : MySqlDataStorage<PlayerPoints>
 						{
 							SteamID = reader.GetUInt64("SteamID"),
 							TotalPoints = reader.GetInt32("TotalPoints"),
-							LastLoginDate = reader.GetDateTime("LastLoginDate")
+							LastLoginDate = (reader.IsDBNull(reader.GetOrdinal("LastLoginDate"))? null : reader.GetDateTime("LastLoginDate")),
 						};
 						dataList.Add(data);
 						var action = () =>
@@ -70,9 +70,10 @@ public class PlayerPointsStorage : MySqlDataStorage<PlayerPoints>
 				}
 			}
 		}
-		catch
+		catch(Exception e)
 		{
 			Plugin.PluginLog.LogInfo("Exception during player points data load");
+			Plugin.PluginLog.LogError(e);
 		}
 
 		return dataList;

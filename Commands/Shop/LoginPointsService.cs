@@ -42,6 +42,7 @@ public static class LoginPointsService
 			player.PlayerPointsData.TotalPoints += points;
 			Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { player.PlayerPointsData });
 			player.ReceiveMessage($"You were awarded {points.ToString().Emphasize()} {"VPoints".Warning()} for your daily login.".White());
+			player.ReceiveMessage($"New total: {player.PlayerPointsData.TotalPoints.ToString().Warning()}".White());
 		}
 	}
 
