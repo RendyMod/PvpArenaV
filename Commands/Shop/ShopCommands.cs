@@ -41,12 +41,12 @@ internal static class ShopCommands
 	{
 		Player player = foundPlayer ?? sender;
 
-		player.PlayerPointsData.RemovePointsForAllRegions(Math.Max(player.PlayerPointsData.TotalPoints - points, 0));
+		player.PlayerPointsData.RemovePointsForAllRegions(Math.Max(points, 0));
 		Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { player.PlayerPointsData });
-		sender.ReceiveMessage($"Removed {points.ToString().Emphasize()} {"VPoint(s)".Warning()} to {player.Name.Colorify(ExtendedColor.ClanNameColor)} ".Success());
+		sender.ReceiveMessage($"Removed {points.ToString().Emphasize()} {"VPoint(s)".Warning()} from {player.Name.Colorify(ExtendedColor.ClanNameColor)} ".Success());
 		sender.ReceiveMessage(($"{player.Name.Colorify(ExtendedColor.ClanNameColor)} {"VPoint(s)".Warning()} are now {player.PlayerPointsData.TotalPoints.ToString().Emphasize()}.").White());
 		
-		player.ReceiveMessage($"An admin removed {points.ToString().Emphasize()} {"VPoint(s)".Warning()} to you.".Error());
+		player.ReceiveMessage($"An admin removed {points.ToString().Emphasize()} {"VPoint(s)".Warning()} from you.".Error());
 		player.ReceiveMessage(($"Your {"VPoint(s)".Warning()} are now {player.PlayerPointsData.TotalPoints.ToString().Emphasize()}.").White());
 	}
 
