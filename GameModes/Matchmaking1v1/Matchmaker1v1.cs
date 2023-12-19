@@ -193,8 +193,8 @@ public static class MatchmakingQueue
 								 " points. New score: ".White() + $"{newLoserMmr}".Warning());
 
 			int pointsToAward = 1;
-			winner.PlayerPointsData.TotalPoints += pointsToAward;
-			loser.PlayerPointsData.TotalPoints += pointsToAward;
+			winner.PlayerPointsData.AddPointsToAllRegions(pointsToAward);
+			loser.PlayerPointsData.AddPointsToAllRegions(pointsToAward);
 			Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { winner.PlayerPointsData, loser.PlayerPointsData });
 			string pointsName = "VPoint";
 			if (pointsToAward > 1)

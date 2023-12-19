@@ -54,13 +54,102 @@ public class PlayerConfigOptions : PlayerData
 
 public class PlayerPoints : PlayerData
 {
+	public const string REGION_CN = "CN";
+	public const string REGION_NA = "NA";
+	public const string REGION_EU = "EU";
+	public const string REGION_BR = "BR";
+	public const string REGION_TEST = "TEST";
 	public override ulong SteamID { get; set; }
 	public int TotalPoints { get; set; }
-	[JsonIgnore]
+	public int TotalPoints_EU { get; set; }
+	public int TotalPoints_NA { get; set; }
+	public int TotalPoints_CN { get; set; }
+	public int TotalPoints_BR { get; set; }
+	public int TotalPoints_TEST { get; set; }
 	public Timer OnlineTimer { get; set; }
 	public DateTime? LastLoginDate { get; set; } = null;
 
 	public PlayerPoints() { }
+
+	public void AddPointsToAllRegions(int points)
+	{
+		TotalPoints += points;
+		TotalPoints_EU += points;
+		TotalPoints_NA += points;
+		TotalPoints_CN += points;
+		TotalPoints_BR += points;
+		TotalPoints_TEST += points;
+	}
+
+	public void SetPointsForAllRegions(int points)
+	{
+		TotalPoints = points;
+		TotalPoints_EU = points;
+		TotalPoints_NA = points;
+		TotalPoints_CN = points;
+		TotalPoints_BR = points;
+		TotalPoints_TEST = points;
+	}
+
+	public void RemovePointsForAllRegions(int points)
+	{
+		TotalPoints -= points;
+		TotalPoints_EU -= points;
+		TotalPoints_NA -= points;
+		TotalPoints_CN -= points;
+		TotalPoints_BR -= points;
+		TotalPoints_TEST -= points;
+	}
+
+	public int GetPointsFromCurrentRegion()
+	{
+		int points;
+		if (PvpArenaConfig.Config.CurrentRegion == REGION_EU)
+		{
+			points = TotalPoints_EU;
+		}
+		else if (PvpArenaConfig.Config.CurrentRegion == REGION_NA)
+		{
+			points = TotalPoints_NA;
+		}
+		else if (PvpArenaConfig.Config.CurrentRegion == REGION_CN)
+		{
+			points = TotalPoints_CN;
+		}
+		else if (PvpArenaConfig.Config.CurrentRegion == REGION_BR)
+		{
+			points = TotalPoints_BR;
+		}
+		else
+		{
+			points = TotalPoints_TEST;
+		}
+		return points;
+	}
+
+	public void RemovePointsFromCurrentRegion(int points)
+	{
+		if (PvpArenaConfig.Config.CurrentRegion == REGION_EU)
+		{
+			TotalPoints_EU -= points;
+		}
+		else if (PvpArenaConfig.Config.CurrentRegion == REGION_NA)
+		{
+			TotalPoints_NA -= points;
+		}
+		else if (PvpArenaConfig.Config.CurrentRegion == REGION_CN)
+		{
+			TotalPoints_CN -= points;
+		}
+		else if (PvpArenaConfig.Config.CurrentRegion == REGION_BR)
+		{
+			TotalPoints_BR -= points;
+		}
+		else if (PvpArenaConfig.Config.CurrentRegion == REGION_TEST)
+		{
+			TotalPoints_TEST -= points;
+		}
+	}
 }
 
 public class PlayerBanInfo : PlayerData
