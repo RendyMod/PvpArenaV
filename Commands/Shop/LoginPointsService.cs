@@ -31,12 +31,18 @@ public static class LoginPointsService
 		player.ReceiveMessage($"New total: {player.PlayerPointsData.TotalPoints.ToString().Warning()}".White());
 	}
 	
-	public static void DailyLoginPoints(Player player, int points)
+	public static void TryGrantDailyLoginPoints(Player player, int points)
 	{
-		player.PlayerPointsData.TotalPoints += points;
-		Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { player.PlayerPointsData });
-		player.ReceiveMessage($"You were awarded {points.ToString().Emphasize()} {"VPoints".Warning()} for your daily login.".White());
-		player.ReceiveMessage($"New total: {player.PlayerPointsData.TotalPoints.ToString().Warning()}".White());
+		DateTime currentTime = DateTime.UtcNow;
+
+		if (player.PlayerPointsData.LastLoginDate == null || currentTime.Day != player.PlayerPointsData.LastLoginDate.Value.Day)
+		{
+			player.PlayerPointsData.LastLoginDate = DateTime.UtcNow;
+			player.PlayerPointsData.TotalPoints += points;
+			Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { player.PlayerPointsData });
+			player.ReceiveMessage($"You were awarded {points.ToString().Emphasize()} {"VPoints".Warning()} for your daily login.".White());
+			player.ReceiveMessage($"New total: {player.PlayerPointsData.TotalPoints.ToString().Warning()}".White());
+		}
 	}
 
 	public static void AwardPointsToAllOnlinePlayers(int points)
