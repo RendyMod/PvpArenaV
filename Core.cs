@@ -189,6 +189,7 @@ public static class Core
 		if (PvpArenaConfig.Config.PointSystemEnabled)
 		{
 			LoginPointsService.Initialize();
+			ScheduleAnnouncementService.Initialize();
 		}
 
 		HasInitialized = true;
@@ -227,7 +228,9 @@ public static class Core
 		PlayerSpawnHandler.Dispose();
 		TrollModeManager.Dispose();
 		noHealingLimitGameMode.Dispose();
-		LoginPointsService.DisposeTimersForOnlinePlayers();
+		LoginPointsService.Dispose();
+		ScheduleAnnouncementService.Dispose();
+		
 		Listener.Dispose();
 		DiscordBot.Dispose();
 	}

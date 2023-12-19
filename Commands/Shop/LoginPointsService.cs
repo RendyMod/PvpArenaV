@@ -23,6 +23,7 @@ public static class LoginPointsService
 		}
 	}
 
+	
 	public static void AwardPoints(Player player, int points)
 	{
 		player.PlayerPointsData.TotalPoints += points;
@@ -47,6 +48,7 @@ public static class LoginPointsService
 		}
 	}
 
+	/*
 	public static void SetTimersForOnlinePlayers()
 	{
 		foreach (var player in PlayerService.OnlinePlayers.Keys)
@@ -71,5 +73,6 @@ public static class LoginPointsService
 			}
 		}
 	}
+	*/
 }
 
