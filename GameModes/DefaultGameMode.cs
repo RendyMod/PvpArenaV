@@ -338,7 +338,7 @@ public class DefaultGameMode : BaseGameMode
 			else
 			{
 				eventEntity.Destroy();
-				player.ReceiveMessage($"Not enough {"VPoints".Warning()} to purchase! {player.PlayerPointsData.TotalPoints.ToString().Warning()} / {cost}".Error());
+				player.ReceiveMessage($"Not enough {"VPoints".Warning()} to purchase! {player.PlayerPointsData.GetPointsFromCurrentRegion().ToString().Warning()} / {cost}".Error());
 			}
 		}
 		base.HandleOnPlayerPurchasedItem(player, eventEntity);

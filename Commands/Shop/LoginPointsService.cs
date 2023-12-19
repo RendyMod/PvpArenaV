@@ -29,7 +29,7 @@ public static class LoginPointsService
 		player.PlayerPointsData.AddPointsToAllRegions(points);
 		Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { player.PlayerPointsData });
 		player.ReceiveMessage($"You were awarded {points.ToString().Emphasize()} {"VPoints".Warning()} for being online.".White());
-		player.ReceiveMessage($"New total: {player.PlayerPointsData.TotalPoints.ToString().Warning()}".White());
+		player.ReceiveMessage($"New total: {player.PlayerPointsData.GetPointsFromCurrentRegion().ToString().Warning()}".White());
 	}
 	
 	public static void TryGrantDailyLoginPoints(Player player, int points)
@@ -42,7 +42,7 @@ public static class LoginPointsService
 			player.PlayerPointsData.AddPointsToAllRegions(points);
 			Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { player.PlayerPointsData });
 			player.ReceiveMessage($"You were awarded {points.ToString().Emphasize()} {"VPoints".Warning()} for your daily login.".White());
-			player.ReceiveMessage($"New total: {player.PlayerPointsData.TotalPoints.ToString().Warning()}".White());
+			player.ReceiveMessage($"New total: {player.PlayerPointsData.GetPointsFromCurrentRegion().ToString().Warning()}".White());
 		}
 	}
 
