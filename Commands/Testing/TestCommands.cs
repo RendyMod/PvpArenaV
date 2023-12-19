@@ -36,7 +36,41 @@ internal class TestCommands
 	[Command("test", description: "Used for debugging", adminOnly: true)]
 	public void TestCommand(Player sender)
 	{
-		
+		if (Helper.BuffPlayer(sender, Helper.CustomBuff3, out var buffEntity, Helper.NO_DURATION))
+		{
+			Helper.ApplyStatModifier(buffEntity, new ModifyUnitStatBuff_DOTS
+			{
+				StatType = UnitStatType.AttackSpeed,
+				Priority = 100,
+				Id = ModificationIdFactory.NewId(),
+				ModificationType = ModificationType.Set,
+				Value = 2
+			}, false);
+			Helper.ApplyStatModifier(buffEntity, new ModifyUnitStatBuff_DOTS
+			{
+				StatType = UnitStatType.PhysicalLifeLeech,
+				Priority = 100,
+				Id = ModificationIdFactory.NewId(),
+				ModificationType = ModificationType.Set,
+				Value = 1f
+			}, false);
+			Helper.ApplyStatModifier(buffEntity, new ModifyUnitStatBuff_DOTS
+			{
+				StatType = UnitStatType.PrimaryLifeLeech,
+				Priority = 100,
+				Id = ModificationIdFactory.NewId(),
+				ModificationType = ModificationType.Set,
+				Value = 1f
+			}, false);
+			Helper.ApplyStatModifier(buffEntity, new ModifyUnitStatBuff_DOTS
+			{
+				StatType = UnitStatType.SpellLifeLeech,
+				Priority = 100,
+				Id = ModificationIdFactory.NewId(),
+				ModificationType = ModificationType.Set,
+				Value = 1f
+			}, false);
+		}
 		
 		sender.ReceiveMessage("done");
 	}

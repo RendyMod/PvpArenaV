@@ -22,6 +22,7 @@ public static class LoginPointsService
 			timer = null;
 		}
 	}
+
 	
 	public static void AwardPoints(Player player, int points)
 	{

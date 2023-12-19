@@ -130,13 +130,25 @@ public static partial class Helper
 
 	public static void RenamePlayer(FromCharacter fromCharacter, string newName)
 	{
-		var networkId = fromCharacter.User.Read<NetworkId>();
-		var renameEvent = new RenameUserDebugEvent
+		var nameTaken = false;
+		foreach (var player in PlayerService.UserCache.Values)
 		{
-			NewName = newName,
-			Target = networkId
-		};
-		Core.debugEventsSystem.RenameUser(fromCharacter, renameEvent);
+			if (player.Name.ToLower() == newName.ToLower())
+			{
+				nameTaken = true;
+				break;
+			}
+		}
+		if (!nameTaken)
+		{
+			var networkId = fromCharacter.User.Read<NetworkId>();
+			var renameEvent = new RenameUserDebugEvent
+			{
+				NewName = newName,
+				Target = networkId
+			};
+			Core.debugEventsSystem.RenameUser(fromCharacter, renameEvent);
+		}
 	}
 
 	public static void ResetAllServants(Team playerTeam)
