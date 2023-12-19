@@ -73,7 +73,7 @@ public class PrisonBreakGameMode : BaseGameMode
 		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
 		GameEvents.OnPlayerPlacedStructure += HandleOnPlayerPlacedStructure;
 
-		foreach (var player in PlayerService.OnlinePlayers.Keys)
+		foreach (var player in PlayerService.OnlinePlayers)
 		{
 			PlayersAlive[player] = true;
 		}

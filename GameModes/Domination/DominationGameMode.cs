@@ -116,7 +116,7 @@ public class DominationGameMode : BaseGameMode
 				if (capturePoint.Zone.Contains(dyeableEntity.Read<LocalToWorld>().Position))
 				{
 					CapturePointIndexToLights[capturePoint.PointIndex].Add(dyeableEntity);
-					/*BuffHelper.BuffEntity(dyeableEntity, BuffHelper.CustomBuff, out var buffEntity, BuffHelper.NO_DURATION);
+					/*BuffHelper.BuffEntity(dyeableEntity, BuffHelper.CustomBuff3, out var buffEntity, BuffHelper.NO_DURATION);
 					BuffHelper.ModifyBuff(buffEntity, BuffModificationTypes.Immaterial | BuffModificationTypes.Invulnerable | BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.DisableMapCollision, true);*/
 				}
 			}

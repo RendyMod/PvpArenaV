@@ -29,6 +29,7 @@ using Epic.OnlineServices.P2P;
 using ProjectM.Shared;
 using System.Linq;
 using Epic.OnlineServices.Sessions;
+using UnityEngine;
 
 namespace PvpArena.Commands.Debug;
 internal class TestCommands
@@ -37,11 +38,18 @@ internal class TestCommands
 	[Command("test", description: "Used for debugging", adminOnly: true)]
 	public void TestCommand(Player sender)
 	{
-		foreach (var player in PlayerService.OnlinePlayers.Keys)
+		sender.ReceiveMessage(sender.Name);
+		foreach (var player in PlayerService.UserCache.Values)
 		{
-			Plugin.PluginLog.LogInfo(player.Name);
+			try
+			{
+				Plugin.PluginLog.LogInfo(player.Name);
+			}
+			catch (Exception e)
+			{
+				Plugin.PluginLog.LogInfo(player.User.GetHashCode());
+			}
 		}
-		
 		sender.ReceiveMessage("done");
 	}
 
@@ -130,7 +138,7 @@ internal class TestCommands
         {
             player = sender;
         }
-        Helper.BuffPlayer(player, Helper.CustomBuff4, out var buffEntity, Helper.NO_DURATION);
+        Helper.BuffPlayer(player, Helper.CustomBuff2, out var buffEntity, Helper.NO_DURATION);
         var abilityBar = new AbilityBar
         {
             Weapon1 = weapon1,

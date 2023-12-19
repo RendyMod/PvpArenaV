@@ -32,7 +32,7 @@ public static class ActionScheduler
 		
 		if (CurrentFrameCount % 30 == 0) //move this into game mode actions later
 		{
-			foreach (var player in PlayerService.OnlinePlayers.Keys)
+			foreach (var player in PlayerService.OnlinePlayers)
 			{
 				if (!player.HasControlledEntity())
 				{

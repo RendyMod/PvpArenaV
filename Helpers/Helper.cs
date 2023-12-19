@@ -237,7 +237,7 @@ public static partial class Helper
 	public static void Teleport(this Entity unit, float3 targetPosition)
 	{
 		Player anyPlayer = null;
-		foreach (var player in PlayerService.OnlinePlayers.Keys)
+		foreach (var player in PlayerService.OnlinePlayers)
 		{
 			anyPlayer = player;
 			break;
@@ -296,6 +296,7 @@ public static partial class Helper
             RemoveConsumables = true,
             RemoveShapeshifts = true,
             ResetCooldowns = true,
+			RemoveMinions = true,
             BuffsToIgnore = new HashSet<PrefabGUID>()
         };
     }
@@ -675,7 +676,7 @@ public static partial class Helper
 				e.Write(level);
 				e.Write(player.Character.Read<Team>());
 				e.Write(player.Character.Read<TeamReference>());
-				Helper.BuffEntity(e, Helper.CustomBuff4, out var buffEntity1, Helper.NO_DURATION);
+				Helper.BuffEntity(e, Helper.CustomBuff2, out var buffEntity1, Helper.NO_DURATION);
 				var aggroConsumer = e.Read<AggroConsumer>();
 				aggroConsumer.Active.Value = false;
 				e.Write(aggroConsumer);

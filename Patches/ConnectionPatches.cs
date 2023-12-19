@@ -72,7 +72,7 @@ public static class OnUserConnectedPatch
 					if (User.Exists())
 					{
 						var player = PlayerService.GetPlayerFromUser(User);
-						if (PlayerService.OnlinePlayers.TryAdd(player, true)) 
+						if (PlayerService.OnlinePlayers.Add(player)) 
 						{
 							PlayerService.OnOnlinePlayerAmountChanged?.Invoke();
 						}

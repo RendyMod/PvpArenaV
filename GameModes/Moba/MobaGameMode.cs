@@ -62,7 +62,7 @@ public class MobaGameMode : BaseGameMode
 			Prefabs.AB_Interact_UseRelic_Behemoth_Buff,
 			Prefabs.AB_Interact_UseRelic_Manticore_Buff,
 			Prefabs.AB_Interact_UseRelic_Monster_Buff,
-			Helper.CustomBuff5 //stop them from jumping off
+			Helper.CustomBuff3 //stop them from jumping off
 		}
 	};
 	private static bool MatchActive = false;
@@ -260,7 +260,7 @@ public class MobaGameMode : BaseGameMode
 	private static Dictionary<PrefabGUID, Action<Entity, Entity>> unitBuffHandlers = new Dictionary<PrefabGUID, Action<Entity, Entity>>
 	{
 		{ Prefabs.Buff_Building_Siege_ActivationTimer_Buff_T02, HandleGolemSummoningBuff },
-		{ Helper.CustomBuff3, HandleSpawnedUnitBuff },
+		{ Helper.CustomBuff1, HandleSpawnedUnitBuff },
 		{ Prefabs.AB_IronGolem_FallAsleep_Buff_SleepingIdle, HandleGolemAsleepBuff }
 	};
 

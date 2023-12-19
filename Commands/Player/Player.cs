@@ -104,12 +104,19 @@ public class Player
         if (character.Exists())
         {
             _character = character;
-            if (!_user.Exists() && _character.Read<PlayerCharacter>().UserEntity.Exists())
-            {
-                _user = _character.Read<PlayerCharacter>().UserEntity;
-                _steamID = _user.Read<User>().PlatformId;
-                AddSteamIdsToPlayerSubData();
-            }
+			if (!_user.Exists())
+			{
+				if (_character.Read<PlayerCharacter>().UserEntity.Exists())
+				{
+					_user = _character.Read<PlayerCharacter>().UserEntity;
+					_steamID = _user.Read<User>().PlatformId;
+					AddSteamIdsToPlayerSubData();
+				}
+				else
+				{
+					throw new Exception("Tried to load a player without a valid user");
+				}
+			}
         }
     }
 

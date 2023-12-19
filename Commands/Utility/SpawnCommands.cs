@@ -67,26 +67,6 @@ internal class SpawnCommands
 		sender.ReceiveMessage($"Spawned boss!".Success());
 	}
 
-	[Command("spawn-vampire", description: "Spawns a boss at your location", adminOnly: true)]
-	public static void SpawnVampireCommand(Player sender, int team = 10, int level = 84)
-	{
-		PrefabSpawnerService.SpawnWithCallback(Prefabs.CHAR_VampireMale, sender.Position, (System.Action<Entity>)((e) => {
-			e.Remove<PlayerCharacter>();
-			e.Remove<RespawnCharacter>();
-			e.Remove<PlayerMapIcon>();
-			e.Remove<Immortal>();
-			e.Add<BuffResistances>();
-			e.Write(new BuffResistances
-			{
-				SettingsEntity = ModifiableEntity.CreateFixed(Helper.GetPrefabEntityByPrefabGUID(Prefabs.BuffResistance_Golem)),
-				InitialSettingGuid = Prefabs.BuffResistance_Golem
-			});
-			Helper.BuffEntity(e, Helper.CustomBuff, out var buffEntity, (float)Helper.NO_DURATION, false);
-			Helper.ModifyBuff(buffEntity, BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.DisableMapCollision);
-		}), 0, -1);
-		sender.ReceiveMessage($"Spawned vampire!".Success());
-	}
-
 	[Command("spawn-prefab", description: "Used for debugging", adminOnly: true)]
 	public static void SpawnPrefabCommand(Player sender, PrefabGUID _prefab, int rotationMode = 1, int spawnSnapMode = 5)
 	{

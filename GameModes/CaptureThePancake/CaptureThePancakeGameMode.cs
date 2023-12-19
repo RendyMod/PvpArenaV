@@ -362,7 +362,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		Action bringSpectatorBackToBaseRootedAction = () =>
 		{
 			player.Teleport(pos);
-			if (Helper.BuffPlayer(player, Helper.CustomBuff2, out var buffEntity, 3))
+			if (Helper.BuffPlayer(player, Helper.CustomBuff1, out var buffEntity, 3))
 			{
 				Helper.ModifyBuff(buffEntity, BuffModificationTypes.MovementImpair | BuffModificationTypes.Immaterial);
 			}

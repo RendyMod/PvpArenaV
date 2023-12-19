@@ -314,7 +314,7 @@ public static class MobaHelper
 			team1Player.MatchmakingTeam = 1;
 			team1Player.Reset(BaseGameMode.ResetOptions);
 			Helper.RemoveBuildImpairBuffFromPlayer(team1Player);
-			Helper.BuffPlayer(team1Player, Helper.CustomBuff5, out var buffEntity, Helper.NO_DURATION, true);
+			Helper.BuffPlayer(team1Player, Helper.CustomBuff3, out var buffEntity, Helper.NO_DURATION, true);
 			buffEntity.Add<AllowJumpFromCliffsBuff>();
 			buffEntity.Write(new AllowJumpFromCliffsBuff
 			{
@@ -333,7 +333,7 @@ public static class MobaHelper
 			team2Player.MatchmakingTeam = 2;
 			team2Player.Reset(BaseGameMode.ResetOptions);
 			Helper.RemoveBuildImpairBuffFromPlayer(team2Player);
-			Helper.BuffPlayer(team2Player, Helper.CustomBuff5, out var buffEntity, Helper.NO_DURATION, true);
+			Helper.BuffPlayer(team2Player, Helper.CustomBuff3, out var buffEntity, Helper.NO_DURATION, true);
 			buffEntity.Add<AllowJumpFromCliffsBuff>();
 			buffEntity.Write(new AllowJumpFromCliffsBuff
 			{
@@ -597,7 +597,7 @@ public static class MobaHelper
 					blood.BloodQuality = 0;
 					e.Write(blood);
 					ApplyTeamColorBuff(e, unitToSpawn.Team);
-					Helper.BuffEntity(e, Helper.CustomBuff5, out var buffEntity, 10);
+					Helper.BuffEntity(e, Helper.CustomBuff3, out var buffEntity, 10);
 					Helper.ModifyBuff(buffEntity, BuffModificationTypes.DisableDynamicCollision, true);
 				}, teamLeader);
 			}

@@ -22,8 +22,12 @@ public static class InteractSystemServerPatch
 				var interactor = entity.Read<Interactor>();
 				if (entity.Has<PlayerCharacter>())
 				{
-					var player = PlayerService.GetPlayerFromCharacter(entity);
-					GameEvents.RaisePlayerInteracted(player, interactor);
+					var playerCharacter = entity.Read<PlayerCharacter>();
+					if (playerCharacter.UserEntity.Exists())
+					{
+						var player = PlayerService.GetPlayerFromCharacter(entity);
+						GameEvents.RaisePlayerInteracted(player, interactor);
+					}
 				}
 			}
 			catch (Exception e)

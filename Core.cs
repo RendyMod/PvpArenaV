@@ -83,7 +83,7 @@ public static class Core
 		
 		DiscordBotConfig.Load();
 		DiscordBot.InitializeAsync();
-		PlayerService.LoadAllPlayers();
+		PlayerService.Initialize();
 		PvpArenaConfig.Load();
 		PlayerJewels.Load();
 		PlayerLegendaries.Load();
@@ -208,6 +208,7 @@ public static class Core
 	public static void Dispose()
 	{
 		HasInitialized = false;
+		PlayerService.Dispose();
 		BulletHellManager.Dispose();
         defaultGameMode.Dispose();
         matchmaking1v1GameMode.Dispose();

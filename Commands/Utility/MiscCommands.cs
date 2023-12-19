@@ -41,12 +41,12 @@ internal static class MiscellaneousCommands
 			mountable.Acceleration = acceleration;
 			mountable.RotationSpeed = rotation;
 			e.Write(mountable);
-			if (Helper.BuffEntity(e, Prefabs.Buff_Manticore_ImmaterialHomePos, out var buffEntity, (float)Helper.NO_DURATION, true))
+			if (Helper.BuffEntity(e, Helper.CustomBuff1, out var buffEntity, (float)Helper.NO_DURATION, true))
 			{
 				buffEntity.Add<BuffModificationFlagData>();
 				buffEntity.Write(new BuffModificationFlagData
 				{
-					ModificationTypes = (long)(BuffModificationTypes.TargetSpellImpaired | BuffModificationTypes.Immaterial | BuffModificationTypes.DisableMapCollision | BuffModificationTypes.DisableDynamicCollision)
+					ModificationTypes = (long)(BuffModificationTypes.TargetSpellImpaired | BuffModificationTypes.Immaterial | BuffModificationTypes.Invulnerable | BuffModificationTypes.DisableMapCollision | BuffModificationTypes.DisableDynamicCollision)
 				});
 			}
 			sender.ReceiveMessage("Spawned horse!".Success());
@@ -127,6 +127,7 @@ internal static class MiscellaneousCommands
 			sender.ReceiveMessage("Must be in normal mode in order to remake".Error());
 			return;
 		}
+		Helper.RemoveFromClan(target);
 		target.Character.Teleport(new float3(0, 0, 0));
 		var originalName = sender.Name;
 		Helper.RenamePlayer(target.ToFromCharacter(), "ABANDONED_CHARACTER");
@@ -146,9 +147,12 @@ internal static class MiscellaneousCommands
 		{
 			Name = originalName
 		});
-		entity.Write(sender.ToFromCharacter());
-		Helper.RemoveFromClan(target);
+		entity.Write(target.ToFromCharacter());
+		
 		PlayerService.CharacterCache.Remove(target.Character);
+		PlayerService.UserCache.Remove(target.User);
+		PlayerService.SteamIdCache.Remove(target.SteamID);
+		PlayerService.OnlinePlayers.Remove(target);
 		target.Character = Entity.Null;
 	}
 

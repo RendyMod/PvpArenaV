@@ -29,7 +29,7 @@ public static class NoHealingLimitManager
 		player.Reset(NoHealingLimitGameMode.ResetOptions);
 		player.CurrentState = Player.PlayerState.NoHealingLimit;
 		NoHealingLimitGameMode.Players.Add(player);
-		Helper.BuffPlayer(player, Helper.CustomBuff4, out var buffEntity, Helper.NO_DURATION);
+		Helper.BuffPlayer(player, Helper.CustomBuff2, out var buffEntity, Helper.NO_DURATION);
 		player.ReceiveMessage($"You have entered {"No Healing Limit".Emphasize()} mode.".White());
 	}
 

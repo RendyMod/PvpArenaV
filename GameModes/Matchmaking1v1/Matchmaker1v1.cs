@@ -148,8 +148,14 @@ public static class MatchmakingQueue
 	{
 		public static void StartMatch(Player p1, Player p2)
 		{
-			Helper.BuffEntity(p1.Character, Prefabs.Buff_Manticore_ImmaterialHomePos, out var buffEntity);
-			Helper.BuffEntity(p2.Character, Prefabs.Buff_Manticore_ImmaterialHomePos, out buffEntity);
+			if (Helper.BuffEntity(p1.Character, Helper.CustomBuff1, out var buffEntity, 3))
+			{
+				Helper.ModifyBuff(buffEntity, BuffModificationTypes.Immaterial | BuffModificationTypes.Invulnerable, true);
+			}
+			if (Helper.BuffEntity(p2.Character, Helper.CustomBuff1, out var buffEntity2, 3))
+			{
+				Helper.ModifyBuff(buffEntity2, BuffModificationTypes.Immaterial | BuffModificationTypes.Invulnerable, true);
+			}
 
 			p1.ReceiveMessage("Found a match!".Success() + " Prepare for teleportation..".White());
 			p2.ReceiveMessage("Found a match!".Success() + " Prepare for teleportation..".White());

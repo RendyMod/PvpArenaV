@@ -29,7 +29,7 @@ public static class DummyHandler
 
 	private static void HandleOnUnitBuffRemoved(Entity unit, Entity buffEntity)
 	{
-		if (buffEntity.Read<PrefabGUID>() == Helper.CustomBuff4 && UnitFactory.HasGameMode(unit, "dummy"))
+		if (buffEntity.Read<PrefabGUID>() == Helper.CustomBuff2 && UnitFactory.HasGameMode(unit, "dummy"))
 		{
 			var health = unit.Read<Health>();
 			var destroyReason = buffEntity.Read<DestroyData>().DestroyReason;
@@ -66,7 +66,7 @@ public static class DummyHandler
 		var dealDamageEvent = eventEntity.Read<DealDamageEvent>();
 		if (UnitFactory.HasGameMode(dealDamageEvent.Target, "dummy"))
 		{
-			if (Helper.TryGetBuff(dealDamageEvent.Target, Helper.CustomBuff4, out var buffEntity))
+			if (Helper.TryGetBuff(dealDamageEvent.Target, Helper.CustomBuff2, out var buffEntity))
 			{
 				var age = buffEntity.Read<Age>();
 				age.Value = 0;
@@ -74,7 +74,7 @@ public static class DummyHandler
 			}
 			else
 			{
-				Helper.BuffEntity(dealDamageEvent.Target, Helper.CustomBuff4, out buffEntity, Dummy.ResetTime);
+				Helper.BuffEntity(dealDamageEvent.Target, Helper.CustomBuff2, out buffEntity, Dummy.ResetTime);
 			}
 		}
 	}

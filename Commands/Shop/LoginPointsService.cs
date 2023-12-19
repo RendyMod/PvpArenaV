@@ -48,7 +48,7 @@ public static class LoginPointsService
 
 	public static void AwardPointsToAllOnlinePlayers(int points)
 	{
-		foreach (var player in PlayerService.OnlinePlayers.Keys)
+		foreach (var player in PlayerService.OnlinePlayers)
 		{
 			AwardPoints(player, points);
 		}

@@ -19,7 +19,7 @@ namespace PvpArena.Services
 		public static readonly Dictionary<Entity, Player> UserCache = new Dictionary<Entity, Player>();
 		public static readonly Dictionary<Entity, Player> CharacterCache = new Dictionary<Entity, Player>();
 		public static readonly Dictionary<ulong, Player> SteamIdCache = new Dictionary<ulong, Player>();
-		public static readonly Dictionary<Player, bool> OnlinePlayers = new Dictionary<Player, bool>();
+		public static readonly HashSet<Player> OnlinePlayers = new();
 		public static Action OnOnlinePlayerAmountChanged;
 
 		public abstract class PlayerData
@@ -27,11 +27,24 @@ namespace PvpArena.Services
 			public abstract ulong SteamID { get; set; }
 		}
 
+		public static void Initialize()
+		{
+			LoadAllPlayers();
+		}
+
+		public static void Dispose()
+		{
+			UserCache.Clear();
+			CharacterCache.Clear();
+			SteamIdCache.Clear();
+			OnlinePlayers.Clear();
+		}
+
 		public static Player GetAnyPlayer()
 		{
 			if (OnlinePlayers.Count > 0)
 			{
-				return OnlinePlayers.Keys.FirstOrDefault();
+				return OnlinePlayers.FirstOrDefault();
 			}
 			else
 			{
@@ -58,10 +71,14 @@ namespace PvpArena.Services
 			{
 				try
 				{
-					var player = GetPlayerFromUser(user); //fill cache
-					if (player.IsOnline)
+					var userData = user.Read<User>();
+					if (userData.LocalCharacter._Entity.Exists() && userData.CharacterName.ToString() != "")
 					{
-						OnlinePlayers.TryAdd(player, true);
+						var player = GetPlayerFromUser(user); //fill cache
+						if (player.IsOnline)
+						{
+							OnlinePlayers.Add(player);
+						}
 					}
 				}
 				catch (Exception e)
@@ -81,13 +98,20 @@ namespace PvpArena.Services
 			}
 			else
 			{
-				player = new Player
+				if (User.Exists())
 				{
-					User = User
-				};
-				UserCache[User] = player;
-				CharacterCache[player.Character] = player;
-				SteamIdCache[player.SteamID] = player;
+					player = new Player
+					{
+						User = User
+					};
+					UserCache[User] = player;
+					CharacterCache[player.Character] = player;
+					SteamIdCache[player.SteamID] = player;
+				}
+				else
+				{
+					throw new Exception("Tried to create a player from a non-existent user");
+				}
 			}
 			return player;
 		}

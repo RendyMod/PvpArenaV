@@ -116,7 +116,7 @@ public static class UnitFactory
 				HashToUnit[hash] = spawnedUnit;
 				StoreMetaDataOnUnit(unit, e, position, player);
 				SetHealth(unit, e);
-				if (Helper.BuffEntity(e, Helper.CustomBuff3, out Entity buffEntity, (float)Helper.NO_DURATION, true))
+				if (Helper.BuffEntity(e, Helper.CustomBuff1, out Entity buffEntity, (float)Helper.NO_DURATION, true))
 				{
 					if (unit.Level != -1 && e.Has<UnitLevel>())
 					{
@@ -208,7 +208,7 @@ public static class UnitFactory
 					aggro.MaxDistanceFromPreCombatPosition = unit.MaxDistanceFromPreCombatPosition;
 					e.Write(aggro);
 				}
-				if (Helper.BuffEntity(e, Helper.CustomBuff3, out Entity buffEntity, (float)Helper.NO_DURATION, true))
+				if (Helper.BuffEntity(e, Helper.CustomBuff1, out Entity buffEntity, (float)Helper.NO_DURATION, true))
 				{
 					if (unit.Level != -1 && e.Has<UnitLevel>())
 					{
@@ -856,7 +856,6 @@ public class ObjectiveHorse : Horse
 		speed = CaptureThePancakeConfig.Config.HorseSpeed;
 		acceleration = 7;
 		rotation = 14;
-		name = $"Pancake #{team}";
 		isImmaterial = true;
 		isInvulnerable = true;
 		isTargetable = false;

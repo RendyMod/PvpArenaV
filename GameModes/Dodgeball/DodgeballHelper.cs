@@ -100,7 +100,7 @@ public static class DodgeballHelper
 
 	public static void SetPlayerAbilities(Player player)
 	{
-		Helper.BuffPlayer(player, Helper.CustomBuff4, out var buffEntity, Helper.NO_DURATION, true);
+		Helper.BuffPlayer(player, Helper.CustomBuff2, out var buffEntity, Helper.NO_DURATION, true);
 		dodgeballAbilityBar.ApplyChangesHard(buffEntity);
 	}
 

@@ -20,7 +20,7 @@ public class NoHealingLimitGameMode : DefaultGameMode
 	{
 		RemoveConsumables = true,
 		RemoveShapeshifts = true,
-		BuffsToIgnore = new HashSet<PrefabGUID> { Helper.CustomBuff4 }
+		BuffsToIgnore = new HashSet<PrefabGUID> { Helper.CustomBuff2 }
 	};
 
 	private static List<ModifyUnitStatBuff_DOTS> NoHealingLimitMods = new List<ModifyUnitStatBuff_DOTS>
@@ -84,7 +84,7 @@ public class NoHealingLimitGameMode : DefaultGameMode
 
 		base.HandleOnPlayerBuffed(player, buffEntity);
 
-		if (buffEntity.Read<PrefabGUID>() == Helper.CustomBuff4)
+		if (buffEntity.Read<PrefabGUID>() == Helper.CustomBuff2)
 		{
 			var buffer = buffEntity.AddBuffer<ModifyUnitStatBuff_DOTS>();
 			buffer.Clear();

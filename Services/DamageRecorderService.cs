@@ -73,31 +73,18 @@ public static class DamageRecorderService
 				float percentage = (float)Math.Round((groupTotalDamage / totalDamage) * 100);
 
 				// Get the group name and color
-				string groupName = null;
 				Color32 groupColor = ExtendedColor.ServerColor; // Default color
-				foreach (var prefabGUID in group.Value.Keys)
-				{
-					if (groupName == null && AbilityData.AbilityPrefabToName.TryGetValue(prefabGUID, out var name))
-					{
-						groupName = name;
-					}
-					else
-					{
-						groupName = prefabGUID.LookupNameString();
-					}
 
-					if (AbilityData.AbilityPrefabToColor.TryGetValue(prefabGUID, out var color))
-					{
-						groupColor = color; // Use the color associated with this ability
-						break;
-					}
+				if (AbilityData.AbilityNameToColor.TryGetValue(group.Key, out var color))
+				{
+					groupColor = color;
 				}
 
 				float roundedGroupTotalDamage = (float)Math.Round(groupTotalDamage);
 
 				if (roundedGroupTotalDamage > 0)
 				{
-					player.ReceiveMessage($"{groupName.Colorify(groupColor)} - {roundedGroupTotalDamage} ({percentage}%)".White());
+					player.ReceiveMessage($"{group.Key.Colorify(groupColor)} - {roundedGroupTotalDamage} ({percentage}%)".White());
 				}
 			}
 

@@ -42,14 +42,14 @@ public class DodgeballGameMode : BaseGameMode
     {
         RemoveConsumables = true,
         RemoveShapeshifts = true,
-		BuffsToIgnore = new HashSet<PrefabGUID> { Prefabs.AB_Shapeshift_Mist_Buff, Prefabs.Buff_General_HideCorpse, Helper.CustomBuff4}
+		BuffsToIgnore = new HashSet<PrefabGUID> { Prefabs.AB_Shapeshift_Mist_Buff, Prefabs.Buff_General_HideCorpse, Helper.CustomBuff2}
     };
 
 	public static Helper.ResetOptions ResetOptionsRemoveGhost { get; set; } = new Helper.ResetOptions
 	{
 		RemoveConsumables = true,
 		RemoveShapeshifts = true,
-		BuffsToIgnore = new HashSet<PrefabGUID> { Helper.CustomBuff4 }
+		BuffsToIgnore = new HashSet<PrefabGUID> { Helper.CustomBuff2 }
 	};
 
 	public DodgeballGameMode()

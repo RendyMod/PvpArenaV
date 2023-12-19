@@ -138,7 +138,7 @@ public static class BulletHellManager
 		player.Reset(BaseGameMode.ResetOptions);
 		Helper.SetDefaultBlood(player, BulletHellConfig.Config.DefaultBlood.ToLower());
 		player.Teleport(arena.FightZone.Center);
-		Helper.BuffPlayer(player, Helper.CustomBuff, out var buffEntity, Helper.NO_DURATION);
+		Helper.BuffPlayer(player, Helper.CustomBuff1, out var buffEntity, Helper.NO_DURATION);
 		Helper.ModifyBuff(buffEntity,
 			BuffModificationTypes.AbilityCastImpair | BuffModificationTypes.TargetSpellImpaired |
 			BuffModificationTypes.Immaterial, true);

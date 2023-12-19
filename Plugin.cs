@@ -70,8 +70,12 @@ public class Plugin : BasePlugin, IRunOnInitialized
 			{
 				try
 				{
-					var player = PlayerService.GetPlayerFromUser(entity);
-					player.Teleport(new float3(0, 0, 0));
+					var userData = entity.Read<User>();
+					if (userData.LocalCharacter._Entity.Exists())
+					{
+						var player = PlayerService.GetPlayerFromUser(entity);
+						player.Teleport(new float3(0, 0, 0));
+					}
 				}
 				catch (Exception e)
 				{
