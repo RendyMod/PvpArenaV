@@ -49,6 +49,11 @@ namespace PvpArena
 					{
 						GarlicResistance_IncreasedExposureFactorPerRating = UnitFactory.StringToFloatHash(category)
 					});
+					entity.Add<NameableInteractable>();
+					entity.Write(new NameableInteractable
+					{
+						Name = category
+					});
 				}
 
 				if (Rotations.RotationModes.ContainsKey(rotationMode)) 
