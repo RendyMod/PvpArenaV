@@ -32,8 +32,8 @@ public static class ShapeshiftSystemPatch
 					{
 						var fromCharacter = entity.Read<FromCharacter>();
 
-						var Player = PlayerService.GetPlayerFromUser(fromCharacter.User);
-						GameEvents.RaisePlayerShapeshifted(Player, entity);
+						var player = PlayerService.GetPlayerFromUser(fromCharacter.User);
+						GameEvents.RaisePlayerShapeshifted(player, entity);
 					}
 				}
 				catch (Exception e)

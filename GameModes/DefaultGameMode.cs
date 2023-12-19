@@ -158,6 +158,13 @@ public class DefaultGameMode : BaseGameMode
 		if (Helper.BuffPlayer(player, Prefabs.Witch_PigTransformation_Buff, out var buffEntity, 3))
 		{
 			Helper.ModifyBuff(buffEntity, BuffModifiers.PigModifications, true);
+
+			var buffer = VWorld.Server.EntityManager.AddBuffer<ModifyUnitStatBuff_DOTS>(buffEntity);
+			buffer.Clear();
+
+			buffer.Add(BuffModifiers.ShapeshiftFastMoveSpeed);
+			var buffer2 = buffEntity.ReadBuffer<CreateGameplayEventsOnDestroy>();
+			buffer2.Clear();
 		}
 
 		if (killer.Has<PlayerCharacter>())
@@ -261,12 +268,6 @@ public class DefaultGameMode : BaseGameMode
 		if (player.CurrentState != this.PlayerGameModeType) return;
 
 		var prefabGuid = buffEntity.Read<PrefabGUID>();
-		if (prefabGuid == Prefabs.Witch_PigTransformation_Buff)
-		{
-			var buffer = VWorld.Server.EntityManager.AddBuffer<ModifyUnitStatBuff_DOTS>(buffEntity);
-			buffer.Clear();
-			buffer.Add(BuffModifiers.ShapeshiftFastMoveSpeed);
-		}
 		if (ShapeshiftsToModify.Contains(prefabGuid))
 		{
 			var buffer = buffEntity.ReadBuffer<ModifyUnitStatBuff_DOTS>();
@@ -320,7 +321,10 @@ public class DefaultGameMode : BaseGameMode
 
 		var purchaseEvent = eventEntity.Read<TraderPurchaseEvent>();
 		Entity trader = Core.networkIdSystem._NetworkIdToEntityMap[purchaseEvent.Trader];
-		
+		if (UnitFactory.HasGameMode(trader, "moba")) //don't let regular players buy stuff from the moba traders, or they will waste their vpoints
+		{
+			eventEntity.Destroy();
+		};
 		var costBuffer = trader.ReadBuffer<TradeCost>();
 		var cost = -1 * (costBuffer[purchaseEvent.ItemIndex].Amount);
 		if (cost > 0)

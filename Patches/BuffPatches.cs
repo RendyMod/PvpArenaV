@@ -59,24 +59,6 @@ public static class BuffDebugSystemPatch
 					}
 					else
 					{
-						if (prefabGuid == Helper.CustomBuff4)
-						{
-							Helper.ApplyStatModifier(entity, new ModifyUnitStatBuff_DOTS
-							{
-								Id = ModificationIdFactory.NewId(),
-								ModificationType = ModificationType.Set,
-								StatType = UnitStatType.AttackSpeed,
-								Value = 5
-							}, true);
-							Helper.ApplyStatModifier(entity, new ModifyUnitStatBuff_DOTS
-							{
-								Id = ModificationIdFactory.NewId(),
-								ModificationType = ModificationType.Set,
-								StatType = UnitStatType.CooldownModifier,
-								Value = 0
-							}, false);
-						}
-
 						GameEvents.RaiseUnitBuffed(buffTarget, entity);
 					}
 				}

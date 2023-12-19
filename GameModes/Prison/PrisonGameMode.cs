@@ -22,7 +22,7 @@ using AsmResolver;
 
 namespace PvpArena.GameModes.Prison;
 
-public class PrisonGameMode : BaseGameMode
+public class PrisonGameMode : DefaultGameMode
 {
 	public override Player.PlayerState PlayerGameModeType => Player.PlayerState.Imprisoned;
 	public override string UnitGameModeType => "prison";
@@ -35,7 +35,7 @@ public class PrisonGameMode : BaseGameMode
 
 	public static List<Timer> Timers = new List<Timer>();
 
-	static HashSet<string> AllowedCommands = new HashSet<string>
+	static new HashSet<string> AllowedCommands = new HashSet<string>
 	{
 		"ping",
 		"help",
@@ -44,34 +44,19 @@ public class PrisonGameMode : BaseGameMode
 		"points",
 		"lb ranked",
 		"bp",
-		"recount"
+		"recount",
+		"prisontime",
 	};
 
 	public override void Initialize()
 	{
-		GameEvents.OnPlayerDowned += HandleOnPlayerDowned;
-		GameEvents.OnPlayerDeath += HandleOnPlayerDeath;
-		GameEvents.OnPlayerShapeshift += HandleOnShapeshift;
-		GameEvents.OnPlayerStartedCasting += HandleOnPlayerStartedCasting;
+        base.Initialize();
 		GameEvents.OnPlayerChatMessage += HandleOnPlayerChatMessage;
-		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
-		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
-		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
-		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
-		GameEvents.OnPlayerPlacedStructure += HandleOnPlayerPlacedStructure;
 	}
 	public override void Dispose()
 	{
-		GameEvents.OnPlayerDowned -= HandleOnPlayerDowned;
-		GameEvents.OnPlayerDeath -= HandleOnPlayerDeath;
-		GameEvents.OnPlayerShapeshift -= HandleOnShapeshift;
-		GameEvents.OnPlayerStartedCasting -= HandleOnPlayerStartedCasting;
+        base.Dispose();
 		GameEvents.OnPlayerChatMessage -= HandleOnPlayerChatMessage;
-		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
-		GameEvents.OnPlayerDamageDealt -= HandleOnPlayerDamageDealt;
-		GameEvents.OnPlayerDisconnected -= HandleOnPlayerDisconnected;
-		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
-		GameEvents.OnPlayerPlacedStructure -= HandleOnPlayerPlacedStructure;
 
 		foreach (var timer in Timers)
 		{
@@ -83,39 +68,13 @@ public class PrisonGameMode : BaseGameMode
 		Timers.Clear();
 	}
 
-	public override void HandleOnPlayerDowned(Player player, Entity killer)
-	{
-		if (player.CurrentState != PlayerGameModeType) return;
-
-		player.Reset(ResetOptions);
-		var timer = Helper.MakeGhostlySpectator(player);
-		Timers.Add(timer);
-		if (killer.Has<PlayerCharacter>())
-		{
-			var KillerPlayer = PlayerService.GetPlayerFromCharacter(killer);
-
-			if (player.ConfigOptions.SubscribeToKillFeed)
-			{
-				player.ReceiveMessage($"You were killed by {KillerPlayer.Name.Error()}.".White());
-			}
-			if (KillerPlayer.ConfigOptions.SubscribeToKillFeed)
-			{
-				KillerPlayer.ReceiveMessage($"You killed {player.Name.Success()}!".White());
-			}
-		}
-	}
-
 	public override void HandleOnShapeshift(Player player, Entity eventEntity)
 	{
 		if (player.CurrentState != PlayerGameModeType) return;
 
 		var enterShapeshiftEvent = eventEntity.Read<EnterShapeshiftEvent>();
-		if (enterShapeshiftEvent.Shapeshift == Prefabs.AB_Shapeshift_BloodMend_Group)
-		{
-			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
-			player.Reset(ResetOptions);
-		}
-		else if (enterShapeshiftEvent.Shapeshift == Prefabs.AB_Shapeshift_ShareBlood_ExposeVein_Group)
+		
+		if (enterShapeshiftEvent.Shapeshift == Prefabs.AB_Shapeshift_ShareBlood_ExposeVein_Group)
 		{
 			VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 			Helper.ToggleBloodOnPlayer(player);
@@ -132,16 +91,13 @@ public class PrisonGameMode : BaseGameMode
 		}
 	}
 
-	public void HandleOnPlayerStartedCasting(Player player, Entity eventEntity)
-	{
-		if (player.CurrentState != PlayerGameModeType) return;
-
-	}
-
 	public override void HandleOnPlayerConnected(Player player)
 	{
 		if (!player.ImprisonInfo.IsImprisoned()) return;
 
+		var endTime = player.ImprisonInfo.GetImprisonExpirationDate();
+		player.ReceiveMessage(($"Your jail time will " + (endTime == null ? "never end. Open a ticket." : "end at " + endTime + "." )).Error());
+		
 		player.CurrentState = Player.PlayerState.Imprisoned;
 		player.Teleport(PrisonConfig.Config.CellCoordinateList[player.ImprisonInfo.PrisonCellNumber].ToFloat3());
 	}
@@ -153,12 +109,57 @@ public class PrisonGameMode : BaseGameMode
 		player.Teleport(PrisonConfig.Config.CellCoordinateList[player.ImprisonInfo.PrisonCellNumber].ToFloat3());
 	}
 
+	
+	public static BuffModificationTypes PrisonDeathModifications = BuffModificationTypes.Invulnerable | BuffModificationTypes.Immaterial | BuffModificationTypes.DisableDynamicCollision | BuffModificationTypes.AbilityCastImpair | BuffModificationTypes.MovementImpair | BuffModificationTypes.RotationImpair;
+	public override void HandleOnPlayerDowned(Player player, Entity killer)
+	{
+		if (player.CurrentState != this.PlayerGameModeType) return;
+		
+		if (player.Clan.Exists()) //if they might be in a teamfight then we don't want to remove summons just because they died
+		{
+			player.Reset(TeamfightResetOptions);
+		}
+		else
+		{
+			player.Reset(ResetOptions);
+		}
+		
+		if (Helper.BuffPlayer(player, Prefabs.VampireDeathBuff, out var buffEntity, 2.2f))
+		{
+			Helper.ModifyBuff(buffEntity, PrisonDeathModifications, true);
+		}
+		
+		System.Action teleportBackToCellAction = () =>
+		{
+			Helper.RemoveBuff(player, Prefabs.VampireDeathBuff);
+			player.Teleport(PrisonConfig.Config.CellCoordinateList[player.ImprisonInfo.PrisonCellNumber].ToFloat3());
+		};
+		
+
+		if (killer.Has<PlayerCharacter>())
+		{
+			var KillerPlayer = PlayerService.GetPlayerFromCharacter(killer);
+
+			if (player.ConfigOptions.SubscribeToKillFeed)
+			{
+				player.ReceiveMessage($"You were killed by {KillerPlayer.Name.Error()}.".White());
+			}
+			if (KillerPlayer.ConfigOptions.SubscribeToKillFeed)
+			{
+				KillerPlayer.ReceiveMessage($"You killed {player.Name.Success()}!".White());
+			}
+		}
+		
+		var timer = ActionScheduler.RunActionOnceAfterDelay(teleportBackToCellAction,  2.2f);
+		Timers.Add(timer);
+	}
+
 	public void HandleOnPlayerChatMessage(Player player, Entity eventEntity)
 	{
 		if (player.CurrentState != PlayerGameModeType) return;
 
 		var chatEvent = eventEntity.Read<ChatMessageEvent>();
-		if (chatEvent.MessageType == ChatMessageType.Global)
+		if (chatEvent.MessageType == ChatMessageType.Global || chatEvent.MessageType == ChatMessageType.Whisper)
 		{
 			eventEntity.Destroy();
 			player.ReceiveMessage("The prison walls are too thick for anyone to hear you.".Error());

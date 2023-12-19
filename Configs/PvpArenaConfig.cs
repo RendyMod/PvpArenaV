@@ -68,6 +68,7 @@ public static class PvpArenaConfig
 		public string DefaultArenaBlood { get; set; } = "Warrior"; // Default value
 		public bool PointSystemEnabled { get; set; } = false;
 		public int PointsPerIntervalOnline { get; set; } = 1; // Default value
+		public int PointsPerDailyLogin { get; set; } = 100; // Default value
 		public int IntervalDurationInMinutes { get; set; } = 15; // Default value
 		public DatabaseConfig MainDatabase { get; set; } = new DatabaseConfig();
 		public DatabaseConfig ServerDatabase { get; set; } = new DatabaseConfig();

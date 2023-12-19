@@ -24,7 +24,7 @@ public class PlayerBulletHellData : PlayerData
 
 	}
 }
-
+	
 public class PlayerMatchmaking1v1Data : PlayerData
 {	
 	public override ulong SteamID { get; set; }	
@@ -67,6 +67,8 @@ public class PlayerPoints : PlayerData
 	public int TotalPoints_BR { get; set; }
 	public int TotalPoints_TEST { get; set; }
 	public Timer OnlineTimer { get; set; }
+	public DateTime? LastLoginDate { get; set; } = null;
+
 	public PlayerPoints() { }
 
 	public void AddPointsToAllRegions(int points)

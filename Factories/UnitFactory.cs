@@ -370,6 +370,11 @@ public static class UnitFactory
 
 	private static void StoreMetaDataOnUnit(Unit unit, Entity e, float3 position, Player player = null)
 	{
+		e.Add<NameableInteractable>();
+		e.Write(new NameableInteractable
+		{
+			Name = unit.GameMode
+		});
 		e.Add<ResistanceData>();
 		var resistanceData = e.Read<ResistanceData>();
 		resistanceData.FireResistance_DamageReductionPerRating = unit.Team;
@@ -459,12 +464,36 @@ public static class UnitFactory
 		e.Write(health);
 	}
 
-	public static bool HasGameMode(Entity entity, string category)
+	public static string GetGameMode(Entity entity)
+	{
+		if (entity.Has<CanFly>() && entity.Has<NameableInteractable>())
+		{
+			var nameableInteractable = entity.Read<NameableInteractable>();
+			return nameableInteractable.Name.ToString();
+		}
+		return "";
+	}
+
+	//this is deprecated but may have a use in the future if we need to spawn in things but can't use the nameable interactable to store their game mode
+	public static bool HasGameModeOld(Entity entity, string category)
 	{
 		if (entity.Has<CanFly>() && entity.Has<ResistanceData>())
-		{
+		{ 
 			var resistances = entity.Read<ResistanceData>();
 			if (StringToFloatHash(category) == resistances.GarlicResistance_IncreasedExposureFactorPerRating)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public static bool HasGameMode(Entity entity, string category)
+	{
+		if (entity.Has<CanFly>() && entity.Has<NameableInteractable>())
+		{
+			var nameableInteractable = entity.Read<NameableInteractable>();
+			if (nameableInteractable.Name.ToString() == category)
 			{
 				return true;
 			}

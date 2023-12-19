@@ -106,6 +106,8 @@ public static class OnUserConnectedPatch
 						}
 
 						SendWelcomeMessageToPlayer(player);
+						
+						LoginPointsService.TryGrantDailyLoginPoints(player, PvpArenaConfig.Config.PointsPerDailyLogin);
 					}
 				}
 			}
@@ -122,9 +124,7 @@ public static class OnUserConnectedPatch
 		player.ReceiveMessage(
 			($"Welcome to " + "V Arena".Emphasize() + " powered by " + "Altab".Emphasize() +
 			 ".be".Colorify(ExtendedColor.ClanNameColor)).Colorify(ExtendedColor.ServerColor));
-		player.ReceiveMessage(("Join us on Discord" + ": " +
-		                       $"{PvpArenaConfig.Config.DiscordLink}".Colorify(ExtendedColor.LightServerColor))
-			.Emphasize());
+		//player.ReceiveMessage(("Join us on Discord" + ": " + $"{PvpArenaConfig.Config.DiscordLink}".Colorify(ExtendedColor.LightServerColor)).Emphasize());
 		player.ReceiveMessage(("Jewels:".Emphasize() + " Use " +
 		                       ".j spellName ?".Colorify(ExtendedColor.LightServerColor) +
 		                       " to see the " + "mods".Emphasize()).White());

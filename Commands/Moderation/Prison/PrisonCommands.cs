@@ -47,9 +47,6 @@ internal class PrisonCommands
 				$"{imprisonedPlayer.Name.Colorify(ExtendedColor.ClanNameColor)} has been imprisoned {durationMessage}."
 					.Error());
 			imprisonedPlayer.ReceiveMessage($"You have been imprisoned {durationMessage}.".Error());
-			sender.ReceiveMessage(
-				$"{imprisonedPlayer.Name.Colorify(ExtendedColor.ClanNameColor)} has been imprisoned {durationMessage}."
-					.White());
 
 			DiscordBot.SendEmbedAsync(DiscordBotConfig.Config.JailChannel,
 				EmbedPrisonAnnouncement(imprisonedPlayer, true, numberOfDays, reason));
@@ -66,8 +63,6 @@ internal class PrisonCommands
 			Helper.SendSystemMessageToAllClients(
 				$"{imprisonedPlayer.Name.Colorify(ExtendedColor.ClanNameColor)} has been unimprisoned.".Success());
 			imprisonedPlayer.ReceiveMessage($"You have been set free!".Success());
-			sender.ReceiveMessage(
-				$"{imprisonedPlayer.Name.Colorify(ExtendedColor.ClanNameColor)} has been unimprisoned.".White());
 
 			DiscordBot.SendEmbedAsync(DiscordBotConfig.Config.JailChannel,
 				EmbedPrisonAnnouncement(imprisonedPlayer, false));
@@ -77,6 +72,20 @@ internal class PrisonCommands
 			sender.ReceiveMessage(
 				$"{imprisonedPlayer.Name.Colorify(ExtendedColor.ClanNameColor)} can't be freed because they are not in prison."
 					.Error());
+		}
+	}
+	
+	[Command("prisontime", description: "Check Duration of prison time", usage: ".prisontime", adminOnly: false)]
+	public void CheckPrisonTimerCommand (Player sender)
+	{
+		if (sender.IsImprisoned())
+		{
+			var endTime = sender.ImprisonInfo.GetImprisonExpirationDate();
+			sender.ReceiveMessage(($"Your jail time will " + (endTime == null ? "never end. Open a ticket." : "end at " + endTime + "." )).Error());
+		}
+		else
+		{
+			sender.ReceiveMessage($"You are not in prison!".Error());
 		}
 	}
 
