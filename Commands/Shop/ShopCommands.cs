@@ -27,7 +27,7 @@ internal static class ShopCommands
 	{
 		Player player = foundPlayer ?? sender;
 		
-		player.PlayerPointsData.TotalPoints += points;
+		player.PlayerPointsData.AddPointsToAllRegions(points);
 		Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { player.PlayerPointsData });
 		sender.ReceiveMessage($"Added {points.ToString().Emphasize()} {"VPoint(s)".Warning()} to {player.Name.Colorify(ExtendedColor.ClanNameColor)}".Success());
 		sender.ReceiveMessage(($"{player.Name.Colorify(ExtendedColor.ClanNameColor)} {"VPoint(s)".Warning()} are now {player.PlayerPointsData.TotalPoints.ToString().Emphasize()}.").White());
@@ -41,7 +41,7 @@ internal static class ShopCommands
 	{
 		Player player = foundPlayer ?? sender;
 
-		player.PlayerPointsData.TotalPoints = Math.Max(player.PlayerPointsData.TotalPoints - points, 0);
+		player.PlayerPointsData.RemovePointsForAllRegions(Math.Max(player.PlayerPointsData.TotalPoints - points, 0));
 		Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { player.PlayerPointsData });
 		sender.ReceiveMessage($"Removed {points.ToString().Emphasize()} {"VPoint(s)".Warning()} to {player.Name.Colorify(ExtendedColor.ClanNameColor)} ".Success());
 		sender.ReceiveMessage(($"{player.Name.Colorify(ExtendedColor.ClanNameColor)} {"VPoint(s)".Warning()} are now {player.PlayerPointsData.TotalPoints.ToString().Emphasize()}.").White());
@@ -55,7 +55,7 @@ internal static class ShopCommands
 	{
 		Player player = foundPlayer ?? sender;
 
-		player.PlayerPointsData.TotalPoints = Math.Max(points, 0);
+		player.PlayerPointsData.SetPointsForAllRegions(Math.Max(points, 0));
 		Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { player.PlayerPointsData });
 		sender.ReceiveMessage($"Set {player.Name.Colorify(ExtendedColor.ClanNameColor)}'s {"VPoint(s)".Warning()} to {points.ToString().Emphasize()}".Success());
 		sender.ReceiveMessage(($"{player.Name.Colorify(ExtendedColor.ClanNameColor)} {"VPoint(s)".Warning()} are now {player.PlayerPointsData.TotalPoints.ToString().Emphasize()}.").White());
