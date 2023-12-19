@@ -68,7 +68,7 @@ public class PlayerPointsStorage : MySqlDataStorage<PlayerPoints>
 						{
 							SteamID = reader.GetUInt64("SteamID"),
 							TotalPoints = reader.GetInt32("TotalPoints"),
-							LastLoginDate = reader.GetDateTime("LastLoginDate"),
+							LastLoginDate = (reader.IsDBNull(reader.GetOrdinal("LastLoginDate"))? null : reader.GetDateTime("LastLoginDate")),
 							TotalPoints_EU = reader.GetInt32("TotalPoints_EU"),
 							TotalPoints_NA = reader.GetInt32("TotalPoints_NA"),
 							TotalPoints_CN = reader.GetInt32("TotalPoints_CN"),
