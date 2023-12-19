@@ -39,7 +39,7 @@ public static class LoginPointsService
 		if (player.PlayerPointsData.LastLoginDate == null || currentTime.Day != player.PlayerPointsData.LastLoginDate.Value.Day)
 		{
 			player.PlayerPointsData.LastLoginDate = DateTime.UtcNow;
-			player.PlayerPointsData.TotalPoints += points;
+			player.PlayerPointsData.AddPointsToAllRegions(points);
 			Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { player.PlayerPointsData });
 			player.ReceiveMessage($"You were awarded {points.ToString().Emphasize()} {"VPoints".Warning()} for your daily login.".White());
 		}
