@@ -148,7 +148,17 @@ public static class Core
 		query = VWorld.Server.EntityManager.CreateEntityQuery(queryDesc);
 		Listener.AddListener(query, new TargetAoeListener());
 
-
+		//this is a listener for debugging to find which events get triggered when you do things in-game
+/*		queryDesc = new EntityQueryDesc
+		{
+			All = new ComponentType[]
+			{
+						new ComponentType(Il2CppType.Of<FromCharacter>(), ComponentType.AccessMode.ReadWrite)
+			},
+			Options = options
+		};
+		query = VWorld.Server.EntityManager.CreateEntityQuery(queryDesc);
+		Listener.AddListener(query, new FromCharacterListener());*/
 
 		defaultGameMode = new DefaultGameMode();
 		defaultGameMode.Initialize();

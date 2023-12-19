@@ -28,6 +28,7 @@ using ProjectM.Gameplay.Systems;
 using Epic.OnlineServices.P2P;
 using ProjectM.Shared;
 using System.Linq;
+using Epic.OnlineServices.Sessions;
 
 namespace PvpArena.Commands.Debug;
 internal class TestCommands
@@ -36,47 +37,9 @@ internal class TestCommands
 	[Command("test", description: "Used for debugging", adminOnly: true)]
 	public void TestCommand(Player sender)
 	{
-		sender.ReceiveMessage($"global {sender.PlayerPointsData.TotalPoints}");
-		sender.ReceiveMessage($"eu {sender.PlayerPointsData.TotalPoints_EU}");
-		sender.ReceiveMessage($"na {sender.PlayerPointsData.TotalPoints_NA}");
-		sender.ReceiveMessage($"cn {sender.PlayerPointsData.TotalPoints_CN}");
-		sender.ReceiveMessage($"br {sender.PlayerPointsData.TotalPoints_BR}");
-		sender.ReceiveMessage($"test {sender.PlayerPointsData.TotalPoints_TEST}");
-
-		if (Helper.BuffPlayer(sender, Helper.CustomBuff3, out var buffEntity, Helper.NO_DURATION))
+		foreach (var player in PlayerService.OnlinePlayers.Keys)
 		{
-			Helper.ApplyStatModifier(buffEntity, new ModifyUnitStatBuff_DOTS
-			{
-				StatType = UnitStatType.AttackSpeed,
-				Priority = 100,
-				Id = ModificationIdFactory.NewId(),
-				ModificationType = ModificationType.Set,
-				Value = 2
-			}, false);
-			Helper.ApplyStatModifier(buffEntity, new ModifyUnitStatBuff_DOTS
-			{
-				StatType = UnitStatType.PhysicalLifeLeech,
-				Priority = 100,
-				Id = ModificationIdFactory.NewId(),
-				ModificationType = ModificationType.Set,
-				Value = 1f
-			}, false);
-			Helper.ApplyStatModifier(buffEntity, new ModifyUnitStatBuff_DOTS
-			{
-				StatType = UnitStatType.PrimaryLifeLeech,
-				Priority = 100,
-				Id = ModificationIdFactory.NewId(),
-				ModificationType = ModificationType.Set,
-				Value = 1f
-			}, false);
-			Helper.ApplyStatModifier(buffEntity, new ModifyUnitStatBuff_DOTS
-			{
-				StatType = UnitStatType.SpellLifeLeech,
-				Priority = 100,
-				Id = ModificationIdFactory.NewId(),
-				ModificationType = ModificationType.Set,
-				Value = 1f
-			}, false);
+			Plugin.PluginLog.LogInfo(player.Name);
 		}
 		
 		sender.ReceiveMessage("done");

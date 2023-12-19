@@ -16,6 +16,7 @@ using PvpArena.Helpers;
 using ProjectM.Scripting;
 using PvpArena.Models;
 using static UnityEngine.UI.GridLayoutGroup;
+using ProjectM.Network;
 
 namespace PvpArena.Patches;
 
@@ -144,6 +145,32 @@ public class TargetAoeListener : EntityQueryListener
 						GameEvents.RaiseUnitAoeCreated(owner, entity);
 					}
 				}
+			}
+		}
+	}
+
+	public void OnNewMatchRemoved(Entity entity)
+	{
+
+	}
+
+	public void OnUpdate(Entity entity)
+	{
+
+	}
+}
+
+public class FromCharacterListener : EntityQueryListener
+{
+	public void OnNewMatchFound(Entity entity)
+	{
+		if (entity.Exists())
+		{
+			var user = entity.Read<FromCharacter>().User;
+			if (user.Exists())
+			{
+				var player = PlayerService.GetPlayerFromUser(user);
+				entity.LogComponentTypes();
 			}
 		}
 	}
