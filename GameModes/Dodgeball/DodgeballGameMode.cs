@@ -74,6 +74,7 @@ public class DodgeballGameMode : BaseGameMode
 		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
 		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
 		GameEvents.OnPlayerPlacedStructure += HandleOnPlayerPlacedStructure;
+		GameEvents.OnUnitHitCastColliderUpdate += HandleOnUnitHitCastColliderUpdate;
 	}
 
 	public void Initialize(List<Player> team1Players, List<Player> team2Players)
@@ -265,33 +266,18 @@ public class DodgeballGameMode : BaseGameMode
 		}
 	}
 
-/*	private bool IsOutOfBounds(Player player)
+	public void HandleOnUnitHitCastColliderUpdate(Entity unit, Entity projectile)
 	{
-		var enemyTeam = 1;
-		if (player.MatchmakingTeam == 1)
-		{
-			enemyTeam = 2;
-		}
-		return FightZones[enemyTeam].Contains(player) && !IsGhost[player];
-	}*/
+        if (!UnitFactory.HasGameMode(unit, UnitGameModeType)) return;
 
-/*	public void HandleOnGameFrameUpdate()
-	{
-		if (HasStarted)
-		{
-			foreach (var team in Teams.Values)
-			{
-				foreach (var player in team)
-				{
-					if (IsOutOfBounds(player))
-					{
-						player.ReceiveMessage("You have gone out of bounds!".Error());
-						EliminatePlayer(player);
-					}
-				}
-			}
-		}
-	}*/
+		var buffer = projectile.ReadBuffer<HitColliderCast>();
+        for (var i = 0; i < buffer.Length; i++)
+        {
+            var hitColliderCast = buffer[i];
+            hitColliderCast.IgnoreImmaterial = true;
+            buffer[i] = hitColliderCast;
+        }
+	}
 
 	public static new HashSet<string> GetAllowedCommands()
 	{
@@ -306,15 +292,6 @@ public class DodgeballGameMode : BaseGameMode
 
 	private static void EliminatePlayer(Player player)
 	{
-		/*if (player.MatchmakingTeam == 1)
-		{
-			player.Teleport(DodgeballConfig.Config.Team1StartPosition.ToFloat3());
-		}
-		else
-		{
-			player.Teleport(DodgeballConfig.Config.Team2StartPosition.ToFloat3());
-		}*/
-
 		bool playerAlreadyGhost = IsGhost[player];
 		IsGhost[player] = true;
 		player.Reset(ResetOptions);

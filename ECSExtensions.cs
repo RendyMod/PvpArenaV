@@ -121,9 +121,25 @@ public static class ECSExtensions
 		Plugin.PluginLog.LogInfo($"===");
     }
 
+	public static PrefabGUID GetPrefabGUID(this Entity entity)
+	{
+		if (entity.Exists() && entity.Has<PrefabGUID>())
+		{
+			return entity.Read<PrefabGUID>();
+		}
+		return PrefabGUID.Empty;
+	}
+
 	public static void LogPrefabName(this Entity entity)
 	{
-		Plugin.PluginLog.LogInfo(entity.Read<PrefabGUID>().LookupName());
+		if (entity.Has<PrefabGUID>())
+		{
+			Plugin.PluginLog.LogInfo(entity.Read<PrefabGUID>().LookupName());
+		}
+		else
+		{
+			Plugin.PluginLog.LogInfo("GUID Not Found");
+		}
 	}
 
 	public static string LookupName(this Entity entity)

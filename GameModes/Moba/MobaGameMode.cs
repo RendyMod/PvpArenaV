@@ -321,7 +321,7 @@ public class MobaGameMode : BaseGameMode
         GameEvents.OnPlayerStartedCasting += HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerDamageReported += HandleOnPlayerDamageReported;
 		GameEvents.OnUnitProjectileCreated += HandleOnUnitProjectileCreated;
-		GameEvents.OnUnitProjectileUpdate += HandleOnUnitProjectileUpdate;
+		GameEvents.OnUnitHitCastColliderUpdate += HandleOnUnitProjectileUpdate;
 		GameEvents.OnAggroPostUpdate += HandleOnAggroPostUpdate;
 		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
 		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
@@ -443,7 +443,7 @@ public class MobaGameMode : BaseGameMode
         GameEvents.OnPlayerStartedCasting -= HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerDamageReported -= HandleOnPlayerDamageReported;
 		GameEvents.OnUnitProjectileCreated -= HandleOnUnitProjectileCreated;
-		GameEvents.OnUnitProjectileUpdate -= HandleOnUnitProjectileUpdate;
+		GameEvents.OnUnitHitCastColliderUpdate -= HandleOnUnitProjectileUpdate;
 		GameEvents.OnAggroPostUpdate -= HandleOnAggroPostUpdate;
 		GameEvents.OnUnitDamageDealt -= HandleOnUnitDamageDealt;
 		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
@@ -1139,6 +1139,7 @@ public class MobaGameMode : BaseGameMode
 	public void HandleOnUnitProjectileUpdate(Entity unit, Entity projectile)
 	{
 		if (!UnitFactory.HasGameMode(unit, "moba")) return;
+		if (!projectile.Has<Projectile>()) return;
 
 		if (projectile.Has<SpellTarget>())
 		{

@@ -17,6 +17,7 @@ using ProjectM.Scripting;
 using PvpArena.Models;
 using static UnityEngine.UI.GridLayoutGroup;
 using ProjectM.Network;
+using ProjectM.CastleBuilding;
 
 namespace PvpArena.Patches;
 
@@ -32,6 +33,14 @@ public static class ProjectileSystem_Spawn_ServerPatch
 			{
 				var prefabGuid = entity.Read<PrefabGUID>();
 				var owner = entity.Read<EntityOwner>().Owner;
+				if (!owner.Exists())
+				{
+					owner = entity.Read<EntityCreator>().Creator._Entity;
+					if (!owner.Exists())
+					{
+						owner = entity;
+					}
+				}
 				if (owner.Exists())
 				{
 					if (owner.Has<PlayerCharacter>())
@@ -65,6 +74,14 @@ public static class HitCastColliderSystem_OnSpawnPatch
 			if (entity.Exists())
 			{
 				var owner = entity.Read<EntityOwner>().Owner;
+				if (!owner.Exists())
+				{
+					owner = entity.Read<EntityCreator>().Creator._Entity;
+					if (!owner.Exists())
+					{
+						owner = entity;
+					}
+				}
 				if (owner.Exists())
 				{
 					if (owner.Has<PlayerCharacter>())
@@ -96,20 +113,24 @@ public static class HitCastColliderSystem_OnUpdatePatch
 				if (entity.Exists())
 				{
 					var owner = entity.Read<EntityOwner>().Owner;
-					var prefabGuid = entity.Read<PrefabGUID>();
+					if (!owner.Exists())
+					{
+						owner = entity.Read<EntityCreator>().Creator._Entity;
+						if (!owner.Exists())
+						{
+							owner = entity;
+						}
+					}
 					if (owner.Exists())
 					{
-						if (entity.Has<Projectile>())
+						if (owner.Has<PlayerCharacter>())
 						{
-							if (owner.Has<PlayerCharacter>())
-							{
-								var player = PlayerService.GetPlayerFromCharacter(owner);
-								GameEvents.RaisePlayerProjectileUpdate(player, entity);
-							}
-							else
-							{
-								GameEvents.RaiseUnitProjectileUpdate(owner, entity);
-							}
+							var player = PlayerService.GetPlayerFromCharacter(owner);
+							GameEvents.RaisePlayerHitColliderCastUpdate(player, entity);
+						}
+						else
+						{
+							GameEvents.RaiseUnitHitColliderCastUpdate(owner, entity);
 						}
 					}
 				}
@@ -118,6 +139,53 @@ public static class HitCastColliderSystem_OnUpdatePatch
 			{
 				entities.Dispose();
 				Plugin.PluginLog.LogInfo(e.ToString());
+			}
+		}
+		entities.Dispose();
+	}
+}
+
+
+[HarmonyPatch(typeof(HandleGameplayEventsBase), nameof(HandleGameplayEventsBase.OnUpdate))]
+public static class HandleGameplayEventsBasePatch
+{
+	public static void Prefix(HandleGameplayEventsBase __instance)
+	{
+		var entities = __instance.__RemoveOnHitTrigger_entityQuery.ToEntityArray(Allocator.Temp);
+		foreach (var entity in entities)
+		{
+			if (entity.GetPrefabGUID() == Prefabs.Buff_General_BounceDelay)
+			{
+				var buffer = entity.ReadBuffer<HitTrigger>();
+				foreach (var hitTrigger in buffer)
+				{
+					if (hitTrigger.Target.Has<CastleHeartConnection>())
+					{
+						entity.Remove<ScriptDestroy>(); //stops wolf bounce
+						Helper.DestroyBuff(entity);
+						break;
+					}
+				}
+			}
+			else if (entity.Has<ApplyBuffOnGameplayEvent>())
+			{
+				var buffer = entity.ReadBuffer<HitTrigger>();
+				foreach (var hitTrigger in buffer)
+				{
+					if (hitTrigger.Target.Has<CastleHeartConnection>())
+					{
+						var buffer2 = entity.ReadBuffer<ApplyBuffOnGameplayEvent>();
+						for (var i = 0; i < buffer2.Length; i++)
+						{
+							var buff = buffer2[i];
+							buff.Buff0 = PrefabGUID.Empty;
+							buff.Buff1 = PrefabGUID.Empty;
+							buff.Buff2 = PrefabGUID.Empty;
+							buff.Buff3 = PrefabGUID.Empty;
+							buffer2[i] = buff;
+						}
+					}
+				}
 			}
 		}
 		entities.Dispose();

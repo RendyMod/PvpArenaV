@@ -30,6 +30,7 @@ using ProjectM.Shared;
 using System.Linq;
 using Epic.OnlineServices.Sessions;
 using UnityEngine;
+using UnityEngine.Jobs;
 
 namespace PvpArena.Commands.Debug;
 internal class TestCommands
@@ -38,19 +39,84 @@ internal class TestCommands
 	[Command("test", description: "Used for debugging", adminOnly: true)]
 	public void TestCommand(Player sender)
 	{
-		sender.ReceiveMessage(sender.Name);
-		foreach (var player in PlayerService.UserCache.Values)
+		var entity = Helper.GetHoveredEntity(sender.User);
+		
+		sender.ReceiveMessage("done");
+	}
+
+	//this needs to be peeled out into the open world mod
+	[Command("toggleresources", description: "Used for debugging", adminOnly: true)]
+	public void EnableResourcesCommand(Player sender)
+	{
+		if (Helper.HasBuff(sender, Helper.CustomBuff1))
 		{
-			try
+			var entities = Helper.GetEntitiesByComponentTypes<MapIconTargetEntity, CanFly>();
+			foreach (var entity in entities)
 			{
-				Plugin.PluginLog.LogInfo(player.Name);
+				var mapIconTargetEntity = entity.Read<MapIconTargetEntity>();
+				if (mapIconTargetEntity.TargetEntity._Entity == sender.User) 
+				{
+					Helper.DestroyEntity(entity);
+					break;
+				}
 			}
-			catch (Exception e)
+
+			Helper.RemoveBuff(sender, Helper.CustomBuff1);
+		}
+		else
+		{
+			if (Helper.BuffPlayer(sender, Helper.CustomBuff1, out var buffEntity, Helper.NO_DURATION, true))
 			{
-				Plugin.PluginLog.LogInfo(player.User.GetHashCode());
+				Helper.ApplyStatModifier(buffEntity, new ModifyUnitStatBuff_DOTS
+				{
+					Id = ModificationIdFactory.NewId(),
+					ModificationType = ModificationType.Multiply,
+					Priority = 100,
+					StatType = UnitStatType.ResourcePower,
+					Value = 1.25f
+				}, true);
+
+				Helper.ApplyStatModifier(buffEntity, new ModifyUnitStatBuff_DOTS
+				{
+					Id = ModificationIdFactory.NewId(),
+					ModificationType = ModificationType.Multiply,
+					Priority = 100,
+					StatType = UnitStatType.ResourceYield,
+					Value = 1.25f
+				}, false);
+				PrefabSpawnerService.SpawnWithCallback(Prefabs.MapIcon_DraculasCastle, sender.Position, (e) =>
+				{
+					var mapIconData = e.Read<MapIconData>();
+					mapIconData.EnemySetting = MapIconShowSettings.Global;
+					mapIconData.AllySetting = MapIconShowSettings.Global;
+					mapIconData.RequiresReveal = false;
+					mapIconData.ShowOutsideVision = true;
+					mapIconData.ShowOnMinimap = true;
+					mapIconData.TargetUser = sender.User;
+					e.Write(mapIconData);
+
+					var mapIconTargetEntity = e.Read<MapIconTargetEntity>();
+					mapIconTargetEntity.TargetEntity = NetworkedEntity.ServerEntity(sender.User);
+					mapIconTargetEntity.TargetNetworkId = sender.User.Read<NetworkId>();
+					e.Write(mapIconTargetEntity);
+				});
 			}
 		}
+
 		sender.ReceiveMessage("done");
+	}
+
+	[Command("destroymapicons", description: "Used for debugging", adminOnly: true)]
+	public void DestroyMapIcons(Player sender)
+	{
+		var entities = Helper.GetEntitiesByComponentTypes<MapIconTargetEntity>();
+		foreach (var entity in entities)
+		{
+			if (entity.GetPrefabGUID() == Prefabs.MapIcon_DraculasCastle)
+			{
+				Helper.DestroyEntity(entity);
+			}
+		}
 	}
 
 	[Command("become", description: "Used for debugging", adminOnly: true)]

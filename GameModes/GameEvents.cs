@@ -93,12 +93,6 @@ public static class GameEvents
 	public delegate void UnitProjectileCreatedHandler(Entity unit, Entity projectile);
 	public static event UnitProjectileCreatedHandler OnUnitProjectileCreated;
 
-	public delegate void PlayerProjectileUpdateHandler(Player player, Entity projectile);
-	public static event PlayerProjectileUpdateHandler OnPlayerProjectileUpdate;
-
-	public delegate void UnitProjectileUpdateHandler(Entity unit, Entity projectile);
-	public static event UnitProjectileUpdateHandler OnUnitProjectileUpdate;
-
 	public delegate void PlayerAoeCreatedHandler(Player player, Entity aoe);
 	public static event PlayerAoeCreatedHandler OnPlayerAoeCreated;
 
@@ -128,6 +122,12 @@ public static class GameEvents
 
 	public delegate void UnitHitCastColliderCreated(Entity unit, Entity hitCastCollider);
 	public static event UnitHitCastColliderCreated OnUnitHitCastColliderCreated;
+
+	public delegate void PlayerHitColliderCastUpdate(Player player, Entity hitCastCollider);
+	public static event PlayerHitColliderCastUpdate OnPlayerHitColliderCastUpdate;
+
+	public delegate void UnitHitCastColliderUpdate(Entity unit, Entity hitCastCollider);
+	public static event UnitHitCastColliderUpdate OnUnitHitCastColliderUpdate;
 
 	public delegate void PlayerPlacedStructure(Player player, Entity eventEntity);
 	public static event PlayerPlacedStructure OnPlayerPlacedStructure;
@@ -269,16 +269,6 @@ public static class GameEvents
 		OnUnitProjectileCreated?.Invoke(unit, projectile);
 	}
 
-	public static void RaisePlayerProjectileUpdate(Player player, Entity projectile)
-	{
-		OnPlayerProjectileUpdate?.Invoke(player, projectile);
-	}
-
-	public static void RaiseUnitProjectileUpdate(Entity unit, Entity projectile)
-	{
-		OnUnitProjectileUpdate?.Invoke(unit, projectile);
-	}
-
 	public static void RaisePlayerAoeCreated(Player player, Entity aoe)
 	{
 		OnPlayerAoeCreated?.Invoke(player, aoe);
@@ -342,6 +332,16 @@ public static class GameEvents
 	public static void RaiseUnitHitColliderCastCreated(Entity unit, Entity hitCastCollider)
 	{
 		OnUnitHitCastColliderCreated?.Invoke(unit, hitCastCollider);
+	}
+
+	public static void RaisePlayerHitColliderCastUpdate(Player player, Entity hitCastCollider)
+	{
+		OnPlayerHitColliderCastUpdate?.Invoke(player, hitCastCollider);
+	}
+
+	public static void RaiseUnitHitColliderCastUpdate(Entity unit, Entity hitCastCollider)
+	{
+		OnUnitHitCastColliderUpdate?.Invoke(unit, hitCastCollider);
 	}
 
 	public static void RaisePlayerPlacedStructure(Player player, Entity eventEntity)
