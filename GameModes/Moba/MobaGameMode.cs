@@ -321,7 +321,7 @@ public class MobaGameMode : BaseGameMode
         GameEvents.OnPlayerStartedCasting += HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerDamageReported += HandleOnPlayerDamageReported;
 		GameEvents.OnUnitProjectileCreated += HandleOnUnitProjectileCreated;
-		GameEvents.OnUnitHitCastColliderUpdate += HandleOnUnitProjectileUpdate;
+		GameEvents.OnUnitHitCastColliderUpdate += HandleOnUnitHitCastColliderUpdate;
 		GameEvents.OnAggroPostUpdate += HandleOnAggroPostUpdate;
 		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
 		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
@@ -443,7 +443,7 @@ public class MobaGameMode : BaseGameMode
         GameEvents.OnPlayerStartedCasting -= HandleOnPlayerStartedCasting;
 		GameEvents.OnPlayerDamageReported -= HandleOnPlayerDamageReported;
 		GameEvents.OnUnitProjectileCreated -= HandleOnUnitProjectileCreated;
-		GameEvents.OnUnitHitCastColliderUpdate -= HandleOnUnitProjectileUpdate;
+		GameEvents.OnUnitHitCastColliderUpdate -= HandleOnUnitHitCastColliderUpdate;
 		GameEvents.OnAggroPostUpdate -= HandleOnAggroPostUpdate;
 		GameEvents.OnUnitDamageDealt -= HandleOnUnitDamageDealt;
 		GameEvents.OnItemWasDropped -= HandleOnItemWasDropped;
@@ -866,7 +866,7 @@ public class MobaGameMode : BaseGameMode
 
 	public void HandleOnUnitBuffed(Entity unit, Entity buffEntity)
 	{
-		if (!UnitFactory.HasGameMode(unit, UnitGameModeType)) return;
+		if (!UnitFactory.HasGameMode(unit, UnitGameModeType) && !(buffEntity.GetPrefabGUID() == Prefabs.Buff_Building_Siege_ActivationTimer_Buff_T02)) return;
 
 		var buffPrefabGUID = buffEntity.Read<PrefabGUID>();
 		if (unitBuffHandlers.TryGetValue(buffPrefabGUID, out var handler))
@@ -1136,7 +1136,7 @@ public class MobaGameMode : BaseGameMode
 		}
 	}
 
-	public void HandleOnUnitProjectileUpdate(Entity unit, Entity projectile)
+	public void HandleOnUnitHitCastColliderUpdate(Entity unit, Entity projectile)
 	{
 		if (!UnitFactory.HasGameMode(unit, "moba")) return;
 		if (!projectile.Has<Projectile>()) return;
