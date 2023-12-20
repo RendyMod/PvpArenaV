@@ -141,7 +141,8 @@ public static class Core
 		{
 			All = new ComponentType[]
 			{
-				new ComponentType(Il2CppType.Of<TargetAoE>(), ComponentType.AccessMode.ReadWrite)
+				new ComponentType(Il2CppType.Of<TargetAoE>(), ComponentType.AccessMode.ReadWrite),
+				new ComponentType(Il2CppType.Of<HitColliderCast>(), ComponentType.AccessMode.ReadWrite)
 			},
 			Options = options
 		};
