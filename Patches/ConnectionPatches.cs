@@ -102,6 +102,10 @@ public static class OnUserConnectedPatch
 
 							Helper.ApplyBuildImpairBuffToPlayer(player);
 						}
+						else
+						{
+							PlayerSpawnHandler.PlayerFirstTimeSpawn[player] = true;
+						}
 
 						SendWelcomeMessageToPlayer(player);
 						

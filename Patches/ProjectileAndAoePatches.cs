@@ -167,7 +167,7 @@ public static class HandleGameplayEventsBasePatch
 					}
 				}
 			}
-			else if (entity.Has<ApplyBuffOnGameplayEvent>())
+			else if (entity.Has<ApplyBuffOnGameplayEvent>() && entity.Has<Projectile>())
 			{
 				var buffer = entity.ReadBuffer<HitTrigger>();
 				foreach (var hitTrigger in buffer)

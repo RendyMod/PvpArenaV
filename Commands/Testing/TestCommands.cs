@@ -39,7 +39,12 @@ internal class TestCommands
 	[Command("test", description: "Used for debugging", adminOnly: true)]
 	public void TestCommand(Player sender)
 	{
-		var entity = Helper.GetHoveredEntity(sender.User);
+		var entity = Helper.GetHoveredEntity<Pylonstation>(sender.User);
+		var buffer = entity.ReadBuffer<CastleTeleporterElement>();
+		foreach (var element in buffer)
+		{
+			element.Entity._Entity.LogPrefabName();
+		}
 		
 		sender.ReceiveMessage("done");
 	}

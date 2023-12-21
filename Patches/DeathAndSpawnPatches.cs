@@ -12,7 +12,7 @@ namespace PvpArena.Patches;
 
 
 [HarmonyPatch(typeof(DeathEventListenerSystem), nameof(DeathEventListenerSystem.OnUpdate))]
-public static class DeathAndSpawnPatches
+public static class DeathEventListenerSystemPatch
 {
 	public static void Postfix(DeathEventListenerSystem __instance)
 	{
@@ -109,39 +109,6 @@ public static class RespawnCharacterSystemPatch
 		}
 	}
 }*/
-
-[HarmonyPatch(typeof(SpawnCharacterSystem), nameof(SpawnCharacterSystem.OnUpdate))]
-public static class SpawnCharacterSystemPatch
-{
-	public static void Prefix(SpawnCharacterSystem __instance)
-	{
-		var entities = __instance.__OnUpdate_LambdaJob0_entityQuery.ToEntityArray(Allocator.Temp);
-		foreach (var entity in entities)
-		{
-			try
-			{
-				var spawnCharacter = entity.Read<SpawnCharacter>();
-
-				if (spawnCharacter.User.Exists())
-				{
-					var Character = spawnCharacter.User.Read<User>().LocalCharacter._Entity;
-
-					if (Character.Exists())
-					{
-						var player = PlayerService.GetPlayerFromUser(spawnCharacter.User);
-						GameEvents.RaisePlayerSpawning(player, spawnCharacter);
-					}
-				}
-			}
-			catch (Exception e)
-			{
-				Plugin.PluginLog.LogInfo(e.ToString());
-			}
-		}
-		entities.Dispose();
-	}
-}
-
 
 [HarmonyPatch(typeof(KillEventSystem), nameof(KillEventSystem.OnUpdate))]
 public static class KillEventSystemPatch

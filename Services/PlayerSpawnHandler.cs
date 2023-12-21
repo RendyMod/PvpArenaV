@@ -20,14 +20,12 @@ public static class PlayerSpawnHandler
 	public static void Initialize()
 	{
 		GameEvents.OnPlayerBuffRemoved += HandleOnPlayerUnbuffed;
-		GameEvents.OnPlayerSpawning += HandleOnPlayerSpawning;
 		GameEvents.OnPlayerDeath += HandleOnPlayerDeath;
 	}
 
 	public static void Dispose()
 	{
 		GameEvents.OnPlayerBuffRemoved -= HandleOnPlayerUnbuffed;
-		GameEvents.OnPlayerSpawning -= HandleOnPlayerSpawning;
 		GameEvents.OnPlayerDeath -= HandleOnPlayerDeath;
 	}
 
@@ -45,14 +43,6 @@ public static class PlayerSpawnHandler
 				GameEvents.RaisePlayerRespawn(player);
 				PlayerIsDead[player] = false;
 			}
-		}
-	}
-
-	private static void HandleOnPlayerSpawning(Player player, SpawnCharacter spawnCharacter)
-	{
-		if (spawnCharacter.FirstTimeSpawn && !PlayerFirstTimeSpawn.TryGetValue(player, out var firstTimeSpawn) && !firstTimeSpawn)
-		{
-			PlayerFirstTimeSpawn[player] = true;
 		}
 	}
 

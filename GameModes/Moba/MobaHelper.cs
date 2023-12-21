@@ -97,54 +97,7 @@ public static class MobaHelper
 			Owner = NetworkedEntity.ServerEntity(players[1].User)
 		});
 
-		var teleporters = Helper.GetEntitiesByComponentTypes<CastleTeleporterComponent>(true);
-		foreach (var teleporter in teleporters)
-		{
-			int index = 0;
-			if (teleporter.Read<PrefabGUID>() == Prefabs.TM_Castle_LocalTeleporter_Red)
-			{
-				index = 1;
-			}
-
-			teleporter.Write(players[index].Character.Read<Team>());
-			teleporter.Write(players[index].Character.Read<TeamReference>());
-
-			
-			teleporter.Write(new CastleHeartConnection
-			{
-				CastleHeartEntity = NetworkedEntity.ServerEntity(foundHearts[index])
-			});
-
-			var castleTeleporterComponent = teleporter.Read<CastleTeleporterComponent>();
-			if (index == 0) 
-			{
-				buffer1.Add(new CastleTeleporterElement
-				{
-					Entity = NetworkedEntity.ServerEntity(teleporter),
-					Group = castleTeleporterComponent.Group
-				});
-			}
-			else
-			{
-				buffer2.Add(new CastleTeleporterElement
-				{
-					Entity = NetworkedEntity.ServerEntity(teleporter),
-					Group = castleTeleporterComponent.Group
-				});
-			}
-			
-			teleporter.Add<UserOwner>();
-			teleporter.Write(new UserOwner
-			{
-				Owner = NetworkedEntity.ServerEntity(players[index].User)
-			});
-			var range = teleporter.Read<CastleBuildingMaxRange>();
-			range.MaxRange = 10000;
-			teleporter.Write(range);
-
-		}
-		
-
+		var i = 0;
 		foreach (var structureSpawn in MobaConfig.Config.StructureSpawns)
 		{
 			var spawnPos = structureSpawn.Location.ToFloat3();
@@ -153,6 +106,48 @@ public static class MobaHelper
 			{
 				PrefabSpawnerService.SpawnWithCallback(structureSpawn.PrefabGUID, spawnPos, (e) =>
 				{
+					if (e.Has<CastleTeleporterComponent>())
+					{
+						int index = 0;
+						if (e.Read<PrefabGUID>() == Prefabs.TM_Castle_LocalTeleporter_Red)
+						{
+							index = 1;
+						}
+
+						e.Write(new CastleHeartConnection
+						{
+							CastleHeartEntity = NetworkedEntity.ServerEntity(foundHearts[index])
+						});
+
+						var castleTeleporterComponent = e.Read<CastleTeleporterComponent>();
+						if (index == 0)
+						{
+							buffer1.Add(new CastleTeleporterElement
+							{
+								Entity = NetworkedEntity.ServerEntity(e),
+								Group = castleTeleporterComponent.Group
+							});
+						}
+						else
+						{
+							buffer2.Add(new CastleTeleporterElement
+							{
+								Entity = NetworkedEntity.ServerEntity(e),
+								Group = castleTeleporterComponent.Group
+							});
+						}
+
+						e.Add<UserOwner>();
+						e.Write(new UserOwner
+						{
+							Owner = NetworkedEntity.ServerEntity(players[index].User)
+						});
+						var range = e.Read<CastleBuildingMaxRange>();
+						range.MaxRange = 10000;
+						e.Write(range);
+					}
+					
+
 					if (e.Has<Health>() && structureSpawn.Health > 0)
 					{
 						var health = e.Read<Health>();
@@ -170,6 +165,12 @@ public static class MobaHelper
 					{
 						e.Write(player2.Character.Read<Team>());
 						e.Write(player2.Character.Read<TeamReference>());
+					}
+					i++;
+					if (i == MobaConfig.Config.StructureSpawns.Count)
+					{
+						hearts[0].ReadBuffer<CastleTeleporterElement>(); //for some reason you need to read them after updating them for it to update in-game
+						hearts[1].ReadBuffer<CastleTeleporterElement>();
 					}
 				}, structureSpawn.RotationMode, -1, true, "moba");
 			};
