@@ -15,7 +15,6 @@ internal static class LegendaryCommands
 	[Command("legendary", description: "Gives you a custom legendary. Do .lw ? to see the mod options", usage: ".lw spear storm 123", aliases: new string[] { "lw", "leg", "lego", "l" }, adminOnly: false, includeInHelp: true, category: "Legendaries")]
 	public static void LegendaryCommand(Player sender, string weaponName, string infusion = "", string mods = "", float power = 1)
 	{
-		//".chunguslegendary spear static 123"
 		if (weaponName == "?")
 		{
 			sender.ReceiveMessage(("Legendary example:".Colorify(ExtendedColor.ServerColor) + " .lw spear storm 123").Emphasize());
