@@ -36,7 +36,7 @@ public static class LoginPointsService
 	{
 		DateTime currentTime = DateTime.UtcNow;
 
-		if (player.PlayerPointsData.LastLoginDate == null || currentTime.Day != player.PlayerPointsData.LastLoginDate.Value.Day)
+		if (player.PlayerPointsData.LastLoginDate == null || currentTime.Day > player.PlayerPointsData.LastLoginDate.Value.Day)
 		{
 			player.PlayerPointsData.LastLoginDate = DateTime.UtcNow;
 			player.PlayerPointsData.AddPointsToAllRegions(points);

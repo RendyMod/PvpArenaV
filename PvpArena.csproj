@@ -4,7 +4,7 @@
     <AssemblyName>PvpArena</AssemblyName>
     <Description>Everything you need for an arena server.</Description>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Version>1.0.2221</Version>
+    <Version>1.0.2223</Version>
     <LangVersion>latest</LangVersion>
     <RootNamespace>PvpArena</RootNamespace>
     <BepInExPluginGuid>PvpArena</BepInExPluginGuid>
