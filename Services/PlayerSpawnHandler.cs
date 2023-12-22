@@ -8,6 +8,8 @@ using PvpArena.Configs;
 using PvpArena.Helpers;
 using PvpArena.Models;
 using static ProjectM.DeathEventListenerSystem;
+using PvpArena.Persistence.MySql.MainDatabase;
+using PvpArena.Services.Moderation;
 
 namespace PvpArena.Services;
 
@@ -74,8 +76,27 @@ public static class PlayerSpawnHandler
 		Helper.SetPlayerBlood(player, Prefabs.BloodType_Warrior);
 
 		Helper.ApplyBuildImpairBuffToPlayer(player); //if a player connects before they have a character, some of our on-connect logic won't be able to work, so it's duplicated here
-		if(PlayerService.OnlinePlayers.Add(player)) //this is only needed for re-made characters
+
+		Core.pointsDataRepository.LoadPointsForPlayerAsync(player).ContinueWith(task =>
+			ActionScheduler.RunActionOnMainThread(() => LoginPointsService.TryGrantDailyLoginPoints(player, PvpArenaConfig.Config.PointsPerDailyLogin))
+		);
+		Core.playerBulletHellDataRepository.LoadDataForPlayerAsync(player);
+		Core.muteDataRepository.LoadMuteInfoForPlayerAsync(player);
+		Core.imprisonDataRepository.LoadDataForPlayerAsync(player).ContinueWith(task =>
+		{
+			ActionScheduler.RunActionOnMainThread(() =>
+			{
+				if (player.IsImprisoned())
+				{
+					player.Teleport(PrisonConfig.Config.CellCoordinateList[player.ImprisonInfo.PrisonCellNumber].ToFloat3());
+				}
+			});
+		});
+
+		if (PlayerService.OnlinePlayers.Add(player))
+		{
 			PlayerService.OnOnlinePlayerAmountChanged?.Invoke();
+		}
 	}
 
 	private static void GiveJewelsAndScheduleEquipment(Player player)

@@ -128,6 +128,7 @@ public class Player
 			if (userComponent.LocalCharacter._Entity.Exists())
 			{
 				_character = userComponent.LocalCharacter._Entity;
+				PlayerService.CharacterCache[_character] = this;
 			}
 			else
 			{

@@ -74,4 +74,44 @@ public class PlayerBulletHellDataStorage : MySqlDataStorage<PlayerBulletHellData
 
 		return dataList;
 	}
+
+	public async Task<PlayerBulletHellData> LoadDataForPlayerAsync(Player player)
+	{
+		PlayerBulletHellData playerData = null;
+
+		try
+		{
+			using (var _connection = new MySqlConnection(connectionString))
+			{
+				await _connection.OpenAsync();
+				var command = new MySqlCommand("SELECT SteamID, BestTime FROM PlayerBulletHellData WHERE SteamID = @SteamID;", _connection);
+				command.Parameters.AddWithValue("@SteamID", player.SteamID);
+
+				using (var reader = await command.ExecuteReaderAsync())
+				{
+					if (await reader.ReadAsync())
+					{
+						playerData = new PlayerBulletHellData
+						{
+							SteamID = reader.GetUInt64("SteamID"),
+							BestTime = reader.GetString("BestTime")
+						};
+
+						// Optionally, update the player object
+						var action = () =>
+						{
+							player.PlayerBulletHellData = playerData;
+						};
+						ActionScheduler.RunActionOnMainThread(action);
+					}
+				}
+			}
+		}
+		catch (Exception ex)
+		{
+			Plugin.PluginLog.LogInfo($"Exception during player data load: {ex.Message}");
+		}
+
+		return playerData;
+	}
 }

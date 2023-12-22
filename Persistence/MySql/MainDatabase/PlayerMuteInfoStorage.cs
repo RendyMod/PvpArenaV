@@ -104,4 +104,46 @@ public class PlayerMuteInfoStorage : MySqlDataStorage<PlayerMuteInfo>
 
 		return dataList;
 	}
+
+	public async Task<PlayerMuteInfo> LoadMuteInfoForPlayerAsync(Player player)
+	{
+		PlayerMuteInfo playerMuteInfo = null;
+
+		try
+		{
+			using (var _connection = new MySqlConnection(connectionString))
+			{
+				await _connection.OpenAsync();
+				var command = new MySqlCommand("SELECT SteamID, MutedDate, MuteDurationDays FROM PlayerMuteInfo WHERE SteamID = @SteamID;", _connection);
+				command.Parameters.AddWithValue("@SteamID", player.SteamID);
+
+				using (var reader = await command.ExecuteReaderAsync())
+				{
+					if (await reader.ReadAsync())
+					{
+						playerMuteInfo = new PlayerMuteInfo
+						{
+							SteamID = reader.GetUInt64("SteamID"),
+							MutedDate = reader.GetDateTime("MutedDate"),
+							MuteDurationDays = reader.GetInt32("MuteDurationDays")
+						};
+
+						// Optionally, you can update the player object with mute info
+						var action = () =>
+						{
+							player.MuteInfo = playerMuteInfo;
+						};
+						ActionScheduler.RunActionOnMainThread(action);
+					}
+				}
+			}
+		}
+		catch (Exception e)
+		{
+			Plugin.PluginLog.LogInfo($"Exception during player mute info load: {e.Message}");
+		}
+
+		return playerMuteInfo;
+	}
+
 }

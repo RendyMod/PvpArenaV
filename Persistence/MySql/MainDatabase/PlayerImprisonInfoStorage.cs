@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using MySqlConnector;
 using ProjectM.Scripting;
+using PvpArena.Helpers;
 using PvpArena.Models;
 using PvpArena.Services;
 using static PvpArena.Configs.ConfigDtos;
@@ -111,4 +112,52 @@ public class PlayerImprisonInfoStorage : MySqlDataStorage<PlayerImprisonInfo>
 			return dataList;
 		}
 	}
+
+	public async Task<PlayerImprisonInfo> LoadDataForPlayerAsync(Player player)
+	{
+		PlayerImprisonInfo playerImprisonInfo = null;
+
+		try
+		{
+			using (var _connection = new MySqlConnection(connectionString))
+			{
+				await _connection.OpenAsync();
+				var command = new MySqlCommand("SELECT SteamID, ImprisonedDate, ImprisonDurationDays, Reason, PrisonCellNumber FROM PlayerImprisonInfo WHERE SteamID = @SteamID;", _connection);
+				command.Parameters.AddWithValue("@SteamID", player.SteamID);
+
+				using (var reader = await command.ExecuteReaderAsync())
+				{
+					if (await reader.ReadAsync())
+					{
+						playerImprisonInfo = new PlayerImprisonInfo
+						{
+							SteamID = reader.GetUInt64("SteamID"),
+							ImprisonedDate = reader.GetDateTime("ImprisonedDate"),
+							ImprisonDurationDays = reader.GetInt32("ImprisonDurationDays"),
+							Reason = reader.IsDBNull(reader.GetOrdinal("Reason")) ? null : reader.GetString("Reason"),
+							PrisonCellNumber = reader.GetInt32("PrisonCellNumber")
+						};
+
+						// Optionally, update the player object
+						var action = () =>
+						{
+							player.ImprisonInfo = playerImprisonInfo;
+							if (player.ImprisonInfo.IsImprisoned())
+							{
+								player.CurrentState = Player.PlayerState.Imprisoned;
+							}
+						};
+						ActionScheduler.RunActionOnMainThread(action);
+					}
+				}
+			}
+		}
+		catch (Exception e)
+		{
+			Plugin.PluginLog.LogInfo($"Exception during player imprison info load: {e.Message}");
+		}
+
+		return playerImprisonInfo;
+	}
+
 }

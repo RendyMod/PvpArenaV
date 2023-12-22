@@ -103,4 +103,47 @@ public class PlayerBanInfoStorage : MySqlDataStorage<PlayerBanInfo>
 			return dataList;
 		}
 	}
+
+	public async Task<PlayerBanInfo> LoadBanInfoForPlayerAsync(Player player)
+	{
+		PlayerBanInfo playerBanInfo = null;
+
+		try
+		{
+			using (var _connection = new MySqlConnection(connectionString))
+			{
+				await _connection.OpenAsync();
+				var command = new MySqlCommand("SELECT SteamID, BannedDate, BanDurationDays, Reason FROM PlayerBanInfo WHERE SteamID = @SteamID;", _connection);
+				command.Parameters.AddWithValue("@SteamID", player.SteamID);
+
+				using (var reader = await command.ExecuteReaderAsync())
+				{
+					if (await reader.ReadAsync())
+					{
+						playerBanInfo = new PlayerBanInfo
+						{
+							SteamID = reader.GetUInt64("SteamID"),
+							BannedDate = reader.GetDateTime("BannedDate"),
+							BanDurationDays = reader.GetInt32("BanDurationDays"),
+							Reason = reader.IsDBNull(reader.GetOrdinal("Reason")) ? null : reader.GetString("Reason")
+						};
+
+						// Optionally, you can update the player object with ban info
+						var action = () =>
+						{
+							player.BanInfo = playerBanInfo;
+						};
+						ActionScheduler.RunActionOnMainThread(action);
+					}
+				}
+			}
+		}
+		catch (Exception e)
+		{
+			Plugin.PluginLog.LogInfo($"Exception during player ban info load: {e.Message}");
+		}
+
+		return playerBanInfo;
+	}
+
 }

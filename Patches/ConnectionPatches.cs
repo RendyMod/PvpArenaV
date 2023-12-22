@@ -72,18 +72,20 @@ public static class OnUserConnectedPatch
 					if (User.Exists())
 					{
 						var player = PlayerService.GetPlayerFromUser(User);
-						if (PlayerService.OnlinePlayers.Add(player)) 
-						{
-							PlayerService.OnOnlinePlayerAmountChanged?.Invoke();
-						}
-						
+						//trying to deprecate bans
+						/*Core.banDataRepository.LoadBanInfoForPlayerAsync(player);
 						if (player.BanInfo.IsBanned())
 						{
 							Helper.KickPlayer(player.SteamID);
-						}
+						}*/
 
 						if (player.Character.Exists())
 						{
+							if (PlayerService.OnlinePlayers.Add(player))
+							{
+								PlayerService.OnOnlinePlayerAmountChanged?.Invoke();
+							}
+
 							if (!player.ControlledEntity.Exists() || player.ControlledEntity != player.Character)
 							{
 								Helper.ControlOriginalCharacter(player);
@@ -101,6 +103,7 @@ public static class OnUserConnectedPatch
 							}
 
 							Helper.ApplyBuildImpairBuffToPlayer(player);
+							LoginPointsService.TryGrantDailyLoginPoints(player, PvpArenaConfig.Config.PointsPerDailyLogin);
 						}
 						else
 						{
@@ -108,8 +111,6 @@ public static class OnUserConnectedPatch
 						}
 
 						SendWelcomeMessageToPlayer(player);
-						
-						LoginPointsService.TryGrantDailyLoginPoints(player, PvpArenaConfig.Config.PointsPerDailyLogin);
 					}
 				}
 			}

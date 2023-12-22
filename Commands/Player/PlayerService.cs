@@ -105,7 +105,10 @@ namespace PvpArena.Services
 						User = User
 					};
 					UserCache[User] = player;
-					CharacterCache[player.Character] = player;
+					if (player.Character.Exists())
+					{
+						CharacterCache[player.Character] = player;
+					}
 					SteamIdCache[player.SteamID] = player;
 				}
 				else
@@ -129,7 +132,10 @@ namespace PvpArena.Services
 				{
 					Character = Character
 				};
-				CharacterCache[Character] = player;
+				if (Character.Exists())
+				{
+					CharacterCache[Character] = player;
+				}
 				UserCache[player.User] = player;
 				SteamIdCache[player.SteamID] = player;
 			}
@@ -161,7 +167,7 @@ namespace PvpArena.Services
 			foreach (var userEntity in userEntities)
 			{
 				var user = userEntity.Read<User>();
-				if (user.CharacterName.ToString().ToLower() == input.ToLower() || (ulong.TryParse(input, out ulong platformID) && user.PlatformId == platformID))
+				if ((ulong.TryParse(input, out ulong platformID) && user.PlatformId == platformID) || user.CharacterName.ToString().ToLower() == input.ToLower())
 				{
 					if (UserCache.TryGetValue(userEntity, out player))
 					{
@@ -174,7 +180,10 @@ namespace PvpArena.Services
 							User = userEntity,
 						};
 						UserCache[userEntity] = player;
-						CharacterCache[player.Character] = player;
+						if (player.Character.Exists())
+						{
+							CharacterCache[player.Character] = player;
+						}
 						SteamIdCache[player.SteamID] = player;
 						return true;
 					}
@@ -183,7 +192,5 @@ namespace PvpArena.Services
 			player = default;
 			return false;
 		}
-
 	}
-	
 }

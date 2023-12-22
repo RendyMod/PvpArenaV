@@ -93,4 +93,49 @@ public class PlayerPointsStorage : MySqlDataStorage<PlayerPoints>
 
 		return dataList;
 	}
+	public async Task<PlayerPoints> LoadPointsForPlayerAsync(Player player)
+	{
+		PlayerPoints playerPoints = null;
+
+		try
+		{
+			using (var _connection = new MySqlConnection(connectionString))
+			{
+				await _connection.OpenAsync();
+				var command = new MySqlCommand("SELECT SteamID, TotalPoints, LastLoginDate, TotalPoints_EU, TotalPoints_NA, TotalPoints_CN, TotalPoints_BR, TotalPoints_TEST FROM PlayerPoints WHERE SteamID = @SteamID;", _connection);
+				command.Parameters.AddWithValue("@SteamID", player.SteamID);
+
+				using (var reader = await command.ExecuteReaderAsync())
+				{
+					if (await reader.ReadAsync())
+					{
+						playerPoints = new PlayerPoints
+						{
+							SteamID = reader.GetUInt64("SteamID"),
+							TotalPoints = reader.GetInt32("TotalPoints"),
+							LastLoginDate = reader.IsDBNull(reader.GetOrdinal("LastLoginDate")) ? null : (DateTime?)reader.GetDateTime("LastLoginDate"),
+							TotalPoints_EU = reader.GetInt32("TotalPoints_EU"),
+							TotalPoints_NA = reader.GetInt32("TotalPoints_NA"),
+							TotalPoints_CN = reader.GetInt32("TotalPoints_CN"),
+							TotalPoints_BR = reader.GetInt32("TotalPoints_BR"),
+							TotalPoints_TEST = reader.GetInt32("TotalPoints_TEST")
+						};
+
+						// Optionally, update the player object with points info
+						var action = () =>
+						{
+							player.PlayerPointsData = playerPoints;
+						};
+						ActionScheduler.RunActionOnMainThread(action);
+					}
+				}
+			}
+		}
+		catch (Exception e)
+		{
+			Plugin.PluginLog.LogInfo($"Exception during player points info load: {e.Message}");
+		}
+
+		return playerPoints;
+	}
 }
