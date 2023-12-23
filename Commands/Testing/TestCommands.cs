@@ -49,6 +49,14 @@ internal class TestCommands
 		sender.ReceiveMessage("done");
 	}
 
+	[Command("kick", description: "Used for debugging", adminOnly: true)]
+	public void KickCommand(Player sender, string platformId)
+	{
+		Helper.KickPlayer(ulong.Parse(platformId));
+
+		sender.ReceiveMessage("Kicked");
+	}
+
 	//this needs to be peeled out into the open world mod
 	[Command("toggleresources", description: "Used for debugging", adminOnly: true)]
 	public void EnableResourcesCommand(Player sender)
