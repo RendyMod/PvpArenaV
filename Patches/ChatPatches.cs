@@ -82,7 +82,7 @@ public static class VivoxConnectionSystemPatch
 	{
 		try
 		{
-			if (PlayerService.GetPlayerFromUser(fromCharacter.User).MuteInfo.IsMuted() || !fromCharacter.Character.Exists())
+			if (PlayerService.GetPlayerFromUser(fromCharacter.User).MuteInfo.IsMuted())
 			{
 				entity.Destroy();
 				return false;

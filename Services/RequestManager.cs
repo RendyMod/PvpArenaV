@@ -26,8 +26,7 @@ public class Request
 public class RequestManager
 {
 	// Mapping from Recipient ID to a dictionary of Requester to Request.
-	private Dictionary<Player, Dictionary<Player, Request>> activeRequests =
-		new Dictionary<Player, Dictionary<Player, Request>>();
+	private Dictionary<Player, Dictionary<Player, Request>> activeRequests = new();
 
 	private List<Request> requestOrder = new List<Request>();
 
