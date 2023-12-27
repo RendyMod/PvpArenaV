@@ -169,6 +169,10 @@ public static class HandleGameplayEventsBasePatch
 			}
 			else if (entity.Has<ApplyBuffOnGameplayEvent>() && entity.Has<Projectile>())
 			{
+				if (entity.GetPrefabGUID() == Prefabs.AB_Frost_CrystalLance_Projectile)
+				{
+					continue;
+				}
 				var buffer = entity.ReadBuffer<HitTrigger>();
 				foreach (var hitTrigger in buffer)
 				{
