@@ -35,6 +35,9 @@ public static partial class Helper
 {
 	public const int RANDOM_POWER = -1;
 
+	public static float3 OFFLINE_PLAYER_POSITION = new float3(-3000f, 0f, 405f);
+	public static float3 NETHER_POSITION_1 = new(-1973.5f, 5f, -3169f);
+
 	public static NativeHashSet<PrefabGUID> prefabGUIDs;
 
 	public static System.Random random = new System.Random();
@@ -280,6 +283,11 @@ public static partial class Helper
         {
             player.Character.Teleport(targetPosition);
         }
+	}
+
+	public static void TeleportToOfflinePosition(this Player player)
+	{
+		player.Teleport(Helper.OFFLINE_PLAYER_POSITION);
 	}
 
     public class ResetOptions

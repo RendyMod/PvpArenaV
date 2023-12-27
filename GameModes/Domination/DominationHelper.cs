@@ -267,7 +267,7 @@ public static class DominationHelper
 			}
 			else
 			{
-				team[i].Teleport(new float3(0, 0, 0));
+				team[i].TeleportToOfflinePosition();
 			}
 		}
 	}

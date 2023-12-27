@@ -751,7 +751,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		if (player.CurrentState != this.PlayerGameModeType) return;
 
         Helper.SoftKillPlayer(player);
-        var action = () => player.Teleport(new float3(0, 0, 0));
+        var action = () => player.TeleportToOfflinePosition();
 		ActionScheduler.RunActionOnceAfterFrames(action, 2);
     }
 

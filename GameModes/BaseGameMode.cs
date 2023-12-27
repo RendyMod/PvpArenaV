@@ -51,7 +51,7 @@ public abstract class BaseGameMode
 
 		player.CurrentState = Player.PlayerState.Normal;
 		player.Reset(Helper.ResetOptions.FreshMatch);
-		player.Teleport(new float3(0, 0, 0));
+		player.TeleportToOfflinePosition();
 	}
 	public virtual void HandleOnItemWasDropped(Player player, Entity eventEntity, PrefabGUID itemType, int slotIndex)
     {

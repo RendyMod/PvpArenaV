@@ -10,6 +10,8 @@ using ProjectM.CastleBuilding;
 using ProjectM.Gameplay.Scripting;
 using ProjectM.Gameplay.Systems;
 using ProjectM.Network;
+using ProjectM.Terrain;
+using ProjectM.UI;
 using PvpArena.Configs;
 using PvpArena.Data;
 using PvpArena.GameModes.Matchmaking1v1;
@@ -18,6 +20,7 @@ using PvpArena.Services;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+using UnityEngine;
 
 namespace PvpArena;
 
@@ -74,7 +77,7 @@ public class Plugin : BasePlugin, IRunOnInitialized
 					if (userData.LocalCharacter._Entity.Exists())
 					{
 						var player = PlayerService.GetPlayerFromUser(entity);
-						player.Teleport(new float3(0, 0, 0));
+						player.TeleportToOfflinePosition();
 					}
 				}
 				catch (Exception e)
@@ -276,13 +279,10 @@ public class Plugin : BasePlugin, IRunOnInitialized
 		var radialZoneSystem_Curse_Server = VWorld.Server.GetExistingSystem<RadialZoneSystem_Curse_Server>();
 		var respawnAiEventSystem = VWorld.Server.GetExistingSystem<RespawnAiEventSystem>();
 		var resetBloodOnRespawnSystem = VWorld.Server.GetExistingSystem<ResetBloodOnRespawnSystem>();
-		var onDeathSystem = VWorld.Server.GetExistingSystem<OnDeathSystem>();
 		var playerCombatBuffSystem = VWorld.Server.GetExistingSystem<PlayerCombatBuffSystem>();
 		var createGameplayEventsOnDeathSystem = VWorld.Server.GetExistingSystem<CreateGameplayEventsOnDeathSystem>();
 		var spawnRegionSpawnSystem = VWorld.Server.GetExistingSystem<SpawnRegionSpawnSystem>();
-		var initializeNewSpawnChainSystem = VWorld.Server.GetExistingSystem<InitializeNewSpawnChainSystem>();
 		var dropInInventoryOnSpawn = VWorld.Server.GetExistingSystem<DropInInventoryOnSpawnSystem>();
-		var unitSpawnerReactSystem = VWorld.Server.GetExistingSystem<UnitSpawnerReactSystem>();
 		var pavementBonusSystem = VWorld.Server.GetExistingSystem<PavementBonusSystem>();
 		var patrolMoveSystem = VWorld.Server.GetExistingSystem<PatrolMoveSystem>();
 
@@ -291,12 +291,9 @@ public class Plugin : BasePlugin, IRunOnInitialized
 		radialZoneSystem_Curse_Server.Enabled = false;
 		respawnAiEventSystem.Enabled = false;
 		resetBloodOnRespawnSystem.Enabled = false; //stops you from going to frailed blood when you die
-		onDeathSystem.Enabled = true; //stops you from dropping your hat when you die
-		playerCombatBuffSystem.Enabled = false; //setting to false totally removes pve in combat buff, but also can mess up hp regen
+		playerCombatBuffSystem.Enabled = false; //setting to false totally removes pve in combat buff, but also can mess up hp regen (?)
 		spawnRegionSpawnSystem.Enabled = false;
-		initializeNewSpawnChainSystem.Enabled = true;
 		dropInInventoryOnSpawn.Enabled = false;
-		unitSpawnerReactSystem.Enabled = true;
 		pavementBonusSystem.Enabled = false;
 		patrolMoveSystem.Enabled = false;
 		/*createGameplayEventsOnDeathSystem.Enabled = true;*/

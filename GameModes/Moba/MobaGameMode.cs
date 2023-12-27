@@ -895,7 +895,7 @@ public class MobaGameMode : BaseGameMode
 		if (player.CurrentState != this.PlayerGameModeType) return;
 
 		Helper.SoftKillPlayer(player);
-		player.Teleport(new float3(0, 0, 0));
+		player.TeleportToOfflinePosition();
 	}
 
 	public void HandleOnPlayerInvitedToClan(Player player, Entity eventEntity)

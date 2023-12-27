@@ -128,7 +128,7 @@ internal static class MiscellaneousCommands
 			return;
 		}
 		Helper.RemoveFromClan(target);
-		target.Character.Teleport(new float3(0, 0, 0));
+		target.Character.Teleport(Helper.OFFLINE_PLAYER_POSITION);
 		var originalName = sender.Name;
 		Helper.RenamePlayer(target.ToFromCharacter(), "ABANDONED_CHARACTER");
 		var userData = target.User.Read<User>();
