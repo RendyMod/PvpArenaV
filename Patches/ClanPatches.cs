@@ -91,8 +91,15 @@ public static class UpdateMapIconsSystemPatch
 			var targetEntity = entity.Read<MapIconTargetEntity>();
 			if (targetEntity.TargetEntity._Entity.Has<PlayerCharacter>())
 			{
-				var player = PlayerService.GetPlayerFromCharacter(targetEntity.TargetEntity._Entity);
-				GameEvents.RaiseMapIconPostUpdate(player, entity);
+				try
+				{
+					var player = PlayerService.GetPlayerFromCharacter(targetEntity.TargetEntity._Entity);
+					GameEvents.RaiseMapIconPostUpdate(player, entity);
+				}
+				catch
+				{
+
+				}
 			}
 		}
 	}
