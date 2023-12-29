@@ -815,9 +815,7 @@ public class MobaGameMode : BaseGameMode
 
 	public static void HandlePvPCombatBuff(Player player, Entity buffEntity)
 	{
-		var lifeTime = buffEntity.Read<LifeTime>();
-		lifeTime.Duration = 10;
-		buffEntity.Write(lifeTime);
+		Helper.SetBuffDuration(buffEntity, 10);
 	}
 
 	public void HandleOnPlayerBuffed(Player player, Entity buffEntity)

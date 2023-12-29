@@ -150,6 +150,30 @@ public class PlayerPoints : PlayerData
 			TotalPoints_TEST -= points;
 		}
 	}
+
+	public void AddPointsToCurrentRegion(int points)
+	{
+		if (PvpArenaConfig.Config.CurrentRegion == REGION_EU)
+		{
+			TotalPoints_EU += points;
+		}
+		else if (PvpArenaConfig.Config.CurrentRegion == REGION_NA)
+		{
+			TotalPoints_NA += points;
+		}
+		else if (PvpArenaConfig.Config.CurrentRegion == REGION_CN)
+		{
+			TotalPoints_CN += points;
+		}
+		else if (PvpArenaConfig.Config.CurrentRegion == REGION_BR)
+		{
+			TotalPoints_BR += points;
+		}
+		else if (PvpArenaConfig.Config.CurrentRegion == REGION_TEST)
+		{
+			TotalPoints_TEST += points;
+		}
+	}
 }
 
 public class PlayerBanInfo : PlayerData

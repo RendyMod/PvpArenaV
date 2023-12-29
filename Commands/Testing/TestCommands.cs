@@ -10,7 +10,6 @@ using ProjectM.CastleBuilding;
 using PvpArena.Helpers;
 using PvpArena.Models;
 using static PvpArena.Frameworks.CommandFramework.CommandFramework;
-using System.Numerics;
 using System;
 using PvpArena.GameModes.Dodgeball;
 using ProjectM.Network;
@@ -31,6 +30,7 @@ using System.Linq;
 using Epic.OnlineServices.Sessions;
 using UnityEngine;
 using UnityEngine.Jobs;
+using Unity.Entities.UniversalDelegates;
 
 namespace PvpArena.Commands.Debug;
 internal class TestCommands
@@ -39,14 +39,30 @@ internal class TestCommands
 	[Command("test", description: "Used for debugging", adminOnly: true)]
 	public void TestCommand(Player sender)
 	{
-		var entity = Helper.GetHoveredEntity<Pylonstation>(sender.User);
-		var buffer = entity.ReadBuffer<CastleTeleporterElement>();
-		foreach (var element in buffer)
-		{
-			element.Entity._Entity.LogPrefabName();
-		}
-		
+		sender.Clan.LogComponentTypes();
 		sender.ReceiveMessage("done");
+	}
+
+	[Command("admin-reset", description: "Used for debugging", adminOnly: true)]
+	public void AdminResetCommand(Player sender, Player target = null)
+	{
+		if (target == null)
+		{
+			target = sender;
+		}
+		target.Reset(new Helper.ResetOptions
+		{
+			ResetCooldowns = true,
+			RemoveBuffs = false
+		});
+	}
+
+	[Command("add-region-points", description: "Used for debugging", adminOnly: true)]
+	public void AddRegionPoints(Player sender, Player target, int amount)
+	{
+		target.PlayerPointsData.AddPointsToCurrentRegion(amount);
+		sender.ReceiveMessage($"Added {amount} points to {target.Name}".White());
+		target.ReceiveMessage($"Received {amount} points".White());
 	}
 
 	[Command("kick", description: "Used for debugging", adminOnly: true)]
@@ -55,6 +71,68 @@ internal class TestCommands
 		Helper.KickPlayer(ulong.Parse(platformId));
 
 		sender.ReceiveMessage("Kicked");
+	}
+
+	[Command("hurt", description: "Used for debugging", adminOnly: false)]
+	public void HurtCommand(Player sender, int amount = 100)
+	{
+		var statChangeEventEntity = Helper.CreateEntityWithComponents<StatChangeEvent>();
+		var statChangeEvent = statChangeEventEntity.Read<StatChangeEvent>();
+
+		statChangeEvent.Change = -Math.Abs(amount);
+		statChangeEvent.OriginalChange = amount;
+		statChangeEvent.StatChangeFlags |= (int)StatChangeFlag.ShowSct;
+		statChangeEvent.StatType = StatType.Health;
+		statChangeEvent.Entity = sender.Character;
+		statChangeEvent.StatChangeEntity = statChangeEventEntity;
+
+		statChangeEventEntity.Write(statChangeEvent);
+	}
+
+	[Command("pacify", description: "Used for debugging", adminOnly: true)]
+	public void PacifyCommand(Player sender, int distance = 15)
+	{
+		var nearbyPlayers = Helper.GetPlayersNearPlayer(sender, distance);
+
+		if (nearbyPlayers.Count > 0)
+		{
+			float angleStep = 360.0f / nearbyPlayers.Count;
+			float radius = 5.0f; // Adjust the radius as needed
+			var senderPosition = sender.Position;
+
+			for (int i = 0; i < nearbyPlayers.Count; i++)
+			{
+				float angle = i * angleStep;
+				var teleportPosition = senderPosition + new float3(
+					radius * Mathf.Cos(Mathf.Deg2Rad * angle),
+					0, // Assuming you want to keep them at the same height
+					radius * Mathf.Sin(Mathf.Deg2Rad * angle)
+				);
+
+				nearbyPlayers[i].Teleport(teleportPosition);
+				if (Helper.BuffPlayer(nearbyPlayers[i], Helper.CustomBuff5, out var buffEntity, Helper.NO_DURATION))
+				{
+					Helper.ModifyBuff(buffEntity, BuffModificationTypes.MovementImpair | BuffModificationTypes.AbilityCastImpair);
+				}
+				nearbyPlayers[i].ReceiveMessage("You have been pacified.".White());
+			}
+		}
+
+		sender.ReceiveMessage("Pacified");
+	}
+
+	[Command("unpacify", description: "Used for debugging", adminOnly: true)]
+	public void UnpacifyCommand(Player sender, int distance = 15)
+	{
+		var nearbyPlayers = Helper.GetPlayersNearPlayer(sender, distance);
+
+		foreach (var nearbyPlayer in nearbyPlayers)
+		{
+			Helper.RemoveBuff(nearbyPlayer, Helper.CustomBuff5);
+			nearbyPlayer.ReceiveMessage("You are you no longer pacified.".White());
+		}
+
+		sender.ReceiveMessage("Unpacified");
 	}
 
 	//this needs to be peeled out into the open world mod

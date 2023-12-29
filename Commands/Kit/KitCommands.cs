@@ -69,8 +69,15 @@ public static class KitCommands
 	[Command("od", description: "Gives trippy shroom", usage: ".od", aliases: new string[] {"od"}, adminOnly: false, includeInHelp: false, category: "Trippy Shroom")]
 	public static void OverdoseShroomCommand(Player sender)
 	{
-		Helper.AddItemToInventory(sender.Character, Prefabs.Item_Consumable_TrippyShroom, 1, out Entity itemEntity);
-		
-		sender.ReceiveMessage("Gave:".Success()+ " Trippy Shroom".White());
+		if (!Helper.HasBuff(sender, Prefabs.AB_Consumable_Eat_TrippyShroom_Buff))
+		{
+			Helper.BuffPlayer(sender, Prefabs.AB_Consumable_Eat_TrippyShroom_Buff, out var buffEntity, Helper.NO_DURATION, true);
+			sender.ReceiveMessage("You are now OD'd".White());
+		}
+		else
+		{
+			Helper.RemoveBuff(sender, Prefabs.AB_Consumable_Eat_TrippyShroom_Buff);
+			sender.ReceiveMessage("You are no longer OD'd".White());
+		}
 	}
 }

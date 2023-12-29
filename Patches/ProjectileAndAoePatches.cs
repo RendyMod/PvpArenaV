@@ -169,15 +169,16 @@ public static class HandleGameplayEventsBasePatch
 			}
 			else if (entity.Has<ApplyBuffOnGameplayEvent>() && entity.Has<Projectile>())
 			{
-				if (entity.GetPrefabGUID() == Prefabs.AB_Frost_CrystalLance_Projectile)
-				{
-					continue;
-				}
 				var buffer = entity.ReadBuffer<HitTrigger>();
 				foreach (var hitTrigger in buffer)
 				{
 					if (hitTrigger.Target.Has<CastleHeartConnection>())
 					{
+						if (entity.GetPrefabGUID() == Prefabs.AB_Frost_CrystalLance_Projectile_SpellMod_Pierce)
+						{
+							Helper.DestroyEntity(entity);
+							break;
+						}
 						var buffer2 = entity.ReadBuffer<ApplyBuffOnGameplayEvent>();
 						for (var i = 0; i < buffer2.Length; i++)
 						{

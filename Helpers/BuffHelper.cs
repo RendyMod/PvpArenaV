@@ -8,6 +8,7 @@ using Bloodstone.API;
 using Il2CppSystem.Runtime.Remoting;
 using Newtonsoft.Json.Utilities;
 using ProjectM;
+using ProjectM.Gameplay;
 using ProjectM.Network;
 using ProjectM.Shared;
 using PvpArena.Data;
@@ -147,6 +148,22 @@ public static partial class Helper
 	public static bool TryGetBuff(Player player, PrefabGUID buff, out Entity buffEntity)
 	{
 		return TryGetBuff(player.Character, buff, out buffEntity);
+	}
+
+	public static void SetBuffDuration(Entity buffEntity, float duration)
+	{
+		var lifetime = buffEntity.Read<LifeTime>();
+		var age = buffEntity.Read<Age>();
+		var originalBuffDuration = Helper.GetPrefabEntityByPrefabGUID(buffEntity.GetPrefabGUID()).Read<LifeTime>().Duration;
+		if (duration < originalBuffDuration)
+		{
+			var delta = originalBuffDuration - duration;
+			age.Value += delta;
+			buffEntity.Write(age);
+		}
+		
+		lifetime.Duration = duration;
+		buffEntity.Write(lifetime);
 	}
 
 	public static void DestroyBuff(Entity buff)

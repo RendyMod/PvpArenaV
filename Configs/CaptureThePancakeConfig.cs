@@ -70,6 +70,7 @@ public class CaptureThePancakeConfigData
 {
 	public float ShardSpeed { get; set; }
 	public float HorseSpeed { get; set; }
+	public float PvpTimerDuration { get; set; } = 15;
 	public int SecondsBeforeMatchScalingStops { get; set; }
 	public int PlayerStartingRespawnTime { get; set; } = 6; // Default value
 	public int PlayerMaxRespawnTime { get; set; } = 30; // Default value

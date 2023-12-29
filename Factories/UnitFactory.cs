@@ -519,7 +519,7 @@ public class Unit
 	protected bool isInvulnerable = false;
 	protected bool dynamicCollision = false;
 	protected float maxDistanceFromPreCombatPosition = -1;
-	protected bool worldCollision = true;
+	protected bool mapCollision = true;
 	protected string gameMode = "";
 	protected int spawnDelay = -1;
 	protected bool softSpawn = false;
@@ -539,7 +539,7 @@ public class Unit
 	public bool DrawsAggro { get => drawsAggro; set => drawsAggro = value; }
 	public bool DynamicCollision { get => dynamicCollision; set => dynamicCollision = value; }
 	public float MaxDistanceFromPreCombatPosition { get => maxDistanceFromPreCombatPosition; set => maxDistanceFromPreCombatPosition = value; }
-	public bool MapCollision { get => worldCollision; set => worldCollision = value; }
+	public bool MapCollision { get => mapCollision; set => mapCollision = value; }
 	public bool IsTargetable { get => isTargetable; set => isTargetable = value; }
 	public string GameMode { get => gameMode; set => gameMode = value; }
 	public bool AnnounceSpawn { get => announceSpawn; set => announceSpawn = value; }

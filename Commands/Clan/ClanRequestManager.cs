@@ -15,9 +15,9 @@ public static class ClanRequestManager
 	{
 		return requestManager.GetRequest(recipient, requester);
 	}
-	public static Request GetRequest()
+	public static Request GetRequest(Player recipient)
 	{
-		return requestManager.GetRequest();
+		return requestManager.GetRequest(recipient);
 	}
 
 	public static void RemoveRequest(Request request)

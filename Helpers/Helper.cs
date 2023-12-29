@@ -27,6 +27,7 @@ using UnityEngine.Rendering;
 using PvpArena.GameModes;
 using Il2CppSystem.Security.Cryptography;
 using ProjectM.Gameplay.Systems;
+using UnityEngine.UIElements;
 
 namespace PvpArena.Helpers;
 
@@ -74,6 +75,23 @@ public static partial class Helper
 				customSpawnLocation: spawnLoc,
 				previousCharacter: player.Character);
 		}
+	}
+
+	public static List<Player> GetPlayersNearPlayer(Player player, int distance = 15, bool includeSpectators = false)
+	{
+		List<Player> nearbyPlayers = new();
+		foreach (var onlinePlayer in PlayerService.OnlinePlayers) 
+		{
+			if (math.distance(onlinePlayer.Position, player.Position) <= distance && onlinePlayer != player)
+			{
+				if (!includeSpectators && Helper.HasBuff(onlinePlayer, Prefabs.Admin_Observe_Invisible_Buff))
+				{
+					continue;
+				}
+				nearbyPlayers.Add(onlinePlayer);
+			}
+		}
+		return nearbyPlayers;
 	}
 
 	public static void KickPlayer(ulong PlatformId)
@@ -296,6 +314,8 @@ public static partial class Helper
         public bool RemoveShapeshifts = false;
         public bool ResetCooldowns = true;
 		public bool RemoveMinions = false;
+		public bool RemoveBuffs = true;
+		public bool ResetHealth = true;
 		public HashSet<PrefabGUID> BuffsToIgnore = new HashSet<PrefabGUID>();
 
         public static ResetOptions Default => new ResetOptions();
@@ -305,6 +325,8 @@ public static partial class Helper
             RemoveShapeshifts = true,
             ResetCooldowns = true,
 			RemoveMinions = true,
+			RemoveBuffs = true,
+			ResetHealth = true,
             BuffsToIgnore = new HashSet<PrefabGUID>()
         };
     }
@@ -363,10 +385,17 @@ public static partial class Helper
 		{
 			DestroyPlayerSummonsAndProjectiles(player);
 		}
-        ClearExtraBuffs(player.Character, resetOptions);
+		if (resetOptions.RemoveBuffs)
+		{
+			ClearExtraBuffs(player.Character, resetOptions);
+		}
+        
         //delay so that removing gun e / heart strike doesnt dmg you
-        var action = () => HealEntity(player.Character);
-		ActionScheduler.RunActionOnceAfterFrames(action, 3);
+		if (resetOptions.ResetHealth)
+		{
+			var action = () => HealEntity(player.Character);
+			ActionScheduler.RunActionOnceAfterFrames(action, 3);
+		}
 
         GameEvents.RaisePlayerReset(player);
     }

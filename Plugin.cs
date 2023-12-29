@@ -176,7 +176,7 @@ public class Plugin : BasePlugin, IRunOnInitialized
 		List<PrefabGUID> PrefabsToIgnore = new List<PrefabGUID>
 		{
 			Prefabs.CHAR_Illusion_Mosquito,
-			/*Prefabs.CHAR_Unholy_FallenAngel,*/
+			Prefabs.CHAR_Unholy_FallenAngel,
 			Prefabs.CHAR_Unholy_DeathKnight,
 			Prefabs.CHAR_Unholy_Baneling,
 			Prefabs.CHAR_Unholy_SkeletonWarrior_Summon,

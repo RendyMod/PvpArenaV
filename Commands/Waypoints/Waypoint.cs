@@ -213,9 +213,9 @@ public static class TeleportRequestManager
 	{
 		return (TeleportRequest)requestManager.GetRequest(recipient, requester);
 	}
-	public static TeleportRequest GetRequest()
+	public static TeleportRequest GetRequest(Player recipient)
 	{
-		return (TeleportRequest)requestManager.GetRequest();
+		return (TeleportRequest)requestManager.GetRequest(recipient);
 	}
 
 	public static void RemoveRequest(TeleportRequest request)

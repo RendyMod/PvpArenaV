@@ -5,6 +5,7 @@ using ProjectM.Gameplay.Clan;
 using PvpArena.Services;
 using PvpArena.GameModes;
 using System;
+using ProjectM;
 
 namespace PvpArena.Patches;
 
@@ -69,3 +70,30 @@ public static class ClanSystem_ServerPatch
 	}
 }
 
+[HarmonyPatch(typeof(UpdateClanStatusSystem), nameof(UpdateClanStatusSystem.OnUpdate))]
+public static class UpdateClanStatusSystemPatch
+{
+	public static void Postfix(UpdateClanStatusSystem __instance)
+	{
+		GameEvents.RaiseClanStatusPostUpdate();
+	}
+}
+
+
+[HarmonyPatch(typeof(UpdateMapIconsSystem), nameof(UpdateMapIconsSystem.OnUpdate))]
+public static class UpdateMapIconsSystemPatch
+{
+	public static void Postfix(UpdateMapIconsSystem __instance)
+	{
+		var entities = __instance._Query.ToEntityArray(Allocator.Temp);
+		foreach (var entity in entities)
+		{
+			var targetEntity = entity.Read<MapIconTargetEntity>();
+			if (targetEntity.TargetEntity._Entity.Has<PlayerCharacter>())
+			{
+				var player = PlayerService.GetPlayerFromCharacter(targetEntity.TargetEntity._Entity);
+				GameEvents.RaiseMapIconPostUpdate(player, entity);
+			}
+		}
+	}
+}

@@ -78,6 +78,15 @@ public static class UnEquipItemSystemPatch
 					player.ReceiveMessage("Transferring items is disabled".Error());
 					entity.Destroy();
 				}
+				else if (targetPrefabGUID == Prefabs.External_Inventory)
+				{
+					var fromCharacter = entity.Read<FromCharacter>();
+					var player = PlayerService.GetPlayerFromUser(fromCharacter.User);
+					if (InventoryUtilities.GetFreeSlotsCount(VWorld.Server.EntityManager, player.Character) == 0)
+					{
+						entity.Destroy();
+					}
+				}
 			}
 		}
 		entities.Dispose();

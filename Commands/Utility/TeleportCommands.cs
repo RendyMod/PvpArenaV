@@ -107,7 +107,7 @@ internal class TeleportCommands
 		}
 		else
 		{
-			request = TeleportRequestManager.GetRequest();
+			request = TeleportRequestManager.GetRequest(RecipientPlayer);
 			if (RequesterPlayer == null)
 			{
 				RequesterPlayer = request.Requester;
@@ -150,19 +150,27 @@ internal class TeleportCommands
 		}
 		else
 		{
-			sender.CurrentState = Player.PlayerState.Spectating;
-			Helper.BuffPlayer(sender, Prefabs.Admin_Observe_Invisible_Buff, out var buffEntity, Helper.NO_DURATION);
-			Helper.RemoveBuffModifications(buffEntity, BuffModificationTypes.DisableMapCollision);
-			
 			if (player != null)
 			{
-				sender.Teleport( player.Position);
-				sender.ReceiveMessage($"Now spectating {player.Name.Colorify(ExtendedColor.ClanNameColor)}. Do {".spectate".Emphasize()} again to undo.".White());
+				if (player.IsOnline)
+				{
+					sender.Teleport(player.Position);
+					player.ReceiveMessage($"{sender.Name.Colorify(ExtendedColor.ClanNameColor)} is now spectating you.");
+					sender.ReceiveMessage($"Now spectating {player.Name.Colorify(ExtendedColor.ClanNameColor)}. Do {".spectate".Emphasize()} again to undo.".White());
+				}
+				else
+				{
+					sender.ReceiveMessage($"{player.Name.Colorify(ExtendedColor.ClanNameColor)} is offline and cannot be spectated.".Error());
+					return;
+				}
 			}
 			else
 			{
 				sender.ReceiveMessage($"Entered spectate mode. Do {".spectate".Emphasize()} again to undo.".White());
 			}
+			sender.CurrentState = Player.PlayerState.Spectating;
+			Helper.BuffPlayer(sender, Prefabs.Admin_Observe_Invisible_Buff, out var buffEntity, Helper.NO_DURATION);
+			Helper.RemoveBuffModifications(buffEntity, BuffModificationTypes.DisableMapCollision);
 		}
 	}
 }

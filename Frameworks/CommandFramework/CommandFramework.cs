@@ -245,7 +245,7 @@ public class CommandFramework
 						}
 						catch (Exception ex)
 						{
-							Plugin.PluginLog.LogInfo(ex.ToString());
+							Plugin.PluginLog.LogInfo($"input '{input}' resulted in {ex.ToString()}");
 							player.ReceiveMessage($"An error occurred: {ex.ToString()}".Error());
 							return true;
 						}

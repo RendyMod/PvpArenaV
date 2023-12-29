@@ -141,6 +141,12 @@ public static class GameEvents
 	public delegate void AggroPostUpdateHandler(Entity entity);
 	public static event AggroPostUpdateHandler OnAggroPostUpdate;
 
+	public delegate void ClanStatusPostUpdateHandler();
+	public static event ClanStatusPostUpdateHandler OnClanStatusPostUpdate;
+
+	public delegate void PlayerMapIconPostUpdateHandler(Player player, Entity mapIconEntity);
+	public static event PlayerMapIconPostUpdateHandler OnPlayerMapIconPostUpdate;
+
 	public delegate void PlayerInteractedHandler(Player player, Interactor interactor);
 	public static event PlayerInteractedHandler OnPlayerInteracted;
 
@@ -324,6 +330,11 @@ public static class GameEvents
 		OnAggroPostUpdate?.Invoke(entity);
 	}
 
+	public static void RaiseMapIconPostUpdate(Player player, Entity mapIconEntity)
+	{
+		OnPlayerMapIconPostUpdate?.Invoke(player, mapIconEntity);
+	}
+
 	public static void RaisePlayerHitColliderCastCreated(Player player, Entity hitCastCollider)
 	{
 		OnPlayerHitColliderCastCreated?.Invoke(player, hitCastCollider);
@@ -357,5 +368,10 @@ public static class GameEvents
 	public static void RaisePlayerInteracted(Player player, Interactor interactor)
 	{
 		OnPlayerInteracted?.Invoke(player, interactor);
+	}
+
+	public static void RaiseClanStatusPostUpdate()
+	{
+		OnClanStatusPostUpdate?.Invoke();
 	}
 }

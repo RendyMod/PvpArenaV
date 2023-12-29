@@ -141,7 +141,8 @@ public static class ResetBuffPrefabs
 		Prefabs.AB_BloodBuff_ResetSpellCooldownOnCast,
 		Prefabs.AB_BloodBuff_Scholar_MovementSpeedOnCast,
 		Prefabs.Buff_OutOfCombat,
-		Prefabs.AB_Shapeshift_NormalForm_Buff
+		Prefabs.AB_Shapeshift_NormalForm_Buff,
+		Prefabs.AB_Consumable_Eat_TrippyShroom_Buff
 	};
 
 	public static HashSet<PrefabGUID> ShapeshiftBuffs = new HashSet<PrefabGUID>

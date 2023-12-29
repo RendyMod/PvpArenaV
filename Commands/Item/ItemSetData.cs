@@ -113,6 +113,15 @@ public class ItemSet
 		bootsPrefab = Prefabs.Item_Boots_T00_StartingRags,
 	};
 
+	public static ItemSet TrueNaked = new ItemSet()
+	{
+		equipmentSet = new PrefabGUID(0),
+		chestPrefab = Prefabs.Item_Armor_Chest_Base,
+		glovesPrefab = Prefabs.Item_Armor_Gloves_Base,
+		legsPrefab = Prefabs.Item_Armor_Legs_Base,
+		bootsPrefab = Prefabs.Item_Armor_Boots_Base,
+	};
+
 	public static Dictionary<string, ItemSet> ItemSetDictionary = new Dictionary<string, ItemSet>
 	{
 		{ "naked", Naked },
@@ -126,5 +135,6 @@ public class ItemSet
 		{ "bloodmoon", BloodmoonSet },
 		{ "noctum", NoctumSet },
 		{ "darkmatter", DarkMatterSet },
+		{ "truenaked", TrueNaked }
 	};
 }

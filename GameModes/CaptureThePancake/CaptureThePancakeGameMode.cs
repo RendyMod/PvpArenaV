@@ -32,6 +32,7 @@ using ProjectM.Shared.Systems;
 using static DamageRecorderService;
 using Cpp2IL.Core.Extensions;
 using UnityEngine.Jobs;
+using ProjectM.Gameplay.Clan;
 
 namespace PvpArena.GameModes.CaptureThePancake;
 
@@ -45,6 +46,15 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		RemoveShapeshifts = true,
 		ResetCooldowns = false
 	};
+
+	public static Helper.ResetOptions ResetOptionsNoHeal { get; set; } = new Helper.ResetOptions
+	{
+		RemoveConsumables = false,
+		RemoveShapeshifts = true,
+		ResetCooldowns = false,
+		ResetHealth = false
+	};
+
 	private static bool MatchActive = false;
 	private static Stopwatch stopwatch = new Stopwatch();
 
@@ -54,6 +64,8 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		{1, new List<PrefabGUID>() },
 		{2, new List<PrefabGUID>() }
 	};
+
+	public static HashSet<Player> DeadPlayers = new();
 
 	private static Dictionary<Player, bool> shouldRemoveGallopBuff = new Dictionary<Player, bool>();
 
@@ -109,8 +121,11 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		{ Prefabs.Buff_InCombat, HandleInCombatBuff },
 		{ Prefabs.AB_Shapeshift_BloodMend_Buff, HandleBloodMendBuff },
 		{ Prefabs.AB_Storm_PolarityShift_Travel_Ally, HandleFriendlyPolarityShiftBuff },
-		{ Prefabs.HideCharacterBuff, HandleHideCharacterBuff }
-	};
+		{ Prefabs.HideCharacterBuff, HandleHideCharacterBuff },
+        { Prefabs.Buff_InCombat_PvPVampire, HandlePvPBuff},
+    };
+
+	public static Dictionary<int, Player> UserIndexToPlayer = new();
 
 	public static HashSet<string> AllowedCommands = new HashSet<string>
 	{
@@ -172,6 +187,8 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
 		GameEvents.OnPlayerPlacedStructure += HandleOnPlayerPlacedStructure;
 		GameEvents.OnPlayerInteracted += HandleOnPlayerInteracted;
+		GameEvents.OnClanStatusPostUpdate += HandleOnClanStatusPostUpdate;
+		GameEvents.OnPlayerMapIconPostUpdate += HandleOnPlayerMapIconPostUpdate;
 
 		stopwatch.Start();
 	}
@@ -193,6 +210,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
                 PlayerRespawnTimers[player] = new List<Timer>();
 				PlayerDamageDealt[player] = 0;
 				PlayerDamageReceived[player] = 0;
+				UserIndexToPlayer[player.User.Read<User>().Index] = player;
 			}
 		}
 	}
@@ -225,8 +243,11 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		GameEvents.OnPlayerConnected -= HandleOnPlayerConnected;
 		GameEvents.OnPlayerPlacedStructure -= HandleOnPlayerPlacedStructure;
 		GameEvents.OnPlayerInteracted -= HandleOnPlayerInteracted;
+		GameEvents.OnClanStatusPostUpdate -= HandleOnClanStatusPostUpdate;
+		GameEvents.OnPlayerMapIconPostUpdate -= HandleOnPlayerMapIconPostUpdate;
 
 		Teams.Clear();
+		UserIndexToPlayer.Clear();
 		foreach (var shardBuffs in TeamToShardBuffsMap.Values)
 		{
 			shardBuffs.Clear();
@@ -357,6 +378,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 				Helper.ApplyStatModifier(buffEntity, BuffModifiers.FastRespawnMoveSpeed);
 				Helper.RemoveBuffModifications(buffEntity, BuffModificationTypes.Immaterial);
 			}
+			DeadPlayers.Remove(player);
 		};
 
 		Action bringSpectatorBackToBaseRootedAction = () =>
@@ -379,10 +401,10 @@ public class CaptureThePancakeGameMode : BaseGameMode
 			}
 		};
 
-		player.Reset(ResetOptions);
-		var respawnDelay = CalculateRespawnDelay();
+        player.Reset(ResetOptionsNoHeal);
+        var respawnDelay = CalculateRespawnDelay();
+		DeadPlayers.Add(player);
 		PlayerRespawnTimers[player].Add(Helper.MakeGhostlySpectator(player, respawnDelay));
-
 		var timer = ActionScheduler.RunActionOnceAfterDelay(bringSpectatorBackToBaseRootedAction, respawnDelay - 3);
 		PlayerRespawnTimers[player].Add(timer);
 	}
@@ -544,6 +566,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 	public static void HandleMountBuff(Player player, Entity buffEntity)
 	{
 		Helper.BuffPlayer(player, Prefabs.AB_Gallop_Buff, out var buffEntity2, Helper.NO_DURATION); //I don't know how to make horses go below 6 speed without gallop buff
+		Helper.ModifyBuff(buffEntity2, BuffModificationTypes.DisableDynamicCollision);
 	}
 
 	public static void HandleHealingOrbBuff(Player player, Entity buffEntity)
@@ -570,7 +593,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		scriptBuffShapeshiftDataShared.RemoveOnDamageTaken = false;
 		grandmaBuffEntity.Write(scriptBuffShapeshiftDataShared);
 		grandmaBuffEntity.Remove<ModifyMovementSpeedBuff>();
-		Helper.ModifyBuff(grandmaBuffEntity, BuffModificationTypes.TargetSpellImpaired);
+		Helper.ModifyBuff(grandmaBuffEntity, BuffModificationTypes.TargetSpellImpaired | BuffModificationTypes.DisableDynamicCollision);
 		Helper.FixIconForShapeshiftBuff(player, grandmaBuffEntity, Prefabs.AB_Shapeshift_Human_Grandma_Skin01_Group);
 
 		Helper.RemoveNewAbilitiesFromBuff(grandmaBuffEntity);
@@ -637,7 +660,19 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		ActionScheduler.RunActionOnceAfterDelay(action, 2);
 	}
 
-	public void HandleOnPlayerBuffed(Player player, Entity buffEntity)
+    public static void HandlePvPBuff(Player player, Entity buffEntity)
+    {
+        if (Helper.HasBuff(player, Prefabs.Buff_General_HideCorpse))
+        {
+            Helper.DestroyBuff(buffEntity);
+        }
+        else
+        {
+            Helper.SetBuffDuration(buffEntity, CaptureThePancakeConfig.Config.PvpTimerDuration);
+        }
+    }
+
+    public void HandleOnPlayerBuffed(Player player, Entity buffEntity)
 	{
         if (player.CurrentState != this.PlayerGameModeType) return;
 
@@ -1069,8 +1104,54 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		}
 	}
 
+	public void HandleOnPlayerMapIconPostUpdate(Player player, Entity mapIconEntity)
+	{
+		if (player.CurrentState != PlayerGameModeType) return;
 
-public void HandleOnGameFrameUpdate()
+		if (DeadPlayers.Contains(player))
+		{
+			var position = mapIconEntity.Read<MapIconPosition>();
+			position.TilePosition = new int2(0, 0);
+			mapIconEntity.Write(position);
+		}
+	}
+
+	public void HandleOnClanStatusPostUpdate()
+	{
+		var clan1 = Teams[1][0].Clan;
+		var clan2 = Teams[2][0].Clan;
+		var clans = new List<Entity>
+		{
+			clan1, clan2
+		};
+
+		foreach (var clan in clans)
+		{
+			if (clan.Exists())
+			{
+				var buffer = clan.ReadBuffer<ClanMemberStatus>();
+				for (var i = 0; i < buffer.Length; i++)
+				{
+					var clanMemberStatus = buffer[i];
+					var player = UserIndexToPlayer[clanMemberStatus.UserIndex];
+					if (DeadPlayers.Contains(player))
+					{
+						if (Helper.TryGetBuff(player, Prefabs.AB_Shapeshift_Mist_Buff, out var buffEntity))
+						{
+							var age = buffEntity.Read<Age>();
+							var lifetime = buffEntity.Read<LifeTime>();
+							var percent = (int)((age.Value / lifetime.Duration) * 100);
+							clanMemberStatus.HealthPercent = percent;
+							clanMemberStatus.IsConnected = false;
+							buffer[i] = clanMemberStatus;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	public void HandleOnGameFrameUpdate()
 	{
 		//check for shard captures
 		foreach (var team in Teams.Values)

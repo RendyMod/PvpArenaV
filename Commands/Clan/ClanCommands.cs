@@ -89,7 +89,7 @@ internal class ClanCommands
 		}
 		else
 		{
-			request = ClanRequestManager.GetRequest();
+			request = ClanRequestManager.GetRequest(RecipientPlayer);
 		}
 
 		if (request != null && !request.IsExpired())

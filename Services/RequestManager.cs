@@ -19,7 +19,7 @@ public class Request
 
 	public bool IsExpired()
 	{
-		return (DateTime.Now - Timestamp > TimeSpan.FromSeconds(15));
+		return (DateTime.Now - Timestamp > TimeSpan.FromSeconds(30));
 	}
 }
 
@@ -63,11 +63,21 @@ public class RequestManager
 		return null;
 	}
 
-	public Request GetRequest()
+	public Request GetRequest(Player recipient)
 	{
-		if (requestOrder.Count == 0) return null;
+		if (activeRequests.TryGetValue(recipient, out var requesterToRequestMap))
+		{
+			for (int i = requestOrder.Count - 1; i >= 0; i--)
+			{
+				var request = requestOrder[i];
+				if (request.Recipient == recipient)
+				{
+					return request;
+				}
+			}
+		}
 
-		return requestOrder[requestOrder.Count - 1];
+		return null;
 	}
 
 	public void RemoveRequest(Request request)
