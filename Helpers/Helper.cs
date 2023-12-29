@@ -400,6 +400,19 @@ public static partial class Helper
         GameEvents.RaisePlayerReset(player);
     }
 
+    public static bool IsImmaterial(this Player player)
+    {
+        var buffer = player.Character.ReadBuffer<LongModificationBuffer>();
+        foreach (var item in buffer)
+        {
+            if ((item.ModData.ModValue & (long)BuffModificationTypes.Immaterial) != 0)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
 	public static void MakeSCT(Player player, PrefabGUID sctPrefab, float value = 0, float3 pos = default)
 	{
 		if (pos.Equals(default(float3)))

@@ -6,6 +6,7 @@ using static PvpArena.Frameworks.CommandFramework.CommandFramework;
 using PvpArena.Models;
 using PvpArena.Configs;
 using PvpArena.GameModes.Matchmaking1v1;
+using PvpArena.GameModes.CaptureThePancake;
 
 namespace PvpArena.Commands;
 
@@ -190,4 +191,18 @@ internal static class MatchmakingCommands
 			}
 		}
 	}
+
+	[Command("lb pancake", description: "Used for debugging", adminOnly: true)]
+	public static void PancakeLeaderboardCommand(Player sender)
+	{
+		if (CaptureThePancakeGameMode.MatchActive)
+		{
+			CaptureThePancakeGameMode.ReportStats();
+		}
+		else
+		{
+			sender.ReceiveMessage("There is no active pancake match".Error());
+		}
+	}
+
 }

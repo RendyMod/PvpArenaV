@@ -55,7 +55,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		ResetHealth = false
 	};
 
-	private static bool MatchActive = false;
+	public static bool MatchActive = false;
 	private static Stopwatch stopwatch = new Stopwatch();
 
 	public static Dictionary<int, List<Player>> Teams = new Dictionary<int, List<Player>>();
@@ -945,6 +945,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 		var damageDealtEvent = eventEntity.Read<DealDamageEvent>();
 		var targetPrefab = damageDealtEvent.Target.Read<PrefabGUID>();
+		var spellPrefab = damageDealtEvent.SpellSource.GetPrefabGUID();
 
 		bool isSpawnedByGameMode = false;
 		var isStructure = damageDealtEvent.Target.Has<CastleHeartConnection>();
@@ -965,6 +966,17 @@ public class CaptureThePancakeGameMode : BaseGameMode
 			else
 			{
 				VWorld.Server.EntityManager.DestroyEntity(eventEntity);
+			}
+		}
+		else if (spellPrefab == Prefabs.AB_Storm_RagingTempest_Other_Self_Buff)
+		{
+			if (damageDealtEvent.Target.Has<PlayerCharacter>())
+			{
+				var targetPlayer = PlayerService.GetPlayerFromCharacter(damageDealtEvent.Target);
+				if (targetPlayer.IsImmaterial())
+				{
+					eventEntity.Destroy();
+				}
 			}
 		}
 	}
@@ -1358,7 +1370,12 @@ public class CaptureThePancakeGameMode : BaseGameMode
 			team2DamagesColorized = team2Damages.ConvertToEngineeringNotation().FriendlyTeam();
 		}
 
-		receiver.ReceiveMessage("Team Recap:".Colorify(ExtendedColor.LightServerColor));
+		var elapsedSeconds = stopwatch.ElapsedMilliseconds / 1000;
+		var minutes = elapsedSeconds / 60;
+		var seconds = elapsedSeconds % 60;
+
+		receiver.ReceiveMessage($"Match Time: {($"{minutes}m {seconds}s").White()}".Colorify(ExtendedColor.LightServerColor));
+		receiver.ReceiveMessage($"Team Recap:".Colorify(ExtendedColor.LightServerColor));
 		receiver.ReceiveMessage($"{team1NameColorized} - K/D: {team1KillsColorized} / {team1DeathsColorized} - DMG: {team1DamagesColorized}".White());
 		receiver.ReceiveMessage($"{team2NameColorized} - K/D: {team2KillsColorized} / {team2DeathsColorized} - DMG: {team2DamagesColorized}".White());
 	}
