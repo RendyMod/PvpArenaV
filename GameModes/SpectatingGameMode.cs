@@ -47,20 +47,27 @@ public class SpectatingGameMode : BaseGameMode
 
 	private static HashSet<string> AllowedCommands = new HashSet<string>
 	{
+		"ping",
+		"help",
+		"legendary",
+		"kit",
+		"kit legendary",
+		"jewel",
+		"forfeit",
+		"points",
+		"lb ranked",
+		"lb bullet",
+		"lb pancake",
+		"bp",
+		"tp-list",
 		"spectate",
 		"tp",
 		"ttp",
 		"tpa",
-		"j",
 		"lw",
 		"tp list",
-		"help",
-		"bp",
-		"points",
 		"togglekillfeed",
 		"discord",
-		"ping",
-		"kit",
 	};
 
 	public override void HandleOnPlayerDowned(Player player, Entity killer)
