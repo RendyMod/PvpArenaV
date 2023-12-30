@@ -332,5 +332,30 @@ public static class CreateGameplayEventOnTickSystemPatch
 }
 */
 
+/*[HarmonyPatch(typeof(DestroySystem), nameof(DestroySystem.OnUpdate))]
+public static class DestroySystemPatch
+{
+	public static void Prefix(DestroySystem __instance)
+	{
+		var entities = __instance.__OnUpdate_LambdaJob0_entityQuery.ToEntityArray(Allocator.Temp);
+		foreach (var entity in entities)
+		{
+			if (entity.GetPrefabGUID() == Prefabs.CHAR_Mount_Horse)
+			{
+				var destroyState = entity.Read<DestroyState>();
+				var destroyData = entity.Read<DestroyData>();
+				Plugin.PluginLog.LogInfo($"{destroyState.Value} {destroyData.DestroyReason}");
+*//*				destroyState.Value = DestroyStateEnum.NotDestroyed;
+				destroyData.DestroyReason = DestroyReason.Default;
+				entity.Remove<DestroyTag>();
+				entity.Write(destroyState);
+				entity.Write(destroyData);
+				entity.LogComponentTypes();*//*
+				
+			}
+		}
+	}
+}*/
+
 //
 //AbilitySpawnSystem

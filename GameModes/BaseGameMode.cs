@@ -130,8 +130,9 @@ public abstract class BaseGameMode
 		"points",
 		"lb ranked",
 		"lb bullet",
+		"lb pancake",
 		"bp",
-		"tp-list",
+		"tp-list"
 	};
 	public static HashSet<string> GetAllowedCommands()
 	{

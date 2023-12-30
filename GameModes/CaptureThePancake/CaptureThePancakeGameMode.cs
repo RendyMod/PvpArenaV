@@ -137,6 +137,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		"points",
 		"lb ranked",
 		"bp",
+		"lb pancake"
 	};
 
 	public static List<Timer> Timers = new List<Timer>();
@@ -1286,6 +1287,46 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		return BaseGameMode.AllowedCommands;
 	}
 
+	public static void ReportStatsToPlayer(Player requestor)
+	{
+		// Assuming Teams is accessible and has team information
+		var team1 = Teams[1];
+		var team2 = Teams[2];
+
+		// Gather player statistics similar to ReportStats method
+		var playerStats = playerKills.Keys.Select(player => new
+		{
+			Player = player,
+			Kills = playerKills[player],
+			Deaths = playerDeaths.ContainsKey(player) ? playerDeaths[player] : 0,
+			Damage = PlayerDamageDealt.ContainsKey(player) ? PlayerDamageDealt[player] : 0,
+			DamageTaken = PlayerDamageReceived.ContainsKey(player) ? PlayerDamageReceived[player] : 0,
+		})
+		.OrderByDescending(player => player.Kills)
+		.ToList();
+
+		// Send team totals to the requestor
+		SendTeamTotals(requestor, team1, team2);
+		int matchMakingTeam = 1;
+		if (requestor.IsInCaptureThePancake())
+		{
+			matchMakingTeam = requestor.MatchmakingTeam;
+		}
+		
+		// Send individual player stats to the requestor
+		foreach (var stat in playerStats)
+		{
+			bool isStatPlayerAlly = matchMakingTeam == stat.Player.MatchmakingTeam;			
+			string colorizedPlayerName = isStatPlayerAlly ? stat.Player.Name.FriendlyTeam() : stat.Player.Name.EnemyTeam();
+			string colorizedKills = isStatPlayerAlly ? stat.Kills.ToString().FriendlyTeam() : stat.Kills.ToString().EnemyTeam();
+			string colorizedDeaths = isStatPlayerAlly ? stat.Deaths.ToString().EnemyTeam() : stat.Deaths.ToString().FriendlyTeam();
+			string colorizedDamages = isStatPlayerAlly ? stat.Damage.ConvertToEngineeringNotation().FriendlyTeam() : stat.Damage.ConvertToEngineeringNotation().EnemyTeam();
+			string colorizedDamagesTaken = isStatPlayerAlly ? stat.DamageTaken.ConvertToEngineeringNotation().EnemyTeam() : stat.DamageTaken.ConvertToEngineeringNotation().FriendlyTeam();
+
+			requestor.ReceiveMessage($"{colorizedPlayerName} - K/D: {colorizedKills} / {colorizedDeaths} - DMG: {colorizedDamages} / {colorizedDamagesTaken}".White());
+		}
+	}
+
 	public static void ReportStats()
 	{
 		var team1 = Teams[1];
@@ -1341,7 +1382,12 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		string team1DamagesColorized;
 		string team2DamagesColorized;
 
-		if (receiver.MatchmakingTeam == 1)
+		var matchmakingTeam = 1;
+		if (receiver.IsInCaptureThePancake())
+		{
+			matchmakingTeam = receiver.MatchmakingTeam;
+		}
+		if (matchmakingTeam == 1)
 		{
 			team1NameColorized = "Team 1".FriendlyTeam();
 			team2NameColorized = "Team 2".EnemyTeam();

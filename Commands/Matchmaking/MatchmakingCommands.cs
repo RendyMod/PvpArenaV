@@ -192,12 +192,12 @@ internal static class MatchmakingCommands
 		}
 	}
 
-	[Command("lb pancake", description: "Used for debugging", adminOnly: true)]
+	[Command("lb pancake", description: "Displays the current pancake match's stats", adminOnly: false)]
 	public static void PancakeLeaderboardCommand(Player sender)
 	{
 		if (CaptureThePancakeGameMode.MatchActive)
 		{
-			CaptureThePancakeGameMode.ReportStats();
+			CaptureThePancakeGameMode.ReportStatsToPlayer(sender);
 		}
 		else
 		{
