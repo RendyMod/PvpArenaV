@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using PvpArena.Configs;
+using PvpArena.Frameworks.CommandFramework;
 using PvpArena.Models;
+using UnityEngine;
 
 namespace PvpArena.Services;
 
@@ -52,6 +54,12 @@ public static class LoginPointsService
 		{
 			AwardPoints(player, points);
 		}
+	}
+	
+	[CommandFramework.Command("time", description: "Logs the time of the server", adminOnly: true)]
+	public static void LogTimeCommand(Player sender)
+	{
+		sender.ReceiveMessage($"Time: {(DateTime.UtcNow.ToString()).White()}".Emphasize());
 	}
 
 	/*

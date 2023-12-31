@@ -116,12 +116,12 @@ internal class GameModeCommands
 	}
 
 	[Command("start-prisonbreak", description: "Starts prison break", usage: ".start-prisonbreak", aliases: new string[] { "start prisonbreak", "start prison-break", "start-prison-break" }, adminOnly: true)]
-	public void StartPrisonBreakCommand(Player sender)
+	public void StartPrisonBreakCommand(Player sender, Player target)
 	{
 		PrisonBreakHelper.EndMatch();
 		Action action = () =>
 		{
-			PrisonBreakHelper.StartMatch();
+			PrisonBreakHelper.StartMatch(target.GetClanMembers());
 		};
 		ActionScheduler.RunActionOnceAfterDelay(action, 1);
 		sender.ReceiveMessage("Starting".White());

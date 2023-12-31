@@ -68,7 +68,7 @@ public static class PrisonBreakConfig
 
 public class PrisonBreakConfigData
 {
-	public string DefaultBlood { get; set; } = "Warrior"; // Default value
+	public string DefaultBlood { get; set; } = "Frailed"; // Default value
 	public RectangleZoneDto PrisonZone { get; set; } = new RectangleZoneDto();
 	public RectangleZoneDto MapCenter { get; set; } = new RectangleZoneDto();
 

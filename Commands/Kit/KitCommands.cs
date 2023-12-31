@@ -66,7 +66,7 @@ public static class KitCommands
 		sender.ReceiveMessage("Gave:".Success()+ " Healing potions".White());
 	}
 	
-	[Command("od", description: "Gives trippy shroom", usage: ".od", aliases: new string[] {"od"}, adminOnly: false, includeInHelp: false, category: "Trippy Shroom")]
+	[Command("od", description: "Toggles Trippy Shroom effects", usage: ".od", aliases: new string[] {"od"}, adminOnly: false, includeInHelp: false, category: "Trippy Shroom")]
 	public static void OverdoseShroomCommand(Player sender)
 	{
 		if (!Helper.HasBuff(sender, Prefabs.AB_Consumable_Eat_TrippyShroom_Buff))

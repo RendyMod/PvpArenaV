@@ -70,12 +70,13 @@ public static class PrisonBreakHelper
 		return prisonGates;
 	}
 
-	public static void StartMatch()
+	public static void StartMatch(List<Player> _players)
 	{
-		Core.prisonBreakGameMode.Initialize();
+		Core.prisonBreakGameMode.Initialize(_players);
 		var gates = GetAllGates();
 		foreach (var gate in gates)
 		{
+			gate.Remove<Interactable>();
 			var door = gate.Read<Door>();
 			door.OpenState = false;
 			gate.Write(door);
@@ -90,7 +91,8 @@ public static class PrisonBreakHelper
 				player.CurrentState = Player.PlayerState.PrisonBreak;
 				player.Reset(ResetOptions.FreshMatch);
 				SetDefaultBlood(player, PrisonBreakConfig.Config.DefaultBlood);
-				player.Teleport(PrisonConfig.Config.CellCoordinateList[index].ToFloat3());
+				int cellIndex = index % PrisonConfig.Config.CellCoordinateList.Count;
+				player.Teleport(PrisonConfig.Config.CellCoordinateList[cellIndex].ToFloat3());
 				BuffPlayer(player, Prefabs.AB_Consumable_PhysicalBrew_T02_Buff, out var buffEntity, NO_DURATION);
 				BuffPlayer(player, Prefabs.AB_Consumable_SpellBrew_T02_Buff, out buffEntity, NO_DURATION);
 				if (BuffPlayer(player, Prefabs.Buff_General_Phasing, out buffEntity, 10))

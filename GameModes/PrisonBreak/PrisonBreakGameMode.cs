@@ -27,9 +27,9 @@ public class PrisonBreakGameMode : BaseGameMode
 	public override string UnitGameModeType => "prisonbreak";
 	public static new Helper.ResetOptions ResetOptions { get; set; } = new Helper.ResetOptions
 	{
-		RemoveConsumables = false,
+		RemoveConsumables = true,
 		RemoveShapeshifts = true,
-		ResetCooldowns = false,
+		ResetCooldowns = true,
 		BuffsToIgnore = new HashSet<PrefabGUID> { Prefabs.AB_Shapeshift_Mist_Buff, Prefabs.Buff_General_HideCorpse }
 	};
 
@@ -52,8 +52,6 @@ public class PrisonBreakGameMode : BaseGameMode
 		"jewel",
 		"forfeit",
 		"points",
-		"lb ranked",
-		"bp",
 	};
 
 	public static List<Timer> Timers = new List<Timer>();
@@ -83,13 +81,25 @@ public class PrisonBreakGameMode : BaseGameMode
 
 	public void Initialize(List<Player> players)
 	{
+		GameEvents.OnPlayerDowned += HandleOnPlayerDowned;
+		GameEvents.OnPlayerDeath += HandleOnPlayerDeath;
+		GameEvents.OnPlayerShapeshift += HandleOnShapeshift;
+		GameEvents.OnPlayerUsedConsumable += HandleOnConsumableUse;
+		GameEvents.OnPlayerInvitedToClan += HandleOnPlayerInvitedToClan;
+		GameEvents.OnPlayerBuffed += HandleOnPlayerBuffed;
+		GameEvents.OnItemWasDropped += HandleOnItemWasDropped;
+		GameEvents.OnPlayerDamageDealt += HandleOnPlayerDamageDealt;
+		GameEvents.OnPlayerDisconnected += HandleOnPlayerDisconnected;
+		GameEvents.OnPlayerConnected += HandleOnPlayerConnected;
+		GameEvents.OnPlayerPlacedStructure += HandleOnPlayerPlacedStructure;
+		
 		foreach (var player in players)
 		{
 			PlayersAlive[player] = true;
-			PlayerRespawnTimers[player] = new List<Timer>();
 		}
-		Initialize();
+
 		playerKills.Clear();
+		stopwatch.Start();
 	}
 	public override void Dispose()
 	{
