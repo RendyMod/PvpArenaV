@@ -41,6 +41,7 @@ using ProjectM.Gameplay;
 using ProjectM.Gameplay.Clan;
 using Unity.Collections.LowLevel.Unsafe;
 using PvpArena.GameModes.CaptureThePancake;
+using ProjectM.Shared;
 
 namespace PvpArena.Patches;
 
@@ -331,30 +332,14 @@ public static class CreateGameplayEventOnTickSystemPatch
 
 }
 */
-
-/*[HarmonyPatch(typeof(DestroySystem), nameof(DestroySystem.OnUpdate))]
-public static class DestroySystemPatch
+/*
+[HarmonyPatch(typeof(HandleGameplayEventsOnHitSystem), nameof(HandleGameplayEventsOnHitSystem.OnUpdate))]
+public static class HandleGameplayEventsOnHitSystemPatch
 {
-	public static void Prefix(DestroySystem __instance)
+	public static void Prefix(HandleGameplayEventsOnHitSystem __instance)
 	{
-		var entities = __instance.__OnUpdate_LambdaJob0_entityQuery.ToEntityArray(Allocator.Temp);
-		foreach (var entity in entities)
-		{
-			if (entity.GetPrefabGUID() == Prefabs.CHAR_Mount_Horse)
-			{
-				var destroyState = entity.Read<DestroyState>();
-				var destroyData = entity.Read<DestroyData>();
-				Plugin.PluginLog.LogInfo($"{destroyState.Value} {destroyData.DestroyReason}");
-*//*				destroyState.Value = DestroyStateEnum.NotDestroyed;
-				destroyData.DestroyReason = DestroyReason.Default;
-				entity.Remove<DestroyTag>();
-				entity.Write(destroyState);
-				entity.Write(destroyData);
-				entity.LogComponentTypes();*//*
-				
-			}
-		}
-	}
+		Plugin.PluginLog.LogInfo("hi");
+	} 
 }*/
 
 //

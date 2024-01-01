@@ -27,13 +27,14 @@ internal class GameModeCommands
 		}
 		if (!Team.IsAllies(team1Leader.Character.Read<Team>(), team2Leader.Character.Read<Team>()))
 		{
-			CaptureThePancakeHelper.EndMatch();
-			System.Action action = () =>
+			try
 			{
-				CaptureThePancakeHelper.StartMatch(team1Leader, team2Leader);
-			};
-			ActionScheduler.RunActionOnceAfterDelay(action, 1);
-
+				CaptureThePancakeManager.StartMatchAtFirstAvailableArena(team1Leader, team2Leader);
+			}
+			catch (Exception e)
+			{
+				sender.ReceiveMessage("There are no available pancake arenas at this time");
+			}
 		}
 		else
 		{
@@ -41,10 +42,10 @@ internal class GameModeCommands
 		}
 	}
 
-	[Command("end-pancake", description: "Ends capture the pancake", adminOnly: true)]
-	public void EndPancakeCommand(Player sender)
+	[Command("end-pancake", usage: ".end-pancake {arenaNumber}", description: "Ends capture the pancake", adminOnly: true)]
+	public void EndPancakeCommand(Player sender, int arenaNumber)
 	{
-		CaptureThePancakeHelper.EndMatch(1);
+		CaptureThePancakeManager.EndMatch(arenaNumber - 1, 0);
 		sender.ReceiveMessage("Match ended".Success());
 	}
 

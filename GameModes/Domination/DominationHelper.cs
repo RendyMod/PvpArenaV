@@ -77,10 +77,6 @@ public static class DominationHelper
 			{
 				unitToSpawn = new ObjectiveHorse(unitSettings.Team);
 			}
-			else if (unitType == "lightningrod")
-			{
-				unitToSpawn = new LightningBoss(unitSettings.Team, unitSettings.Level);
-			}
 			else if (unitType == "healingorb")
 			{
 				unitToSpawn = new HealingOrb();

@@ -19,12 +19,6 @@ internal class TeleportCommands
 	[Command("tp", description: "Teleports you to a set waypoint", usage:".tp 1", aliases: new string[] { "teleport" }, adminOnly: false, includeInHelp: true, category: "Teleport")]
 	public void TeleportCommand(Player sender, string nameOrId)
 	{
-		if (sender.IsInMatch())
-		{
-			sender.ReceiveMessage("Can't teleport while in a match!".Error());
-			return;
-		}
-
 		if (WaypointManager.TryFindWaypoint(nameOrId, out var Waypoint))
 		{
 			if (sender.IsAdmin || !Waypoint.IsAdminOnly)
@@ -51,6 +45,12 @@ internal class TeleportCommands
 			sender.ReceiveMessage("Could not find waypoint!".Error());
 			return;
 		}
+	}
+
+	[Command("admin-tp", description: "Teleports you to a set waypoint", usage: ".admin-tp 1", adminOnly: true)]
+	public void AdminTeleportCommand(Player sender, string nameOrId)
+	{
+		TeleportCommand(sender, nameOrId);
 	}
 
 	[Command("ttp", description: "Requests to teleport you to player", usage:".ttp Ash", adminOnly: false, includeInHelp: true, category: "Teleport")]

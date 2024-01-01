@@ -181,7 +181,7 @@ internal class ClanCommands
 		sender.ReceiveMessage($"{player1.Name.Colorify(ExtendedColor.ClanNameColor)} has joined {player2.Name.Colorify(ExtendedColor.ClanNameColor)}'s clan".White());
 	}
 
-	[Command("kick-clan", description: "Removes a player from their clan", usage: ".kick-clan rendy", aliases: new string[] { "kickclan", "kick clan" }, adminOnly: true)]
+	[Command("kick-clan", description: "Removes a player from their clan", usage: ".kick-clan rendy", aliases: new string[] { "kickclan", "kick clan", "clan kick", "clankick" }, adminOnly: true)]
 	public static void KickClanCommand(Player sender, Player player2)
 	{
 		Helper.RemoveFromClan(player2);

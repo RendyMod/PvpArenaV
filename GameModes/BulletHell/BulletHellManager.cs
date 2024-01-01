@@ -22,8 +22,8 @@ namespace PvpArena.GameModes.BulletHell;
 public static class BulletHellManager
 {
 	private static List<BulletHellGameMode> bulletHellGameModes = new List<BulletHellGameMode>();
-	private static List<Player> playerQueue = new List<Player>();
 	public static Dictionary<BulletHellGameMode, List<Timer>> gameModeTimers = new Dictionary<BulletHellGameMode, List<Timer>>();
+	private static List<Player> playerQueue = new List<Player>();
 	private static bool HasInitialized = false;
 
 	static BulletHellManager ()

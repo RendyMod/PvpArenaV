@@ -210,6 +210,11 @@ public class TargetAoeListener : EntityQueryListener
 				{
 					if (owner.Has<PlayerCharacter>())
 					{
+						if (entity.GetPrefabGUID() == Prefabs.AB_Frost_FrostVortex_Throw)
+						{
+							var buffer = entity.ReadBuffer<CreateGameplayEventsOnHit>();
+							entity.Remove<CreateGameplayEventsOnHit>();
+						}
 						var player = PlayerService.GetPlayerFromCharacter(owner);
 						GameEvents.RaisePlayerAoeCreated(player, entity);
 					}

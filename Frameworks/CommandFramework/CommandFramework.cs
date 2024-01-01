@@ -64,7 +64,7 @@ public class CommandFramework
 		public static List<IMiddleware> middlewares = new List<IMiddleware>
 		{
 			new RolePermissionMiddleware(),
-			new GameModePermissionMiddleware()
+			new GameModePermissionMiddleware(),
 		};
 		private static string[] categoryOrder = new string[] { "Reset CDs & Heal", "Blood Potions", "Witch & Rage Buffs", "Kits", "Jewels", "Legendaries", "Teleport", "Clan", "Misc"};
 

@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
+using PvpArena;
 using PvpArena.Models;
 using static PvpArena.Frameworks.CommandFramework.CommandFramework;
 
@@ -11,7 +12,7 @@ public class RolePermissionMiddleware : IMiddleware
 {
 	public bool CanExecute(Player sender, CommandAttribute command, MethodInfo method)
 	{
-		if (sender.IsAdmin || !command.AdminOnly) return true;
+        if (sender.IsAdmin || !command.AdminOnly) return true;
 		if (RoleRepository.CanUserExecuteCommand(sender.Name, command.Name))
 		{
 			return true;
@@ -71,15 +72,31 @@ public static class RoleRepository
 	public static bool CanUserExecuteCommand(string user, string command)
 	{
 		var roles = FileRoleStorage.GetCommandPermission(command);
-		if (roles == null) return false;
+        if (roles == null)
+        {
+            return false;
+        }
 		var userRoles = FileRoleStorage.GetUserRoles(user);
-		if (userRoles == null) return false;
-		return roles.Any(userRoles.Contains);
+        if (userRoles == null) 
+        {
+            return false;
+        }
+        return roles.Any(userRoles.Contains);
 	}
 }
 
 public static class FileRoleStorage
 {
+	public static void Initialize()
+	{
+		LoadData();
+	}
+	public static void Dispose()
+	{
+		_userRoles.Clear();
+		_commandPermissions.Clear();
+		_roles.Clear();
+	}
 	private static readonly string _filePath = "BepInEx/config/PvpArena/roles.json";
 	private static Dictionary<string, HashSet<string>> _userRoles = new Dictionary<string, HashSet<string>>();
 	private static Dictionary<string, HashSet<string>> _commandPermissions = new Dictionary<string, HashSet<string>>();
@@ -152,19 +169,17 @@ public static class FileRoleStorage
 
 	public static HashSet<string> GetCommandPermission(string command)
 	{
-		LoadData();
+		
 		return _commandPermissions.GetValueOrDefault(command, new HashSet<string>());
 	}
 
 	public static HashSet<string> GetUserRoles(string userId)
 	{
-		LoadData();
 		return _userRoles.GetValueOrDefault(userId, new HashSet<string>());
 	}
 
 	public static HashSet<string> GetRoles()
 	{
-		LoadData();
 		return _roles;
 	}
 

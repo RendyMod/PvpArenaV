@@ -89,6 +89,18 @@ public class ConfigDtos
 		}
 	}
 
+	public class CaptureThePancakeArenaDto
+	{
+		public CoordinateDto Team1PlayerRespawn { get; set; } = new CoordinateDto();
+		public CoordinateDto Team2PlayerRespawn { get; set; } = new CoordinateDto();
+		public RectangleZoneDto Team1EndZone { get; set; } = new RectangleZoneDto();
+		public RectangleZoneDto Team2EndZone { get; set; } = new RectangleZoneDto();
+		public RectangleZoneDto EntireMapZone { get; set; } = new RectangleZoneDto();
+		public RectangleZoneDto MapCenter { get; set; } = new RectangleZoneDto();
+		public List<PrefabSpawn> StructureSpawns { get; set; } = new List<PrefabSpawn>();
+		public List<UnitSpawn> UnitSpawns { get; set; } = new List<UnitSpawn>();
+	}
+
 	public class RectangleZoneDto
 	{
 		public float Left { get; set; }

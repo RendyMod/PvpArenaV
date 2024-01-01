@@ -80,7 +80,7 @@ public static class UpdateClanStatusSystemPatch
 }
 
 
-[HarmonyPatch(typeof(UpdateMapIconsSystem), nameof(UpdateMapIconsSystem.OnUpdate))]
+/*[HarmonyPatch(typeof(UpdateMapIconsSystem), nameof(UpdateMapIconsSystem.OnUpdate))]
 public static class UpdateMapIconsSystemPatch
 {
 	public static void Postfix(UpdateMapIconsSystem __instance)
@@ -103,4 +103,4 @@ public static class UpdateMapIconsSystemPatch
 			}
 		}
 	}
-}
+}*/

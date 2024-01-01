@@ -205,6 +205,8 @@ public class DefaultGameMode : BaseGameMode
 		}
 		else if (Shapeshifts.ContainsKey(enterShapeshiftEvent.Shapeshift))
 		{
+			Helper.RemoveBuff(player, Prefabs.AB_Vampire_Slashers_Camouflage_Main_Buff);
+			Helper.RemoveBuff(player, Prefabs.AB_Blood_BloodRite_SpellMod_Stealth);
 			foreach (var shapeshift in Shapeshifts)
 			{
 				if (enterShapeshiftEvent.Shapeshift == shapeshift.Key)
@@ -310,7 +312,11 @@ public class DefaultGameMode : BaseGameMode
 
 		var sctEntity = Helper.GetPrefabEntityByPrefabGUID(Prefabs.ScrollingCombatTextMessage);
 		ScrollingCombatTextMessage.Create(VWorld.Server.EntityManager, Core.entityCommandBufferSystem.CreateCommandBuffer(), sctEntity, 0, Prefabs.SCT_Type_MAX, player.Position, player.Character, player.Character);
-		Helper.BuffPlayer(player, Prefabs.AB_Shapeshift_NormalForm_Buff, out var buffEntity);
+		if (Helper.BuffPlayer(player, Prefabs.AB_Shapeshift_NormalForm_Buff, out var buffEntity))
+        {
+            var buffer = buffEntity.ReadBuffer<CreateGameplayEventsOnSpawn>();
+            buffer.Clear();
+        }
 	}
 
 	public override void HandleOnPlayerPurchasedItem(Player player, Entity eventEntity)
