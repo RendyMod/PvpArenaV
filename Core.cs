@@ -17,6 +17,7 @@ using PvpArena.GameModes.Dodgeball;
 using PvpArena.GameModes.Domination;
 using PvpArena.GameModes.Matchmaking1v1;
 using PvpArena.GameModes.Moba;
+using PvpArena.GameModes.Pacified;
 using PvpArena.GameModes.Prison;
 using PvpArena.GameModes.PrisonBreak;
 using PvpArena.GameModes.Troll;
@@ -49,7 +50,6 @@ public static class Core
 	public static List<ArenaLocationDto> matchmaking1v1ArenaLocations;
 
 	public static DefaultGameMode defaultGameMode;
-	public static CaptureThePancakeGameMode captureThePancakeGameMode;
 	public static DominationGameMode dominationGameMode;
 	public static Matchmaking1v1GameMode matchmaking1v1GameMode;
     public static SpectatingGameMode spectatingGameMode;
@@ -59,6 +59,7 @@ public static class Core
 	public static NoHealingLimitGameMode noHealingLimitGameMode;
 	public static MobaGameMode mobaGameMode;
 	public static TrollGameMode trollGameMode;
+	public static PacifiedGameMode pacifiedGameMode;
 
 	public static bool HasInitialized = false;
 	public static SQLHandler sqlHandler;
@@ -150,19 +151,24 @@ public static class Core
 		Listener.AddListener(query, new TargetAoeListener());
 
 		//this is a listener for debugging to find which events get triggered when you do things in-game
-/*		queryDesc = new EntityQueryDesc
-		{
-			All = new ComponentType[]
-			{
-						new ComponentType(Il2CppType.Of<FromCharacter>(), ComponentType.AccessMode.ReadWrite)
-			},
-			Options = options
-		};
-		query = VWorld.Server.EntityManager.CreateEntityQuery(queryDesc);
-		Listener.AddListener(query, new FromCharacterListener());*/
+		/*		queryDesc = new EntityQueryDesc
+				{
+					All = new ComponentType[]
+					{
+								new ComponentType(Il2CppType.Of<FromCharacter>(), ComponentType.AccessMode.ReadWrite)
+					},
+					Options = options
+				};
+				query = VWorld.Server.EntityManager.CreateEntityQuery(queryDesc);
+				Listener.AddListener(query, new FromCharacterListener());*/
+
+		FileRoleStorage.Initialize();
 
 		defaultGameMode = new DefaultGameMode();
 		defaultGameMode.Initialize();
+
+		pacifiedGameMode = new PacifiedGameMode();
+		pacifiedGameMode.Initialize();
 
 		if (PvpArenaConfig.Config.MatchmakingEnabled)
 		{
@@ -175,7 +181,7 @@ public static class Core
 		spectatingGameMode = new SpectatingGameMode();
 		spectatingGameMode.Initialize();
 
-		captureThePancakeGameMode = new CaptureThePancakeGameMode(); //wait until a match has started to initialize
+		CaptureThePancakeManager.Initialize();
 
 		dominationGameMode = new DominationGameMode();
 
@@ -212,11 +218,10 @@ public static class Core
 		PlayerService.Dispose();
 		BulletHellManager.Dispose();
         defaultGameMode.Dispose();
-        matchmaking1v1GameMode.Dispose();
-        if (captureThePancakeGameMode != null)
-        {
-            MobaHelper.EndMatch();
-        }
+		pacifiedGameMode.Dispose();
+		matchmaking1v1GameMode.Dispose();
+        
+        CaptureThePancakeManager.Dispose();
 		if (dominationGameMode != null)
 		{
 			DominationHelper.EndMatch();

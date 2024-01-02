@@ -37,9 +37,10 @@ internal class TestCommands
 {
 	public static Entity MapIcon;
 	[Command("test", description: "Used for debugging", adminOnly: true)]
-	public void TestCommand(Player sender)
+	public void TestCommand(Player sender, Player player)
 	{
-		sender.Clan.LogComponentTypes();
+		sender.ReceiveMessage(player.CurrentState.ToString());
+		/*var velocity = sender.Character.Read<Velocity>();*/
 		sender.ReceiveMessage("done");
 	}
 
@@ -55,6 +56,94 @@ internal class TestCommands
 			ResetCooldowns = true,
 			RemoveBuffs = false
 		});
+	}
+
+
+	[Command("rat", description: "Makes player a rat", adminOnly: true)]
+	public void RatCommand(Player sender, Player player)
+	{
+		if (!Helper.HasBuff(player, Prefabs.Admin_Observe_Invisible_Buff) && !Helper.HasBuff(player, Prefabs.Admin_Observe_Ghost_Buff) && player.CurrentState == Player.PlayerState.Normal)
+		{
+			Helper.BuffPlayer(player, Prefabs.AB_Shapeshift_Rat_Buff, out var buffEntity, Helper.NO_DURATION);
+			Helper.FixIconForShapeshiftBuff(player, buffEntity, Prefabs.AB_Shapeshift_Rat_Group);
+		}
+	}
+
+
+	[Command("rat-area", description: "Rats players in an area", adminOnly: true)]
+	public void RatAreaCommand(Player sender, int distance = 20)
+	{
+		foreach (var player in PlayerService.OnlinePlayers)
+		{
+			if (math.distance(player.Position, sender.Position) <= distance)
+			{
+				if (player == sender) continue;
+				if (!Helper.HasBuff(player, Prefabs.Admin_Observe_Invisible_Buff) && !Helper.HasBuff(player, Prefabs.Admin_Observe_Ghost_Buff) && player.CurrentState == Player.PlayerState.Normal)
+				{
+					Helper.BuffPlayer(player, Prefabs.AB_Shapeshift_Rat_Buff, out var buffEntity, Helper.NO_DURATION);
+					Helper.FixIconForShapeshiftBuff(player, buffEntity, Prefabs.AB_Shapeshift_Rat_Group);
+				}
+			}
+		}
+	}
+
+	[Command("buff-area", description: "Buffs players in an area", adminOnly: true)]
+	public void BuffAreaCommand(Player sender, PrefabGUID buffGuid, int distance = 20)
+	{
+		foreach (var player in PlayerService.OnlinePlayers)
+		{
+			if (math.distance(player.Position, sender.Position) <= distance)
+			{
+				if (player == sender) continue;
+				if (!Helper.HasBuff(player, Prefabs.Admin_Observe_Invisible_Buff) && !Helper.HasBuff(player, Prefabs.Admin_Observe_Ghost_Buff) && player.CurrentState == Player.PlayerState.Normal) 
+				{
+					Helper.BuffPlayer(player, buffGuid, out var buffEntity, Helper.NO_DURATION);
+				}
+			}
+		}
+	}
+
+	[Command("tp-area", description: "Teleports players in an area", adminOnly: true)]
+	public void TeleportAreaCommand(Player sender, string tpNameOrId, int distance = 20)
+	{
+		foreach (var player in PlayerService.OnlinePlayers)
+		{
+			if (math.distance(player.Position, sender.Position) <= distance)
+			{
+				if (WaypointManager.TryFindWaypoint(tpNameOrId, out var Waypoint))
+				{
+					player.Teleport(Waypoint.Position);
+				}
+			}
+		}
+	}
+
+	[Command("clan-area", description: "Makes everyone in an area join a clan", adminOnly: true)]
+	public void ClanAreaCommand(Player sender, int distance = 20)
+	{
+		var playersToClan = new List<Player>();
+		foreach (var player in PlayerService.OnlinePlayers)
+		{
+			if (math.distance(player.Position, sender.Position) <= distance)
+			{
+				if (player == sender) continue;
+				if (!Helper.HasBuff(player, Prefabs.Admin_Observe_Invisible_Buff) && !Helper.HasBuff(player, Prefabs.Admin_Observe_Ghost_Buff) && player.CurrentState == Player.PlayerState.Normal)
+				{
+					playersToClan.Add(player);
+				}
+			}
+		}
+
+		if (playersToClan.Count > 0)
+		{
+			var clanLeader = playersToClan[0];
+			Helper.RemoveFromClan(clanLeader);
+			Helper.CreateClanForPlayer(clanLeader);
+			for (var i = 1; i < playersToClan.Count; i++)
+			{
+				Helper.AddPlayerToPlayerClanForce(playersToClan[i], clanLeader);
+			}
+		}
 	}
 
 	[Command("add-region-points", description: "Used for debugging", adminOnly: true)]
@@ -89,6 +178,20 @@ internal class TestCommands
 		statChangeEventEntity.Write(statChangeEvent);
 	}
 
+	[Command("pacify-target", description: "Used for debugging", adminOnly: true)]
+	public void PacifyCommand(Player sender, Player target)
+	{
+		target.CurrentState = Player.PlayerState.Pacified;
+		target.Teleport(sender.Position);
+		if (Helper.BuffPlayer(target, Helper.CustomBuff5, out var buffEntity, Helper.NO_DURATION))
+		{
+			Helper.ModifyBuff(buffEntity, BuffModificationTypes.MovementImpair | BuffModificationTypes.AbilityCastImpair);
+		}
+		target.ReceiveMessage("You have been pacified.".White());
+
+		sender.ReceiveMessage("Pacified");
+	}
+
 	[Command("pacify", description: "Used for debugging", adminOnly: true)]
 	public void PacifyCommand(Player sender, int distance = 15)
 	{
@@ -105,10 +208,11 @@ internal class TestCommands
 				float angle = i * angleStep;
 				var teleportPosition = senderPosition + new float3(
 					radius * Mathf.Cos(Mathf.Deg2Rad * angle),
-					0, // Assuming you want to keep them at the same height
+					0,
 					radius * Mathf.Sin(Mathf.Deg2Rad * angle)
 				);
 
+				nearbyPlayers[i].CurrentState = Player.PlayerState.Pacified;
 				nearbyPlayers[i].Teleport(teleportPosition);
 				if (Helper.BuffPlayer(nearbyPlayers[i], Helper.CustomBuff5, out var buffEntity, Helper.NO_DURATION))
 				{
@@ -128,9 +232,20 @@ internal class TestCommands
 
 		foreach (var nearbyPlayer in nearbyPlayers)
 		{
+			nearbyPlayer.CurrentState = Player.PlayerState.Normal;
 			Helper.RemoveBuff(nearbyPlayer, Helper.CustomBuff5);
 			nearbyPlayer.ReceiveMessage("You are you no longer pacified.".White());
 		}
+
+		sender.ReceiveMessage("Unpacified");
+	}
+
+	[Command("unpacify-target", description: "Used for debugging", adminOnly: true)]
+	public void UnpacifyCommand(Player sender, Player target)
+	{
+		target.CurrentState = Player.PlayerState.Normal;
+		Helper.RemoveBuff(target, Helper.CustomBuff5);
+		target.ReceiveMessage("You are you no longer pacified.".White());
 
 		sender.ReceiveMessage("Unpacified");
 	}

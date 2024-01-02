@@ -655,43 +655,6 @@ public class DominationGameMode : BaseGameMode
 		}
 		ApplyBuffStacks(player);
 	}
-	private static bool IsInFriendlyEndZone(Player player)
-	{
-		RectangleZone endZone;
-		if (player.MatchmakingTeam == 1)
-		{
-			endZone = CaptureThePancakeConfig.Config.Team1EndZone.ToRectangleZone();
-		}
-		else
-		{
-			endZone = CaptureThePancakeConfig.Config.Team2EndZone.ToRectangleZone();
-		}
-		return endZone.Contains(player);
-	}
-
-	private static List<Player> GetOpposingTeam(Player player)
-	{
-		if (player.MatchmakingTeam == 1)
-		{
-			return Teams[2];
-		}
-		else
-		{
-			return Teams[1];
-		}
-	}
-
-	private static List<Player> GetFriendlyTeam(Player player)
-	{
-		if (player.MatchmakingTeam == 1)
-		{
-			return Teams[1];
-		}
-		else
-		{
-			return Teams[2];
-		}
-	}
 
 	public static new HashSet<string> GetAllowedCommands()
 	{

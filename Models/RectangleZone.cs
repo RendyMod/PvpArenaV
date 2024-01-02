@@ -92,6 +92,13 @@ public class RectangleZone
 		return false;
 	}
 
+	public float2 GetCenter()
+	{
+		var x = (Left + Right) / 2;
+		var z = (Top + Bottom) / 2;
+		return new float2(x, z);
+	}
+
 
 	//assumes you are facing north and that are you are standing in the bottom-left square
 	public static RectangleZone GetZoneByCurrentCoordinates(Player player, int tilesRight, int tilesUp)

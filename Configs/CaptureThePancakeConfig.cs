@@ -75,13 +75,7 @@ public class CaptureThePancakeConfigData
 	public int PlayerStartingRespawnTime { get; set; } = 6; // Default value
 	public int PlayerMaxRespawnTime { get; set; } = 30; // Default value
 	public string DefaultBlood { get; set; } = "Warrior"; // Default value
-	public CoordinateDto Team1PlayerRespawn { get; set; } = new CoordinateDto();
-	public CoordinateDto Team2PlayerRespawn { get; set; } = new CoordinateDto();
-	public RectangleZoneDto Team1EndZone { get; set; } = new RectangleZoneDto();
-	public RectangleZoneDto Team2EndZone { get; set; } = new RectangleZoneDto();
-	public RectangleZoneDto MapCenter { get; set; } = new RectangleZoneDto();
-	public List<PrefabSpawn> StructureSpawns { get; set; } = new List<PrefabSpawn>();
-	public List<UnitSpawn> UnitSpawns { get; set; } = new List<UnitSpawn>();
+    public List<CaptureThePancakeArenaDto> Arenas { get; set; } = new();
 
 	// Additional properties...
 }

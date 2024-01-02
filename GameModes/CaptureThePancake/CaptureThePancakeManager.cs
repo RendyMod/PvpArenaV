@@ -19,10 +19,12 @@ using ProjectM.Shared;
 using PvpArena.Configs;
 using PvpArena.Data;
 using PvpArena.Factories;
+using PvpArena.GameModes.BulletHell;
 using PvpArena.Helpers;
 using PvpArena.Models;
 using PvpArena.Services;
 using Unity.Entities;
+using Unity.Entities.UniversalDelegates;
 using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine.Rendering.HighDefinition;
@@ -31,30 +33,102 @@ using static RootMotion.FinalIK.Grounding;
 
 namespace PvpArena.GameModes.CaptureThePancake;
 
-public static class CaptureThePancakeHelper
+public static class CaptureThePancakeManager
 {
-	public static List<Timer> timers = new List<Timer>();
+	public static List<CaptureThePancakeGameMode> captureThePancakeGameModes = new List<CaptureThePancakeGameMode>();
+	public static Dictionary<CaptureThePancakeGameMode, List<Timer>> gameModeTimers = new Dictionary<CaptureThePancakeGameMode, List<Timer>>();
+	private static bool HasInitialized = false;
 
-	public static void DisposeTimers()
+	public static void Initialize()
 	{
-		foreach (var timer in timers)
+		if (!HasInitialized)
+		{
+			for (var i = 0; i < CaptureThePancakeConfig.Config.Arenas.Count; i++)
+			{
+				var pancakeArena = new CaptureThePancakeGameMode();
+				pancakeArena.ArenaNumber = i;
+				captureThePancakeGameModes.Add(pancakeArena);
+				gameModeTimers[pancakeArena] = new List<Timer>();
+			}
+		}
+
+		HasInitialized = true;
+	}
+
+	public static void Dispose()
+	{
+		for (var i = 0; i < captureThePancakeGameModes.Count; i++)
+		{
+			EndMatch(i, 1);
+		}
+
+		captureThePancakeGameModes.Clear();
+		gameModeTimers.Clear();
+		HasInitialized = false;
+	}
+
+	public static void DisposeTimers(int arenaNumber)
+	{
+		var gameMode = captureThePancakeGameModes[arenaNumber];
+		foreach (var timer in gameModeTimers[gameMode])
 		{
 			if (timer != null)
 			{
 				timer.Dispose();
 			}
 		}
-		timers.Clear();
+		gameModeTimers[gameMode].Clear();
 	}
 
-	public static void SpawnStructures(Player player1, Player player2)
+    public static void StartMatchAtFirstAvailableArena(Player team1LeaderPlayer, Player team2LeaderPlayer)
+    {
+        var arenaNumber = GetAvailableArena();
+        if (arenaNumber == -1)
+        {
+            throw new Exception();
+        }
+        else
+        {
+			CaptureThePancakeManager.EndMatch(arenaNumber, 0);
+			var action = () => StartMatch(team1LeaderPlayer, team2LeaderPlayer, arenaNumber);
+			ActionScheduler.RunActionOnceAfterDelay(action, 1);
+		}
+    }
+
+	public static bool StartMatchAtArenaIfAvailable(int arenaNumber, Player team1LeaderPlayer, Player team2LeaderPlayer)
 	{
-		foreach (var structureSpawn in CaptureThePancakeConfig.Config.StructureSpawns)
+		if (!captureThePancakeGameModes[arenaNumber].MatchActive)
+		{
+			var action = () => StartMatch(team1LeaderPlayer, team2LeaderPlayer, arenaNumber);
+			ActionScheduler.RunActionOnceAfterDelay(action, 1);
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+    private static int GetAvailableArena()
+    {
+        for (var i = 0; i < captureThePancakeGameModes.Count; i++)
+        {
+			if (!captureThePancakeGameModes[i].MatchActive)
+            {
+				return i;
+            }
+        }
+        return -1;
+    }
+
+	public static void SpawnStructures(Player player1, Player player2, int arenaNumber)
+	{
+		foreach (var structureSpawn in CaptureThePancakeConfig.Config.Arenas[arenaNumber].StructureSpawns)
 		{
 			var spawnPos = structureSpawn.Location.ToFloat3();
 			if (structureSpawn.Type.ToLower() == "shard chest" && structureSpawn.SpawnDelay >= 30)
 			{
-				foreach (var team in CaptureThePancakeGameMode.Teams.Values)
+				foreach (var team in captureThePancakeGameModes[arenaNumber].Teams.Values)
 				{
 					foreach (var player in team)
 					{
@@ -78,11 +152,23 @@ public static class CaptureThePancakeHelper
 					{
 						e.Write(player1.Character.Read<Team>());
 						e.Write(player1.Character.Read<TeamReference>());
+						if (e.Has<UserOwner>())
+						{
+							var userOwner = e.Read<UserOwner>();
+							userOwner.Owner = player1.User;
+							e.Write(userOwner);
+						}
 					}
 					else if (structureSpawn.Team == 2)
 					{
 						e.Write(player2.Character.Read<Team>());
 						e.Write(player2.Character.Read<TeamReference>());
+						if (e.Has<UserOwner>())
+						{
+							var userOwner = e.Read<UserOwner>();
+							userOwner.Owner = player2.User;
+							e.Write(userOwner);
+						}
 					}
 
 					if (structureSpawn.InventoryItems.Count > 0)
@@ -99,17 +185,17 @@ public static class CaptureThePancakeHelper
 					{
 						if (structureSpawn.Description == "Spawn Gate")
 						{
-							HandleGateOpeningAtMatchStart(e);
+							HandleGateOpeningAtMatchStart(e, arenaNumber);
 						}
 						else
 						{
 							if (structureSpawn.Description == "Winged Horror Gate")
 							{
-								CaptureThePancakeGameMode.WingedHorrorGate = e;
+								captureThePancakeGameModes[arenaNumber].WingedHorrorGate = e;
 							}
 							else if (structureSpawn.Description == "Monster Gate")
 							{
-								CaptureThePancakeGameMode.MonsterGate = e;
+								captureThePancakeGameModes[arenaNumber].MonsterGate = e;
 							}
 
 							e.Remove<Interactable>();
@@ -122,7 +208,7 @@ public static class CaptureThePancakeHelper
 
 					if (structureSpawn.Type.ToLower() == "shard chest" && structureSpawn.SpawnDelay > 0)
 					{
-						foreach (var team in CaptureThePancakeGameMode.Teams.Values)
+						foreach (var team in captureThePancakeGameModes[arenaNumber].Teams.Values)
 						{
 							foreach (var player in team)
 							{
@@ -131,13 +217,13 @@ public static class CaptureThePancakeHelper
 						}
 					}
 
-				}, structureSpawn.RotationMode, -1, true, "pancake");
+				}, structureSpawn.RotationMode, -1, true, $"pancake{arenaNumber}");
 			};
 			Timer timer;
 			if (structureSpawn.SpawnDelay > 0)
 			{
 				timer = ActionScheduler.RunActionOnceAfterDelay(action, structureSpawn.SpawnDelay);
-				timers.Add(timer);
+				gameModeTimers[captureThePancakeGameModes[arenaNumber]].Add(timer);
 			}
 			else
 			{
@@ -149,7 +235,7 @@ public static class CaptureThePancakeHelper
 			{
 				var chestSpawnNotificationAction = () =>
 				{
-					foreach (var team in CaptureThePancakeGameMode.Teams.Values)
+					foreach (var team in captureThePancakeGameModes[arenaNumber].Teams.Values)
 					{
 						foreach (var player in team)
 						{
@@ -159,12 +245,12 @@ public static class CaptureThePancakeHelper
 				};
 
 				timer = ActionScheduler.RunActionOnceAfterDelay(chestSpawnNotificationAction, structureSpawn.SpawnDelay - 30);
-				timers.Add(timer);
+				gameModeTimers[captureThePancakeGameModes[arenaNumber]].Add(timer);
 			}
 		}
 	}
 
-	private static void HandleGateOpeningAtMatchStart(Entity e)
+	private static void HandleGateOpeningAtMatchStart(Entity e, int arenaNumber)
 	{
 		e.Remove<Interactable>();
 		var spawnDoor = e.Read<Door>();
@@ -177,10 +263,10 @@ public static class CaptureThePancakeHelper
 			e.Write(spawnDoor);
 		};
 		var timer = ActionScheduler.RunActionOnceAfterDelay(action, 10);
-		CaptureThePancakeGameMode.Timers.Add(timer);
+		captureThePancakeGameModes[arenaNumber].Timers.Add(timer);
 	}
 
-	private static void StartMatchCountdown()
+	private static void StartMatchCountdown(int arenaNumber)
 	{
 		for (int i = 5; i >= 0; i--)
 		{
@@ -188,7 +274,7 @@ public static class CaptureThePancakeHelper
 
 			Action action = () =>
 			{
-				foreach (var team in CaptureThePancakeGameMode.Teams.Values)
+				foreach (var team in captureThePancakeGameModes[arenaNumber].Teams.Values)
 				{
 					foreach (var player in team)
 					{
@@ -205,23 +291,23 @@ public static class CaptureThePancakeHelper
 
 				if (countdownNumber == 0)
 				{
-					SpawnUnits(CaptureThePancakeGameMode.Teams[1][0], CaptureThePancakeGameMode.Teams[2][0]);
+					SpawnUnits(captureThePancakeGameModes[arenaNumber].Teams[1][0], captureThePancakeGameModes[arenaNumber].Teams[2][0], arenaNumber);
 				}
 			};
 
 			Timer timer = ActionScheduler.RunActionOnceAfterDelay(action, 5 - countdownNumber);
-			CaptureThePancakeGameMode.Timers.Add(timer);
+			captureThePancakeGameModes[arenaNumber].Timers.Add(timer);
 		}
 	}
 
-	public static void KillPreviousEntities()
+	public static void KillPreviousEntities(int arenaNumber)
 	{
 		var entities = Helper.GetNonPlayerSpawnedEntities(true);
 		foreach (var entity in entities)
 		{
 			if (!entity.Has<PlayerCharacter>())
 			{
-				if (UnitFactory.HasGameMode(entity, "pancake"))
+				if (UnitFactory.HasGameMode(entity, $"pancake{arenaNumber}"))
 				{
 					Helper.DestroyEntity(entity);
 				}
@@ -233,13 +319,16 @@ public static class CaptureThePancakeHelper
 		{
 			if (relic.Read<PrefabGUID>() == Prefabs.Resource_Drop_Relic)
 			{
-				Helper.DestroyEntity(relic);
+				if (CaptureThePancakeConfig.Config.Arenas[arenaNumber].EntireMapZone.ToRectangleZone().Contains(relic))
+				{
+					Helper.DestroyEntity(relic);
+				}
 			}
 		}
 		relics.Dispose();
 	}
 
-	public static void DropItemsIntoBag(Player player, List<PrefabGUID> items, int quantity = 1)
+	public static void DropItemsIntoBag(Player player, List<PrefabGUID> items, int arenaNumber, int quantity = 1)
 	{
 		PrefabSpawnerService.SpawnWithCallback(Prefabs.Resource_PlayerDeathContainer_Drop, player.Position, (Entity e) =>
 		{
@@ -259,7 +348,7 @@ public static class CaptureThePancakeHelper
 				Helper.AddItemToInventory(e, item, quantity, out var itemEntity);
 			}
 			e.Add<DestroyWhenInventoryIsEmpty>();
-		}, 0, -1, true, "pancake");
+		}, 0, -1, true, $"pancake{arenaNumber}");
 	}
 
 	public static void GiveVerminSalvesIfNotPresent(Player player)
@@ -272,29 +361,27 @@ public static class CaptureThePancakeHelper
 		Helper.CompletelyRemoveItemFromInventory(player, Prefabs.Item_Consumable_GlassBottle_BloodRosePotion_T02);
 	}
 
-	public static void ClaimEyesOfTwilight(Player p1, Player p2)
+	public static void StartMatch(Player team1LeaderPlayer, Player team2LeaderPlayer, int arenaNumber)
 	{
-		var entities = Helper.GetEntitiesByComponentTypes<RelicRadar>(true);
-		var players = new List<Player> { p1, p2 };
-		for (var i = 0; i < entities.Length && i < 2; i++)
-		{
-			var entity = entities[i];
-			entity.Write(players[i].Character.Read<TeamReference>());
-			entity.Write(players[i].Character.Read<Team>());
-			var userOwner = entity.Read<UserOwner>();
-			userOwner.Owner = players[i].User;
-			entity.Write(userOwner);
-		}
-		entities.Dispose();
-	}
-
-	public static void StartMatch(Player team1LeaderPlayer, Player team2LeaderPlayer)
-	{
-		ClaimEyesOfTwilight(team1LeaderPlayer, team2LeaderPlayer);
 		var team1Players = team1LeaderPlayer.GetClanMembers();
 		var team2Players = team2LeaderPlayer.GetClanMembers();
-		Core.captureThePancakeGameMode.Initialize(team1Players, team2Players);
-		SpawnStructures(team1LeaderPlayer, team2LeaderPlayer);
+		captureThePancakeGameModes[arenaNumber].Initialize(team1Players, team2Players);
+		foreach (var player in PlayerService.OnlinePlayers)
+		{
+			if (player.CurrentState == Player.PlayerState.Spectating || Helper.HasBuff(player, Prefabs.Admin_Observe_Ghost_Buff) || Helper.HasBuff(player, Prefabs.Admin_Observe_Invisible_Buff))
+			{
+				continue;
+			}
+			else
+			{
+				if (captureThePancakeGameModes[arenaNumber].EntireMapZone.Contains(player.Character))
+				{
+					player.ReceiveMessage("You have been teleported out because a new pancake match has started in this arena".White());
+					player.Teleport(PvpArenaConfig.Config.CustomSpawnLocation.ToFloat3());
+				}
+			}
+		}
+		SpawnStructures(team1LeaderPlayer, team2LeaderPlayer, arenaNumber);
 		
 		foreach (var team1Player in team1Players)
 		{
@@ -303,8 +390,11 @@ public static class CaptureThePancakeHelper
 			team1Player.Reset(BaseGameMode.ResetOptions);
 			Helper.SetDefaultBlood(team1Player, CaptureThePancakeConfig.Config.DefaultBlood.ToLower());
 			GiveVerminSalvesIfNotPresent(team1Player);
-			var teleportPlayerAction = () => team1Player.Teleport(CaptureThePancakeConfig.Config.Team1PlayerRespawn.ToFloat3());
-			ActionScheduler.RunActionOnceAfterDelay(teleportPlayerAction, .1);
+			if (team1Player.IsOnline)
+			{
+				var teleportPlayerAction = () => team1Player.Teleport(CaptureThePancakeConfig.Config.Arenas[arenaNumber].Team1PlayerRespawn.ToFloat3());
+				ActionScheduler.RunActionOnceAfterDelay(teleportPlayerAction, .1);
+			}
 			team1Player.ReceiveMessage($"The match will start in {"10".Emphasize()} seconds. {"Get ready!".Emphasize()}".White());
 			try
 			{
@@ -316,7 +406,7 @@ public static class CaptureThePancakeHelper
 
 			}
 		}
-
+		
 		foreach (var team2Player in team2Players)
 		{
 			team2Player.CurrentState = Player.PlayerState.CaptureThePancake;
@@ -324,8 +414,12 @@ public static class CaptureThePancakeHelper
 			team2Player.Reset(BaseGameMode.ResetOptions);
 			Helper.SetDefaultBlood(team2Player, CaptureThePancakeConfig.Config.DefaultBlood.ToLower());
 			GiveVerminSalvesIfNotPresent(team2Player);
-			var teleportPlayerAction = () => team2Player.Teleport(CaptureThePancakeConfig.Config.Team2PlayerRespawn.ToFloat3());
-			ActionScheduler.RunActionOnceAfterDelay(teleportPlayerAction, .1);
+			if (team2Player.IsOnline)
+			{
+				var teleportPlayerAction = () => team2Player.Teleport(CaptureThePancakeConfig.Config.Arenas[arenaNumber].Team2PlayerRespawn.ToFloat3());
+				ActionScheduler.RunActionOnceAfterDelay(teleportPlayerAction, .1);
+			}
+			
 			team2Player.ReceiveMessage($"The match will start in {"10".Emphasize()} seconds. {"Get ready!".Emphasize()}".White());
 			try
 			{
@@ -338,15 +432,15 @@ public static class CaptureThePancakeHelper
 			}
 		}
 
-		var action = () => { StartMatchCountdown(); };
+		var action = () => { StartMatchCountdown(arenaNumber); };
 
 		Timer timer = ActionScheduler.RunActionOnceAfterDelay(action, 5);
-		CaptureThePancakeGameMode.Timers.Add(timer);
+		captureThePancakeGameModes[arenaNumber].Timers.Add(timer);
 	}
 
-	private static void SpawnUnits(Player team1LeaderPlayer, Player team2LeaderPlayer)
+	private static void SpawnUnits(Player team1LeaderPlayer, Player team2LeaderPlayer, int arenaNumber)
 	{
-		foreach (var unitSettings in CaptureThePancakeConfig.Config.UnitSpawns)
+		foreach (var unitSettings in CaptureThePancakeConfig.Config.Arenas[arenaNumber].UnitSpawns)
 		{
 			Unit unitToSpawn;
 			var unitType = unitSettings.Type.ToLower();
@@ -369,7 +463,7 @@ public static class CaptureThePancakeHelper
 			}
 			else if (unitType == "lightningrod")
 			{
-				unitToSpawn = new LightningBoss(unitSettings.Team, unitSettings.Level);
+				unitToSpawn = new LightningBoss($"pancake{arenaNumber}", unitSettings.Team, unitSettings.Level);
 			}
 			else if (unitType == "healingorb")
 			{
@@ -381,7 +475,7 @@ public static class CaptureThePancakeHelper
 				unitToSpawn.IsRooted = true;
 			}
 			unitToSpawn.MaxHealth = unitSettings.Health;
-			unitToSpawn.GameMode = "pancake";
+			unitToSpawn.GameMode = $"pancake{arenaNumber}";
 			unitToSpawn.RespawnTime = unitSettings.RespawnTime;
 			unitToSpawn.SpawnDelay = unitSettings.SpawnDelay;
 			if (unitSettings.SpawnDelay > 30)
@@ -405,26 +499,26 @@ public static class CaptureThePancakeHelper
 		}
 	}
 
-	public static void EndMatch(int winner = 0)
+	public static void EndMatch(int arenaNumber, int winner = 0)
 	{
 		try
 		{
-			var relics = Helper.GetEntitiesByComponentTypes<Relic>();
+/*			var relics = Helper.GetEntitiesByComponentTypes<Relic>();
 			foreach (var relic in relics)
 			{
 				Helper.KillOrDestroyEntity(relic);
 			}
-			relics.Dispose();
-			foreach (var timer in CaptureThePancakeGameMode.Timers)
+			relics.Dispose();*/
+			foreach (var timer in captureThePancakeGameModes[arenaNumber].Timers)
 			{
 				if (timer != null)
 				{
 					timer.Dispose();
 				}
 			}
-			CaptureThePancakeGameMode.Timers.Clear();
+			captureThePancakeGameModes[arenaNumber].Timers.Clear();
 
-			foreach (var team in CaptureThePancakeGameMode.Teams.Values)
+			foreach (var team in captureThePancakeGameModes[arenaNumber].Teams.Values)
 			{
 				foreach (var player in team)
 				{
@@ -436,31 +530,32 @@ public static class CaptureThePancakeHelper
 					Helper.RespawnPlayer(player, player.Position);
 				}
 			}
-			if (winner > 0 && CaptureThePancakeGameMode.Teams.Count > 0)
+			if (winner > 0 && captureThePancakeGameModes[arenaNumber].Teams.Count > 0)
 			{
 				var action = () => {
-					TeleportTeamsToCenter(CaptureThePancakeGameMode.Teams, winner, TeamSide.East);
-					Core.captureThePancakeGameMode.Dispose();
-					UnitFactory.DisposeTimers("pancake");
-					DisposeTimers();
-					KillPreviousEntities();
+					Plugin.PluginLog.LogInfo("hi");
+					TeleportTeamsToCenter(captureThePancakeGameModes[arenaNumber].Teams, winner, TeamSide.East, arenaNumber);
+					captureThePancakeGameModes[arenaNumber].Dispose();
+					UnitFactory.DisposeTimers($"pancake{arenaNumber}");
+					DisposeTimers(arenaNumber);
+					KillPreviousEntities(arenaNumber);
 				};
 				ActionScheduler.RunActionOnceAfterDelay(action, .1);
 			}
 			else
 			{
-				Core.captureThePancakeGameMode.Dispose();
-				UnitFactory.DisposeTimers("pancake");
-				DisposeTimers();
-				KillPreviousEntities();
+				captureThePancakeGameModes[arenaNumber].Dispose();
+				UnitFactory.DisposeTimers($"pancake{arenaNumber}");
+				DisposeTimers(arenaNumber);
+				KillPreviousEntities(arenaNumber);
 			}
 		}
 		catch (Exception e)
 		{
-			Core.captureThePancakeGameMode.Dispose();
-			UnitFactory.DisposeTimers("pancake");
-			DisposeTimers();
-			KillPreviousEntities();
+			captureThePancakeGameModes[arenaNumber].Dispose();
+			UnitFactory.DisposeTimers($"pancake{arenaNumber}");
+			DisposeTimers(arenaNumber);
+			KillPreviousEntities(arenaNumber);
 			Plugin.PluginLog.LogError(e.ToString());
 		}
 	}
@@ -476,9 +571,11 @@ public static class CaptureThePancakeHelper
 	public static void TeleportTeamsToCenter(
 	Dictionary<int, List<Player>> Teams,
 	int winningTeam,
-	TeamSide teamOneSide)
+	TeamSide teamOneSide,
+	int arenaNumber
+	)
 	{
-		var mapCenter = CaptureThePancakeConfig.Config.MapCenter;
+		var mapCenter = CaptureThePancakeConfig.Config.Arenas[arenaNumber].MapCenter;
 		float playerSpacing = 2f;  // Adjust this as needed for the distance between players.
 
 		// Determine the center coordinates
@@ -526,6 +623,7 @@ public static class CaptureThePancakeHelper
 			else
 			{
 				team[i].TeleportToOfflinePosition();
+				Helper.RemoveFromClan(team[i]);
 			}
 		}
 	}

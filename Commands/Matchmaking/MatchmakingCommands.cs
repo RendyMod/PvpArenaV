@@ -193,15 +193,44 @@ internal static class MatchmakingCommands
 	}
 
 	[Command("lb pancake", description: "Displays the current pancake match's stats", adminOnly: false)]
-	public static void PancakeLeaderboardCommand(Player sender)
+	public static void PancakeLeaderboardCommand(Player sender, int arenaNumber = -1)
 	{
-		if (CaptureThePancakeGameMode.MatchActive)
+		if (arenaNumber == -1)
 		{
-			CaptureThePancakeGameMode.ReportStatsToPlayer(sender);
+			if (sender.IsInCaptureThePancake())
+			{
+				for (var i = 0; i < CaptureThePancakeManager.captureThePancakeGameModes.Count; i++)
+				{
+					if (CaptureThePancakeManager.captureThePancakeGameModes[i].Players.Contains(sender))
+					{
+						arenaNumber = i;
+						break;
+					}
+				}
+			}
+			else
+			{
+				arenaNumber = 0;
+			}
 		}
 		else
 		{
-			sender.ReceiveMessage("There is no active pancake match".Error());
+			arenaNumber--;
+		}
+		
+		if (arenaNumber < 0 || arenaNumber >= CaptureThePancakeManager.captureThePancakeGameModes.Count)
+		{
+			sender.ReceiveMessage("Invalid arena number specified".Error());
+			return;
+		}
+		if (CaptureThePancakeManager.captureThePancakeGameModes[arenaNumber].MatchActive)
+		{
+			sender.ReceiveMessage($"Current Pancake Stats For Arena #{arenaNumber+1}".White());
+			CaptureThePancakeManager.captureThePancakeGameModes[arenaNumber].ReportStatsToPlayer(sender);
+		}
+		else
+		{
+			sender.ReceiveMessage($"There is no active pancake match for Arena #{arenaNumber+1}".Error());
 		}
 	}
 

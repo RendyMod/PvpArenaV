@@ -1,7 +1,9 @@
 // Other comopnents of the middleware
 
+using Cpp2IL.Core.Api;
 using PvpArena.Frameworks.CommandFramework;
 using PvpArena.Models;
+using PvpArena.Services;
 
 public static class RoleCommands
 {
@@ -22,7 +24,7 @@ public static class RoleCommands
 		sender.ReceiveMessage($"Added {name.Emphasize()} role".Success());
 	}
 
-	[CommandFramework.Command("grant-command-role-access", adminOnly:true)]
+	[CommandFramework.Command("grant-role-command-access", adminOnly:true)]
 	public static void AllowCommand(Player sender, string role, string command)
 	{
 		RoleRepository.AddRoleToCommand(command, role);
@@ -37,17 +39,17 @@ public static class RoleCommands
 	}
 
 	[CommandFramework.Command("assign-role", adminOnly:true)]
-	public static void AssignUserToRole(Player sender, string user, string role)
+	public static void AssignPlayerToRole(Player sender, Player player, string role)
 	{
-		RoleRepository.AddUserToRole(user, role);
-		sender.ReceiveMessage($"Assigned {role.Emphasize()} role to {user.Emphasize()}".Success());
+		RoleRepository.AddPlayerToRole(player, role);
+		sender.ReceiveMessage($"Assigned {role.Emphasize()} role to {player.Name.Emphasize()}".Success());
 	}
 
 	[CommandFramework.Command("unassign-role", adminOnly:true)]
-	public static void UnassignUserFromRole(Player sender, string user, string role)
+	public static void UnassignUserFromRole(Player sender, Player player, string role)
 	{
-		RoleRepository.RemoveUserFromRole(user, role);
-		sender.ReceiveMessage($"Unassigned {role.Emphasize()} role to {user.Emphasize()}".Success());
+		RoleRepository.RemovePlayerFromRole(player, role);
+		sender.ReceiveMessage($"Unassigned {role.Emphasize()} role to {player.Name.Emphasize()}".Success());
 	}
 
 	[CommandFramework.Command("list-all-roles", adminOnly:true)]
@@ -56,10 +58,10 @@ public static class RoleCommands
 		sender.ReceiveMessage(("Roles: " + string.Join(", ", RoleRepository.Roles).Emphasize()).Success());
 	}
 
-	[CommandFramework.Command("list-user-roles", adminOnly:true)]
-	public static void ListRoles(Player sender, string user)
+	[CommandFramework.Command("list-player-roles", adminOnly:true)]
+	public static void ListRoles(Player sender, Player player)
 	{
-		sender.ReceiveMessage($"Roles: {string.Join(", ", RoleRepository.ListUserRoles(user)).Emphasize()}".Success());
+		sender.ReceiveMessage($"Roles: {string.Join(", ", RoleRepository.ListPlayerRoles(player)).Emphasize()}".Success());
 	}
 
 	[CommandFramework.Command("list-command-roles", adminOnly:true)]

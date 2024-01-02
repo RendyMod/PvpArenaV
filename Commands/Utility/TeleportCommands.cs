@@ -11,6 +11,7 @@ using PvpArena.Helpers;
 using PvpArena.Data;
 using PvpArena.Configs;
 using PvpArena.GameModes;
+using Unity.Mathematics;
 
 namespace PvpArena.Commands;
 
@@ -19,19 +20,20 @@ internal class TeleportCommands
 	[Command("tp", description: "Teleports you to a set waypoint", usage:".tp 1", aliases: new string[] { "teleport" }, adminOnly: false, includeInHelp: true, category: "Teleport")]
 	public void TeleportCommand(Player sender, string nameOrId)
 	{
-		if (sender.IsInMatch())
-		{
-			sender.ReceiveMessage("Can't teleport while in a match!".Error());
-			return;
-		}
-
 		if (WaypointManager.TryFindWaypoint(nameOrId, out var Waypoint))
 		{
 			if (sender.IsAdmin || !Waypoint.IsAdminOnly)
 			{
 				try
 				{
-					sender.Teleport( Waypoint.Position);
+					if (sender.CurrentState == Player.PlayerState.Pacified)
+					{
+						sender.CurrentState = Player.PlayerState.Normal;
+						Helper.RemoveBuff(sender, Helper.CustomBuff5);
+						sender.ReceiveMessage("You are no longer pacified.".White());
+					}
+					
+					sender.Teleport(Waypoint.Position);
 					sender.ReceiveMessage(("Teleported to waypoint: " + Waypoint.Name.Emphasize()).White());
 				}
 				catch (Exception e)
@@ -51,6 +53,35 @@ internal class TeleportCommands
 			sender.ReceiveMessage("Could not find waypoint!".Error());
 			return;
 		}
+	}
+
+	//temporary hack -- implemented independently of the waypoints in order to allow non-admins with roles to have access to the tp
+	[Command("tp pancake", description: "Teleports you to a set waypoint", usage: ".tp 1", adminOnly: true)]
+	public void TeleportPancakeCommand(Player sender, int arenaNumber = 1)
+	{
+		if (arenaNumber == -1)
+		{
+			arenaNumber = 1;
+		}
+		arenaNumber--;
+		if (arenaNumber < 0 || arenaNumber >= CaptureThePancakeConfig.Config.Arenas.Count)
+		{
+			sender.ReceiveMessage("Invalid arena number");
+			return;
+		}
+		var position = new float3();
+		var float2 = CaptureThePancakeConfig.Config.Arenas[arenaNumber].MapCenter.ToRectangleZone().GetCenter();
+		position.x = float2.x;
+		position.y = 100;
+		position.z = float2.y;
+		sender.Teleport(position);
+		sender.ReceiveMessage("Teleported to pancake.".White());
+	}
+
+	[Command("admin-tp", description: "Teleports you to a set waypoint", usage: ".admin-tp 1", adminOnly: true)]
+	public void AdminTeleportCommand(Player sender, string nameOrId)
+	{
+		TeleportCommand(sender, nameOrId);
 	}
 
 	[Command("ttp", description: "Requests to teleport you to player", usage:".ttp Ash", adminOnly: false, includeInHelp: true, category: "Teleport")]

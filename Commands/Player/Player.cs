@@ -31,7 +31,8 @@ public class Player
 		Troll,
 		PrisonBreak,
 		NoHealingLimit,
-		Moba
+		Moba,
+		Pacified
 	}
 
 	private Entity _user;

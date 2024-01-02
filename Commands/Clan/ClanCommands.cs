@@ -174,14 +174,14 @@ internal class ClanCommands
 		sender.ReceiveMessage("You successfully created the clan!");
 	}
 
-	[Command("force-clan", description: "Forces a player to join the clan of another", usage: ".force-clan ash rendy", aliases: new string[] { "forceclan", "force clan" }, adminOnly: true)]
+	[Command("force-clan", description: "Forces a player to join the clan of another", usage: ".force-clan ash rendy", aliases: new string[] { "fc", "forceclan", "force clan" }, adminOnly: true)]
 	public static void ForceClanCommand(Player sender, Player player1, Player player2)
 	{
 		Helper.AddPlayerToPlayerClanForce(player1, player2);
 		sender.ReceiveMessage($"{player1.Name.Colorify(ExtendedColor.ClanNameColor)} has joined {player2.Name.Colorify(ExtendedColor.ClanNameColor)}'s clan".White());
 	}
 
-	[Command("kick-clan", description: "Removes a player from their clan", usage: ".kick-clan rendy", aliases: new string[] { "kickclan", "kick clan" }, adminOnly: true)]
+	[Command("kick-clan", description: "Removes a player from their clan", usage: ".kick-clan rendy", aliases: new string[] { "kickclan", "kick clan", "clan kick", "clankick" }, adminOnly: true)]
 	public static void KickClanCommand(Player sender, Player player2)
 	{
 		Helper.RemoveFromClan(player2);

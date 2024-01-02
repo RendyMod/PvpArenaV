@@ -603,7 +603,7 @@ public class Boss : Unit
 
 public class LightningBoss : Boss
 {
-	public LightningBoss(int team = 10, int level = -1) : base(Prefabs.CHAR_Gloomrot_SpiderTank_LightningRod, team, level)
+	public LightningBoss(string gameMode, int team = 10, int level = -1) : base(Prefabs.CHAR_Gloomrot_SpiderTank_LightningRod, team, level)
 	{
 		isRooted = true;
 	}
@@ -612,7 +612,7 @@ public class LightningBoss : Boss
 	{
 		Action action = () => Helper.BuffEntity(e, Prefabs.AB_LightningStrike_RodHit_EmpowerTankBuff, out var lightningBuffEntity, Helper.NO_DURATION);
 		var timer = ActionScheduler.RunActionEveryInterval(action, 3);
-		timersByCategory["pancake"].Add(timer);
+		timersByCategory[gameMode].Add(timer);
 		base.Modify(e, buffEntity);
 	}
 }

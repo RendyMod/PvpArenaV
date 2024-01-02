@@ -18,22 +18,35 @@ using static PvpArena.Frameworks.CommandFramework.CommandFramework;
 namespace PvpArena.Commands.GameModes;
 internal class GameModeCommands
 {
-	[Command("start-pancake", description: "Starts capture the pancake", usage: ".start-pancake Ash Rendy", adminOnly: true)]
-	public void StartPancakeCommand(Player sender, Player team2Leader, Player team1Leader = null)
+	[Command("start-pancake", description: "Starts capture the pancake", usage: ".start-pancake 1 Ash Rendy", adminOnly: true)]
+	public void StartPancakeCommand(Player sender, int arenaNumber, Player team2Leader, Player team1Leader = null)
 	{
+		arenaNumber--;
 		if (team1Leader == null)
 		{
 			team1Leader = sender;
 		}
 		if (!Team.IsAllies(team1Leader.Character.Read<Team>(), team2Leader.Character.Read<Team>()))
 		{
-			CaptureThePancakeHelper.EndMatch();
-			System.Action action = () =>
+			if (arenaNumber < 0 || arenaNumber >= CaptureThePancakeManager.captureThePancakeGameModes.Count)
 			{
-				CaptureThePancakeHelper.StartMatch(team1Leader, team2Leader);
-			};
-			ActionScheduler.RunActionOnceAfterDelay(action, 1);
-
+				sender.ReceiveMessage("You have specified an invalid arena number.".Error());
+				return;
+			}
+			if (team1Leader.IsInCaptureThePancake())
+			{
+				sender.ReceiveMessage($"{team1Leader.Name} is already in a pancake match!".Error());
+				return;
+			} 
+			else if (team2Leader.IsInCaptureThePancake())
+			{
+				sender.ReceiveMessage($"{team2Leader.Name} is already in a pancake match!".Error());
+				return;
+			}
+			if (!CaptureThePancakeManager.StartMatchAtArenaIfAvailable(arenaNumber, team1Leader, team2Leader))
+			{
+				sender.ReceiveMessage("That arena is currently in a match!".Error());
+			}
 		}
 		else
 		{
@@ -41,10 +54,10 @@ internal class GameModeCommands
 		}
 	}
 
-	[Command("end-pancake", description: "Ends capture the pancake", adminOnly: true)]
-	public void EndPancakeCommand(Player sender)
+	[Command("end-pancake", usage: ".end-pancake {arenaNumber}", description: "Ends capture the pancake", adminOnly: true)]
+	public void EndPancakeCommand(Player sender, int arenaNumber)
 	{
-		CaptureThePancakeHelper.EndMatch(1);
+		CaptureThePancakeManager.EndMatch(arenaNumber - 1, 0);
 		sender.ReceiveMessage("Match ended".Success());
 	}
 

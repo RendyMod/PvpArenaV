@@ -10,6 +10,7 @@ using PvpArena.GameModes.Dodgeball;
 using PvpArena.GameModes.Domination;
 using PvpArena.GameModes.Matchmaking1v1;
 using PvpArena.GameModes.Moba;
+using PvpArena.GameModes.Pacified;
 using PvpArena.GameModes.Prison;
 using PvpArena.GameModes.PrisonBreak;
 using PvpArena.GameModes.Troll;
@@ -40,7 +41,8 @@ public class GameModePermissionMiddleware : IMiddleware
 			{ Player.PlayerState.Troll, TrollGameMode.GetAllowedCommands() },
 			{ Player.PlayerState.PrisonBreak, PrisonBreakGameMode.GetAllowedCommands() },
 			{ Player.PlayerState.NoHealingLimit, NoHealingLimitGameMode.GetAllowedCommands() },
-			{ Player.PlayerState.Moba, MobaGameMode.GetAllowedCommands() }
+			{ Player.PlayerState.Moba, MobaGameMode.GetAllowedCommands() },
+			{ Player.PlayerState.Pacified, PacifiedGameMode.GetAllowedCommands() }
 			// Add more game modes and their corresponding allowed commands here
 		};
 	}
@@ -48,7 +50,7 @@ public class GameModePermissionMiddleware : IMiddleware
 	{
 		try
 		{
-			if (sender.IsAdmin && command.AdminOnly) return true;
+			if (command.AdminOnly) return true;
 
 			if (allowedCommandsByGameMode.TryGetValue(sender.CurrentState, out var allowedCommands))
 			{
