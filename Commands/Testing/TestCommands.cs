@@ -37,10 +37,18 @@ internal class TestCommands
 {
 	public static Entity MapIcon;
 	[Command("test", description: "Used for debugging", adminOnly: true)]
-	public void TestCommand(Player sender, Player player)
+	public void TestCommand(Player sender)
 	{
-		sender.ReceiveMessage(player.CurrentState.ToString());
-		/*var velocity = sender.Character.Read<Velocity>();*/
+		if (Core.gameDataSystem.ItemHashLookupMap.TryGetValue(Prefabs.Item_Headgear_BearTrophy, out var itemData))
+		{
+			var map = Core.gameDataSystem.ItemHashLookupMap;
+			itemData.ItemCategory |= ItemCategory.BloodBound;
+			map[Prefabs.Item_Headgear_BearTrophy] = itemData;
+			/*var entity = Helper.GetPrefabEntityByPrefabGUID(Prefabs.Item_Headgear_BearTrophy);
+			var prefabItemData = entity.Read<ItemData>();
+			prefabItemData.ItemCategory |= ItemCategory.BloodBound;
+			entity.Write(prefabItemData);*/
+		}
 		sender.ReceiveMessage("done");
 	}
 
@@ -78,7 +86,7 @@ internal class TestCommands
 			if (math.distance(player.Position, sender.Position) <= distance)
 			{
 				if (player == sender) continue;
-				if (!Helper.HasBuff(player, Prefabs.Admin_Observe_Invisible_Buff) && !Helper.HasBuff(player, Prefabs.Admin_Observe_Ghost_Buff) && player.CurrentState == Player.PlayerState.Normal)
+				if (!Helper.HasBuff(player, Prefabs.Admin_Observe_Invisible_Buff) && !Helper.HasBuff(player, Prefabs.Admin_Observe_Ghost_Buff) && (player.CurrentState == Player.PlayerState.Normal || player.CurrentState == Player.PlayerState.Pacified))
 				{
 					Helper.BuffPlayer(player, Prefabs.AB_Shapeshift_Rat_Buff, out var buffEntity, Helper.NO_DURATION);
 					Helper.FixIconForShapeshiftBuff(player, buffEntity, Prefabs.AB_Shapeshift_Rat_Group);

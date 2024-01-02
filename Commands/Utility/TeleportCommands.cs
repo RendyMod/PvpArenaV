@@ -57,8 +57,12 @@ internal class TeleportCommands
 
 	//temporary hack -- implemented independently of the waypoints in order to allow non-admins with roles to have access to the tp
 	[Command("tp pancake", description: "Teleports you to a set waypoint", usage: ".tp 1", adminOnly: true)]
-	public void TeleportPancakeCommand(Player sender, int arenaNumber = 1)
+	public void TeleportPancakeCommand(Player sender, int arenaNumber, Player player = null)
 	{
+		if (player == null)
+		{
+			player = sender;
+		}
 		if (arenaNumber == -1)
 		{
 			arenaNumber = 1;
@@ -74,7 +78,11 @@ internal class TeleportCommands
 		position.x = float2.x;
 		position.y = 100;
 		position.z = float2.y;
-		sender.Teleport(position);
+		player.Teleport(position);
+		if (player != sender)
+		{
+			player.ReceiveMessage("You have been teleported to pancake.".White());
+		}
 		sender.ReceiveMessage("Teleported to pancake.".White());
 	}
 

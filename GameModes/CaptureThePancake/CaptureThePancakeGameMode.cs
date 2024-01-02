@@ -127,7 +127,8 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		"points",
 		"lb ranked",
 		"bp",
-		"lb pancake"
+		"lb pancake",
+		"recount"
 	};
 
 	public List<Timer> Timers = new List<Timer>();
@@ -193,11 +194,13 @@ public class CaptureThePancakeGameMode : BaseGameMode
 		Teams = new Dictionary<int, List<Player>>();
         foreach (var player in team1Players)
         {
-            Players.Add(player);
+			DamageRecorderService.ClearDamageRecord(player);
+			Players.Add(player);
         }
         foreach (var player in team2Players)
         {
-            Players.Add(player);
+			DamageRecorderService.ClearDamageRecord(player);
+			Players.Add(player);
         }
         Teams[1] = team1Players;
 		Teams[2] = team2Players;
@@ -1104,6 +1107,8 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 		var targetPlayer = PlayerService.GetPlayerFromCharacter(target);
 		if (source.CurrentState != PlayerGameModeType || targetPlayer.CurrentState != PlayerGameModeType) return;
+
+		DamageRecorderService.RecordDamageDone(source, ability, damageInfo);
 
 		if (!PlayerDamageDealt.ContainsKey(source)) 
 		{

@@ -92,6 +92,11 @@ public static class DamageRecorderService
 		}
 	}
 
+	public static void ClearDamageRecord(Player player)
+	{
+		_playerDamageDealtRecord[player].Clear();
+	}
+
 	private static Dictionary<string, Dictionary<PrefabGUID, DamageInfo>> GroupRelatedAbilities(Dictionary<PrefabGUID, DamageInfo> abilityDamage)
 	{
 		var groupedAbilities = new Dictionary<string, Dictionary<PrefabGUID, DamageInfo>>();

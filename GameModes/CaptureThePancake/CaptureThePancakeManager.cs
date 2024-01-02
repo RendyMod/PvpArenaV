@@ -374,7 +374,7 @@ public static class CaptureThePancakeManager
 			}
 			else
 			{
-				if (captureThePancakeGameModes[arenaNumber].EntireMapZone.Contains(player.Character))
+				if (captureThePancakeGameModes[arenaNumber].EntireMapZone.Contains(player.Character) && !team1Players.Contains(player) && !team2Players.Contains(player))
 				{
 					player.ReceiveMessage("You have been teleported out because a new pancake match has started in this arena".White());
 					player.Teleport(PvpArenaConfig.Config.CustomSpawnLocation.ToFloat3());

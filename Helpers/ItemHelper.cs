@@ -218,8 +218,7 @@ public static partial class Helper
 	public static bool AddItemToInventory(Entity recipient, PrefabGUID guid, int amount, out Entity entity,
 		bool equip = true, int slot = 0)
 	{
-		var gameData = VWorld.Server.GetExistingSystem<GameDataSystem>();
-		var itemSettings = AddItemSettings.Create(VWorld.Server.EntityManager, gameData.ItemHashLookupMap);
+		var itemSettings = AddItemSettings.Create(VWorld.Server.EntityManager, Core.gameDataSystem.ItemHashLookupMap);
 		itemSettings.EquipIfPossible = equip;
 		itemSettings.StartIndex = new Nullable_Unboxed<int>(slot);
 		var inventoryResponse = InventoryUtilitiesServer.TryAddItem(itemSettings, recipient, guid, amount);
