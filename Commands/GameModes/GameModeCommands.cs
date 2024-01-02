@@ -18,22 +18,34 @@ using static PvpArena.Frameworks.CommandFramework.CommandFramework;
 namespace PvpArena.Commands.GameModes;
 internal class GameModeCommands
 {
-	[Command("start-pancake", description: "Starts capture the pancake", usage: ".start-pancake Ash Rendy", adminOnly: true)]
-	public void StartPancakeCommand(Player sender, Player team2Leader, Player team1Leader = null)
+	[Command("start-pancake", description: "Starts capture the pancake", usage: ".start-pancake 1 Ash Rendy", adminOnly: true)]
+	public void StartPancakeCommand(Player sender, int arenaNumber, Player team2Leader, Player team1Leader = null)
 	{
+		arenaNumber--;
 		if (team1Leader == null)
 		{
 			team1Leader = sender;
 		}
 		if (!Team.IsAllies(team1Leader.Character.Read<Team>(), team2Leader.Character.Read<Team>()))
 		{
-			try
+			if (arenaNumber < 0 || arenaNumber >= CaptureThePancakeManager.captureThePancakeGameModes.Count)
 			{
-				CaptureThePancakeManager.StartMatchAtFirstAvailableArena(team1Leader, team2Leader);
+				sender.ReceiveMessage("You have specified an invalid arena number.".Error());
+				return;
 			}
-			catch (Exception e)
+			if (team1Leader.IsInCaptureThePancake())
 			{
-				sender.ReceiveMessage("There are no available pancake arenas at this time");
+				sender.ReceiveMessage($"{team1Leader.Name} is already in a pancake match!".Error());
+				return;
+			} 
+			else if (team2Leader.IsInCaptureThePancake())
+			{
+				sender.ReceiveMessage($"{team2Leader.Name} is already in a pancake match!".Error());
+				return;
+			}
+			if (!CaptureThePancakeManager.StartMatchAtArenaIfAvailable(arenaNumber, team1Leader, team2Leader))
+			{
+				sender.ReceiveMessage("That arena is currently in a match!".Error());
 			}
 		}
 		else

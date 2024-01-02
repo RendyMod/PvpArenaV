@@ -59,7 +59,7 @@ public static class CaptureThePancakeManager
 	{
 		for (var i = 0; i < captureThePancakeGameModes.Count; i++)
 		{
-			EndMatch(i, 0);
+			EndMatch(i, 1);
 		}
 
 		captureThePancakeGameModes.Clear();
@@ -94,6 +94,20 @@ public static class CaptureThePancakeManager
 			ActionScheduler.RunActionOnceAfterDelay(action, 1);
 		}
     }
+
+	public static bool StartMatchAtArenaIfAvailable(int arenaNumber, Player team1LeaderPlayer, Player team2LeaderPlayer)
+	{
+		if (!captureThePancakeGameModes[arenaNumber].MatchActive)
+		{
+			var action = () => StartMatch(team1LeaderPlayer, team2LeaderPlayer, arenaNumber);
+			ActionScheduler.RunActionOnceAfterDelay(action, 1);
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
 
     private static int GetAvailableArena()
     {
@@ -352,6 +366,21 @@ public static class CaptureThePancakeManager
 		var team1Players = team1LeaderPlayer.GetClanMembers();
 		var team2Players = team2LeaderPlayer.GetClanMembers();
 		captureThePancakeGameModes[arenaNumber].Initialize(team1Players, team2Players);
+		foreach (var player in PlayerService.OnlinePlayers)
+		{
+			if (player.CurrentState == Player.PlayerState.Spectating || Helper.HasBuff(player, Prefabs.Admin_Observe_Ghost_Buff) || Helper.HasBuff(player, Prefabs.Admin_Observe_Invisible_Buff))
+			{
+				continue;
+			}
+			else
+			{
+				if (captureThePancakeGameModes[arenaNumber].EntireMapZone.Contains(player.Character))
+				{
+					player.ReceiveMessage("You have been teleported out because a new pancake match has started in this arena".White());
+					player.Teleport(PvpArenaConfig.Config.CustomSpawnLocation.ToFloat3());
+				}
+			}
+		}
 		SpawnStructures(team1LeaderPlayer, team2LeaderPlayer, arenaNumber);
 		
 		foreach (var team1Player in team1Players)
@@ -361,8 +390,11 @@ public static class CaptureThePancakeManager
 			team1Player.Reset(BaseGameMode.ResetOptions);
 			Helper.SetDefaultBlood(team1Player, CaptureThePancakeConfig.Config.DefaultBlood.ToLower());
 			GiveVerminSalvesIfNotPresent(team1Player);
-			var teleportPlayerAction = () => team1Player.Teleport(CaptureThePancakeConfig.Config.Arenas[arenaNumber].Team1PlayerRespawn.ToFloat3());
-			ActionScheduler.RunActionOnceAfterDelay(teleportPlayerAction, .1);
+			if (team1Player.IsOnline)
+			{
+				var teleportPlayerAction = () => team1Player.Teleport(CaptureThePancakeConfig.Config.Arenas[arenaNumber].Team1PlayerRespawn.ToFloat3());
+				ActionScheduler.RunActionOnceAfterDelay(teleportPlayerAction, .1);
+			}
 			team1Player.ReceiveMessage($"The match will start in {"10".Emphasize()} seconds. {"Get ready!".Emphasize()}".White());
 			try
 			{
@@ -382,8 +414,12 @@ public static class CaptureThePancakeManager
 			team2Player.Reset(BaseGameMode.ResetOptions);
 			Helper.SetDefaultBlood(team2Player, CaptureThePancakeConfig.Config.DefaultBlood.ToLower());
 			GiveVerminSalvesIfNotPresent(team2Player);
-			var teleportPlayerAction = () => team2Player.Teleport(CaptureThePancakeConfig.Config.Arenas[arenaNumber].Team2PlayerRespawn.ToFloat3());
-			ActionScheduler.RunActionOnceAfterDelay(teleportPlayerAction, .1);
+			if (team2Player.IsOnline)
+			{
+				var teleportPlayerAction = () => team2Player.Teleport(CaptureThePancakeConfig.Config.Arenas[arenaNumber].Team2PlayerRespawn.ToFloat3());
+				ActionScheduler.RunActionOnceAfterDelay(teleportPlayerAction, .1);
+			}
+			
 			team2Player.ReceiveMessage($"The match will start in {"10".Emphasize()} seconds. {"Get ready!".Emphasize()}".White());
 			try
 			{
@@ -467,12 +503,12 @@ public static class CaptureThePancakeManager
 	{
 		try
 		{
-			var relics = Helper.GetEntitiesByComponentTypes<Relic>();
+/*			var relics = Helper.GetEntitiesByComponentTypes<Relic>();
 			foreach (var relic in relics)
 			{
 				Helper.KillOrDestroyEntity(relic);
 			}
-			relics.Dispose();
+			relics.Dispose();*/
 			foreach (var timer in captureThePancakeGameModes[arenaNumber].Timers)
 			{
 				if (timer != null)
@@ -497,6 +533,7 @@ public static class CaptureThePancakeManager
 			if (winner > 0 && captureThePancakeGameModes[arenaNumber].Teams.Count > 0)
 			{
 				var action = () => {
+					Plugin.PluginLog.LogInfo("hi");
 					TeleportTeamsToCenter(captureThePancakeGameModes[arenaNumber].Teams, winner, TeamSide.East, arenaNumber);
 					captureThePancakeGameModes[arenaNumber].Dispose();
 					UnitFactory.DisposeTimers($"pancake{arenaNumber}");
@@ -586,6 +623,7 @@ public static class CaptureThePancakeManager
 			else
 			{
 				team[i].TeleportToOfflinePosition();
+				Helper.RemoveFromClan(team[i]);
 			}
 		}
 	}

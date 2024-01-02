@@ -37,15 +37,10 @@ internal class TestCommands
 {
 	public static Entity MapIcon;
 	[Command("test", description: "Used for debugging", adminOnly: true)]
-	public void TestCommand(Player sender)
+	public void TestCommand(Player sender, Player player)
 	{
-		var relicMapIcons = Helper.GetEntitiesByComponentTypes<RelicMapIcon>();
-		foreach (var relicMapIcon in relicMapIcons)
-		{
-			Helper.DestroyEntity(relicMapIcon);
-		}
-		
-		sender.Clan.LogComponentTypes();
+		sender.ReceiveMessage(player.CurrentState.ToString());
+		/*var velocity = sender.Character.Read<Velocity>();*/
 		sender.ReceiveMessage("done");
 	}
 
@@ -61,6 +56,35 @@ internal class TestCommands
 			ResetCooldowns = true,
 			RemoveBuffs = false
 		});
+	}
+
+
+	[Command("rat", description: "Makes player a rat", adminOnly: true)]
+	public void RatCommand(Player sender, Player player)
+	{
+		if (!Helper.HasBuff(player, Prefabs.Admin_Observe_Invisible_Buff) && !Helper.HasBuff(player, Prefabs.Admin_Observe_Ghost_Buff) && player.CurrentState == Player.PlayerState.Normal)
+		{
+			Helper.BuffPlayer(player, Prefabs.AB_Shapeshift_Rat_Buff, out var buffEntity, Helper.NO_DURATION);
+			Helper.FixIconForShapeshiftBuff(player, buffEntity, Prefabs.AB_Shapeshift_Rat_Group);
+		}
+	}
+
+
+	[Command("rat-area", description: "Rats players in an area", adminOnly: true)]
+	public void RatAreaCommand(Player sender, int distance = 20)
+	{
+		foreach (var player in PlayerService.OnlinePlayers)
+		{
+			if (math.distance(player.Position, sender.Position) <= distance)
+			{
+				if (player == sender) continue;
+				if (!Helper.HasBuff(player, Prefabs.Admin_Observe_Invisible_Buff) && !Helper.HasBuff(player, Prefabs.Admin_Observe_Ghost_Buff) && player.CurrentState == Player.PlayerState.Normal)
+				{
+					Helper.BuffPlayer(player, Prefabs.AB_Shapeshift_Rat_Buff, out var buffEntity, Helper.NO_DURATION);
+					Helper.FixIconForShapeshiftBuff(player, buffEntity, Prefabs.AB_Shapeshift_Rat_Group);
+				}
+			}
+		}
 	}
 
 	[Command("buff-area", description: "Buffs players in an area", adminOnly: true)]
@@ -94,7 +118,7 @@ internal class TestCommands
 		}
 	}
 
-	[Command("clan-area", description: "Teleports players in an area", adminOnly: true)]
+	[Command("clan-area", description: "Makes everyone in an area join a clan", adminOnly: true)]
 	public void ClanAreaCommand(Player sender, int distance = 20)
 	{
 		var playersToClan = new List<Player>();

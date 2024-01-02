@@ -49,6 +49,7 @@ public class PacifiedGameMode : BaseGameMode
 		"lb bullet",
 		"lb pancake",
 		"bp",
+		"tp",
 		"tp-list",
 		"tpa",
 		"lw",

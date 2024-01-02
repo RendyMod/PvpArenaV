@@ -174,7 +174,7 @@ internal class ClanCommands
 		sender.ReceiveMessage("You successfully created the clan!");
 	}
 
-	[Command("force-clan", description: "Forces a player to join the clan of another", usage: ".force-clan ash rendy", aliases: new string[] { "forceclan", "force clan" }, adminOnly: true)]
+	[Command("force-clan", description: "Forces a player to join the clan of another", usage: ".force-clan ash rendy", aliases: new string[] { "fc", "forceclan", "force clan" }, adminOnly: true)]
 	public static void ForceClanCommand(Player sender, Player player1, Player player2)
 	{
 		Helper.AddPlayerToPlayerClanForce(player1, player2);

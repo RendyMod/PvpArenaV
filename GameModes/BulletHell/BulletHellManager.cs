@@ -95,13 +95,20 @@ public static class BulletHellManager
 			player.ReceiveMessage("You are already in queue".Error());
 			return;
 		}
-		
+		foreach (var arena in bulletHellGameModes)
+		{
+			if (arena.player == player)
+			{
+				player.ReceiveMessage("You are already in queue".Error());
+				return;
+			}
+		}
+
 		var foundArena = false;
 		foreach (var arena in bulletHellGameModes)
 		{
 			if (arena.player == null)
 			{
-				player.CurrentState = Player.PlayerState.BulletHell;
 				player.ReceiveMessage("Arena is available. Prepare for match!".Success());
 				foundArena = true;
 				arena.player = player; //mark it as occupied before the delay

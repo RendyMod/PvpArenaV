@@ -50,7 +50,7 @@ public class GameModePermissionMiddleware : IMiddleware
 	{
 		try
 		{
-			if (sender.IsAdmin && command.AdminOnly) return true;
+			if (command.AdminOnly) return true;
 
 			if (allowedCommandsByGameMode.TryGetValue(sender.CurrentState, out var allowedCommands))
 			{

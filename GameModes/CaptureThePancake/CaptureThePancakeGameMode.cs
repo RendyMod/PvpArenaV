@@ -340,7 +340,7 @@ public class CaptureThePancakeGameMode : BaseGameMode
 				{
 					bool isTeammate = player.MatchmakingTeam == teamPlayer.MatchmakingTeam;
 					string coloredVictimName = isTeammate ? $"{player.Name.FriendlyTeam()}" : $"{player.Name.EnemyTeam()}";
-					string message = $"{coloredVictimName} died to {"admin abuse".EnemyTeam()}".White();
+					string message = $"{coloredVictimName} was killed by {"mysterious forces".EnemyTeam()}".White();
 					teamPlayer.ReceiveMessage(message);
 				}
 			}

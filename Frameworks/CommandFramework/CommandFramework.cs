@@ -63,8 +63,8 @@ public class CommandFramework
 		private static Dictionary<Type, IArgumentConverter> converters = new Dictionary<Type, IArgumentConverter>();
 		public static List<IMiddleware> middlewares = new List<IMiddleware>
 		{
-			new RolePermissionMiddleware(),
 			new GameModePermissionMiddleware(),
+			new RolePermissionMiddleware(),
 		};
 		private static string[] categoryOrder = new string[] { "Reset CDs & Heal", "Blood Potions", "Witch & Rage Buffs", "Kits", "Jewels", "Legendaries", "Teleport", "Clan", "Misc"};
 
