@@ -342,5 +342,19 @@ public static class HandleGameplayEventsOnHitSystemPatch
 	} 
 }*/
 
+/*[HarmonyPatch(typeof(EntityMetadataSystem), nameof(EntityMetadataSystem.OnUpdate))]
+public static class EntityMetadataSystemPatch
+{
+	public static void Prefix(EntityMetadataSystem __instance)
+	{
+		var entities = __instance.__OnUpdate_LambdaJob0_entityQuery.ToEntityArray(Allocator.Temp);
+		foreach (var entity in entities)
+		{
+			entity.LogPrefabName();
+		}
+		
+	}
+}*/
+
 //
 //AbilitySpawnSystem

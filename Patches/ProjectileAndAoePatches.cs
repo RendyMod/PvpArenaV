@@ -237,29 +237,3 @@ public class TargetAoeListener : EntityQueryListener
 
 	}
 }
-
-public class FromCharacterListener : EntityQueryListener
-{
-	public void OnNewMatchFound(Entity entity)
-	{
-		if (entity.Exists())
-		{
-			var user = entity.Read<FromCharacter>().User;
-			if (user.Exists())
-			{
-				var player = PlayerService.GetPlayerFromUser(user);
-				entity.LogComponentTypes();
-			}
-		}
-	}
-
-	public void OnNewMatchRemoved(Entity entity)
-	{
-
-	}
-
-	public void OnUpdate(Entity entity)
-	{
-
-	}
-}
