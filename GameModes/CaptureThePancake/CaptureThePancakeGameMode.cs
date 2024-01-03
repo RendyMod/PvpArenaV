@@ -1167,36 +1167,43 @@ public class CaptureThePancakeGameMode : BaseGameMode
 
 	public void HandleOnClanStatusPostUpdate()
 	{
-		var clan1 = Teams[1][0].Clan;
-		var clan2 = Teams[2][0].Clan;
-		var clans = new List<Entity>
+		try
+		{
+			var clan1 = Teams[1][0].Clan;
+			var clan2 = Teams[2][0].Clan;
+			var clans = new List<Entity>
 		{
 			clan1, clan2
 		};
 
-		foreach (var clan in clans)
-		{
-			if (clan.Exists())
+			foreach (var clan in clans)
 			{
-				var buffer = clan.ReadBuffer<ClanMemberStatus>();
-				for (var i = 0; i < buffer.Length; i++)
+				if (clan.Exists())
 				{
-					var clanMemberStatus = buffer[i];
-					var player = UserIndexToPlayer[clanMemberStatus.UserIndex];
-					if (DeadPlayers.Contains(player))
+					var buffer = clan.ReadBuffer<ClanMemberStatus>();
+					for (var i = 0; i < buffer.Length; i++)
 					{
-						if (Helper.TryGetBuff(player, Prefabs.AB_Shapeshift_Mist_Buff, out var buffEntity))
+						var clanMemberStatus = buffer[i];
+						var player = UserIndexToPlayer[clanMemberStatus.UserIndex];
+						if (DeadPlayers.Contains(player))
 						{
-							var age = buffEntity.Read<Age>();
-							var lifetime = buffEntity.Read<LifeTime>();
-							var percent = (int)((age.Value / lifetime.Duration) * 100);
-							clanMemberStatus.HealthPercent = percent;
-							clanMemberStatus.IsConnected = false;
-							buffer[i] = clanMemberStatus;
+							if (Helper.TryGetBuff(player, Prefabs.AB_Shapeshift_Mist_Buff, out var buffEntity))
+							{
+								var age = buffEntity.Read<Age>();
+								var lifetime = buffEntity.Read<LifeTime>();
+								var percent = (int)((age.Value / lifetime.Duration) * 100);
+								clanMemberStatus.HealthPercent = percent;
+								clanMemberStatus.IsConnected = false;
+								buffer[i] = clanMemberStatus;
+							}
 						}
 					}
 				}
 			}
+		}
+		catch
+		{
+
 		}
 	}
 

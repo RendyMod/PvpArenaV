@@ -33,19 +33,24 @@ public static class LoginPointsService
 		player.ReceiveMessage($"You were awarded {points.ToString().Emphasize()} {"VPoints".Warning()} for being online.".White());
 		player.ReceiveMessage($"New total: {player.PlayerPointsData.GetPointsFromCurrentRegion().ToString().Warning()}".White());
 	}
-	
+
 	public static void TryGrantDailyLoginPoints(Player player, int points)
 	{
-		DateTime currentTime = DateTime.UtcNow;
+		DateTime currentTime = DateTime.UtcNow; // Current timestamp
+		DateTime currentDate = currentTime.Date; // Current date with time part set to 00:00:00
 
-		if (player.PlayerPointsData.LastLoginDate == null || currentTime.Day > player.PlayerPointsData.LastLoginDate.Value.Day)
+		// Check if LastLoginTimestamp is null or if the current date is after the date part of the last login timestamp
+		if (player.PlayerPointsData.LastLoginDate == null || currentDate > player.PlayerPointsData.LastLoginDate.Value.Date)
 		{
-			player.PlayerPointsData.LastLoginDate = DateTime.UtcNow;
+			// Logic for granting daily login points
 			player.PlayerPointsData.AddPointsToAllRegions(points);
 			Core.pointsDataRepository.SaveDataAsync(new List<PlayerPoints> { player.PlayerPointsData });
 			player.ReceiveMessage($"You were awarded {points.ToString().Emphasize()} {"VPoints".Warning()} for your daily login.".White());
 			player.ReceiveMessage($"New total: {player.PlayerPointsData.GetPointsFromCurrentRegion().ToString().Warning()}".White());
 		}
+
+		// Always update the LastLoginTimestamp, whether or not points are awarded
+		player.PlayerPointsData.LastLoginDate = currentTime;
 	}
 
 	public static void AwardPointsToAllOnlinePlayers(int points)

@@ -32,8 +32,11 @@ public static class MoveItemBetweenInventoriesSystemPatch
 				{
 					var fromCharacter = entity.Read<FromCharacter>();
 					var player = PlayerService.GetPlayerFromUser(fromCharacter.User);
-					player.ReceiveMessage("Transferring items is disabled".Error());
-					entity.Destroy();
+					if (!player.IsAdmin)
+					{
+						player.ReceiveMessage("Transferring items is disabled".Error());
+						entity.Destroy();
+					}
 				}
 			}
 		}

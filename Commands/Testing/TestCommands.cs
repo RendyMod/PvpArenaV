@@ -31,6 +31,7 @@ using Epic.OnlineServices.Sessions;
 using UnityEngine;
 using UnityEngine.Jobs;
 using Unity.Entities.UniversalDelegates;
+using static ProjectM.HitColliderCast;
 
 namespace PvpArena.Commands.Debug;
 internal class TestCommands
@@ -39,18 +40,73 @@ internal class TestCommands
 	[Command("test", description: "Used for debugging", adminOnly: true)]
 	public void TestCommand(Player sender)
 	{
-		if (Core.gameDataSystem.ItemHashLookupMap.TryGetValue(Prefabs.Item_Headgear_BearTrophy, out var itemData))
-		{
-			var map = Core.gameDataSystem.ItemHashLookupMap;
-			itemData.ItemCategory |= ItemCategory.BloodBound;
-			map[Prefabs.Item_Headgear_BearTrophy] = itemData;
-			/*var entity = Helper.GetPrefabEntityByPrefabGUID(Prefabs.Item_Headgear_BearTrophy);
-			var prefabItemData = entity.Read<ItemData>();
-			prefabItemData.ItemCategory |= ItemCategory.BloodBound;
-			entity.Write(prefabItemData);*/
-		}
 		sender.ReceiveMessage("done");
 	}
+
+	[Command("spawn-fire", description: "Spawns a single ring of fire", adminOnly: true)]
+	public void SpawnFireCommand(Player sender, float safeZoneRadius = 5)
+	{
+		var myPos = sender.Position;
+
+		// Define the size of a tile
+		float tileSize = 5.0f;
+
+		// Calculate the radiusIncrement based on tileSize
+		float radiusIncrement = tileSize / 2; // Half-tile increment
+
+		// Calculate the number of fires to spawn in the ring
+		int numFires = Mathf.CeilToInt(2 * Mathf.PI * safeZoneRadius / radiusIncrement);
+
+		// Spawn the fires in the ring
+		for (int i = 0; i < numFires; i++)
+		{
+			// Calculate the angle for this fire
+			float angle = (2 * Mathf.PI / numFires) * i;
+
+			// Calculate the fire position using polar coordinates
+			Vector3 firePosition = new Vector3(
+				myPos.x + safeZoneRadius * Mathf.Cos(angle),
+				myPos.y, // Assuming y is constant and the fire effect spawns at ground level
+				myPos.z + safeZoneRadius * Mathf.Sin(angle)
+			);
+
+			// Spawn fire at this position
+			PrefabSpawnerService.SpawnWithCallback(Prefabs.AB_Shared_FireArea, firePosition, (e) => 
+			{
+				e.Remove<HitColliderCast>();
+				e.Remove<HitTrigger>();
+				e.Remove<ApplyBuffOnGameplayEvent>();
+				e.Remove<GameplayEventListeners>();
+				e.Remove<CollisionCastOnUpdate>();
+				e.Remove<CreateGameplayEventsOnTick>();
+				e.Remove<CreateGameplayEventsOnHit>();
+			});
+		}
+
+		sender.ReceiveMessage($"Ring of fire created with a radius of {safeZoneRadius}. Total fires spawned: {numFires}.");
+	}
+
+	[Command("extinguish", description: "Used for debugging", adminOnly: true)]
+	public void ExtinguishCommand(Player sender)
+	{
+		var entities = Helper.GetEntitiesByComponentTypes<SpellTarget>();
+		foreach (var entity in entities)
+		{
+			if (entity.GetPrefabGUID() == Prefabs.AB_Shared_FireArea)
+			{
+				Helper.DestroyEntity(entity);
+			}
+		}
+		sender.ReceiveMessage("Extinguished");
+	}
+
+	/*var map = Core.gameDataSystem.ItemHashLookupMap;
+	itemData.ItemCategory |= ItemCategory.BloodBound;
+	map[Prefabs.Item_Headgear_BearTrophy] = itemData;
+	*//*var entity = Helper.GetPrefabEntityByPrefabGUID(Prefabs.Item_Headgear_BearTrophy);
+	var prefabItemData = entity.Read<ItemData>();
+	prefabItemData.ItemCategory |= ItemCategory.BloodBound;
+	entity.Write(prefabItemData);*/
 
 	[Command("admin-reset", description: "Used for debugging", adminOnly: true)]
 	public void AdminResetCommand(Player sender, Player target = null)
