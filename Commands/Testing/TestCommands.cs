@@ -47,6 +47,11 @@ internal class TestCommands
 	[Command("start-od", description: "Starts an OD match", aliases: new string[] { "od-fight" }, adminOnly: true)]
 	public void StartODFightCommand(Player sender, Player player1, Player player2)
 	{
+		if (player1.IsAlliedWith(player2))
+		{
+			sender.ReceiveMessage("Cannot start a match against people in the same clan".Error());
+			return;
+		}
 		if (player1.CurrentState != Player.PlayerState.Normal)
 		{
 			sender.ReceiveMessage($"{player1.Name} is already in a game mode".Error());

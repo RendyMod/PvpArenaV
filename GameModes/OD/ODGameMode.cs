@@ -20,6 +20,7 @@ using PvpArena.GameModes.BulletHell;
 using PvpArena.Services.Moderation;
 using AsmResolver;
 using PvpArena.GameModes.Matchmaking1v1;
+using Unity.DebugDisplay;
 
 namespace PvpArena.GameModes.OD;
 
@@ -72,6 +73,9 @@ public class ODGameMode : BaseGameMode
 		GameEvents.OnPlayerShapeshift += HandleOnShapeshift;
 		GameEvents.OnPlayerDowned += HandleOnPlayerDowned;
 		GameEvents.OnPlayerUsedConsumable += HandleOnConsumableUse;
+		GameEvents.OnPlayerInvitedToClan += HandleOnPlayerInvitedToClan;
+		GameEvents.OnPlayerKickedFromClan += HandleOnPlayerKickedFromClan;
+		GameEvents.OnPlayerLeftClan += HandleOnPlayerLeftClan;
 	}
 
 	public ODGameMode()
@@ -104,6 +108,9 @@ public class ODGameMode : BaseGameMode
 		GameEvents.OnPlayerShapeshift -= HandleOnShapeshift;
 		GameEvents.OnPlayerDowned -= HandleOnPlayerDowned;
 		GameEvents.OnPlayerUsedConsumable -= HandleOnConsumableUse;
+		GameEvents.OnPlayerInvitedToClan -= HandleOnPlayerInvitedToClan;
+		GameEvents.OnPlayerKickedFromClan -= HandleOnPlayerKickedFromClan;
+		GameEvents.OnPlayerLeftClan -= HandleOnPlayerLeftClan;
 
 		Teams.Clear();
 		PlayerIsAlive.Clear();
@@ -112,6 +119,7 @@ public class ODGameMode : BaseGameMode
 	public override void HandleOnShapeshift(Player player, Entity eventEntity)
 	{
 		if (player.CurrentState != PlayerGameModeType) return;
+		if (!PlayerIsAlive.ContainsKey(player)) return;
 
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 		player.ReceiveMessage("You are OD'd...".Error());
@@ -120,6 +128,7 @@ public class ODGameMode : BaseGameMode
 	public void HandleOnConsumableUse(Player player, Entity eventEntity, InventoryBuffer item)
 	{
 		if (player.CurrentState != PlayerGameModeType) return;
+		if (!PlayerIsAlive.ContainsKey(player)) return;
 
 		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
 	}
@@ -127,6 +136,8 @@ public class ODGameMode : BaseGameMode
 	public override void HandleOnPlayerDowned(Player player, Entity killer)
 	{
 		if (player.CurrentState != PlayerGameModeType) return;
+		if (!PlayerIsAlive.ContainsKey(player)) return;
+
 		PlayerIsAlive[player] = false;
 		bool allDead = true;
 		foreach (var teamPlayer in Teams[player.MatchmakingTeam])
@@ -162,21 +173,8 @@ public class ODGameMode : BaseGameMode
 				winningTeam = 2;
 				losingTeam = 1;
 			}
-			Helper.SendSystemMessageToAllClients($"Team {Teams[winningTeam][0].Name.Colorify(ExtendedColor.ClanNameColor)} won against {Teams[losingTeam][0].Name.Colorify(ExtendedColor.ClanNameColor)} in an OD match".White());
-			foreach (var team in Teams.Values)
-			{
-				foreach (var teamPlayer in team)
-				{
-					if (teamPlayer.MatchmakingTeam == winningTeam)
-					{
-						teamPlayer.ReceiveMessage("You have won! You are no longer od'd".Success());
-					}
-					else
-					{
-						teamPlayer.ReceiveMessage("You have lost! You are no longer od'd".Error());
-					}
-				}
-			}
+			Helper.SendSystemMessageToAllClients($"Team {Teams[winningTeam][0].Name.Colorify(ExtendedColor.ClanNameColor)} won against Team {Teams[losingTeam][0].Name.Colorify(ExtendedColor.ClanNameColor)} in an OD match".White());
+
 			var action = () => ODManager.EndMatch(MatchNumber, winningTeam);
 			ActionScheduler.RunActionOnceAfterDelay(action, 1);
 		}
@@ -185,10 +183,37 @@ public class ODGameMode : BaseGameMode
 	public override void HandleOnPlayerDisconnected(Player player)
 	{
 		if (player.CurrentState != PlayerGameModeType) return;
+		if (!PlayerIsAlive.ContainsKey(player)) return;
 
 		base.HandleOnPlayerDisconnected(player);
 
 		PlayerIsAlive[player] = false;
+	}
+	public void HandleOnPlayerInvitedToClan(Player player, Entity eventEntity)
+	{
+		if (player.CurrentState != this.PlayerGameModeType) return;
+		if (!PlayerIsAlive.ContainsKey(player)) return;
+
+		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
+		player.ReceiveMessage("You may not invite players to your clan while OD'd".Error());
+	}
+
+	public void HandleOnPlayerKickedFromClan(Player player, Entity eventEntity)
+	{
+		if (player.CurrentState != this.PlayerGameModeType) return;
+		if (!PlayerIsAlive.ContainsKey(player)) return;
+
+		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
+		player.ReceiveMessage("You may not kick players from your clan while OD'd".Error());
+	}
+
+	public void HandleOnPlayerLeftClan(Player player, Entity eventEntity)
+	{
+		if (player.CurrentState != this.PlayerGameModeType) return;
+		if (!PlayerIsAlive.ContainsKey(player)) return;
+
+		VWorld.Server.EntityManager.DestroyEntity(eventEntity);
+		player.ReceiveMessage("You may not leave your clan while OD'd".Error());
 	}
 
 	public static new HashSet<string> GetAllowedCommands()

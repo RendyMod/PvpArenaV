@@ -7,6 +7,7 @@ using Bloodstone.API;
 using Discord;
 using ProjectM;
 using ProjectM.Behaviours;
+using PvpArena.Configs;
 using PvpArena.Data;
 using PvpArena.Factories;
 using PvpArena.GameModes.Domination;
@@ -43,10 +44,15 @@ public static class ODManager
 			player.CurrentState = Player.PlayerState.OD;
 			player.MatchmakingTeam = 1;
 			player.Reset(Helper.ResetOptions.FreshMatch);
+			if (player != team1LeaderPlayer)
+			{
+				var action = () => player.Teleport(team1LeaderPlayer.Position);
+				ActionScheduler.RunActionOnceAfterFrames(action, 5);
+			}
+			
 			Helper.SetDefaultBlood(player, "warrior");
-
+			Helper.ApplyMatchInitializationBuff(player, 5);
 			Helper.BuffPlayer(player, Prefabs.AB_Consumable_Eat_TrippyShroom_Buff, out var buffEntity, Helper.NO_DURATION);
-			Helper.ApplyMatchInitializationBuff(player, 15);
 		}
 
 		foreach (var player in team2)
@@ -54,9 +60,15 @@ public static class ODManager
 			player.CurrentState = Player.PlayerState.OD;
 			player.MatchmakingTeam = 2;
 			player.Reset(Helper.ResetOptions.FreshMatch);
+			if (player != team2LeaderPlayer)
+			{
+				var action = () => player.Teleport(team2LeaderPlayer.Position);
+				ActionScheduler.RunActionOnceAfterFrames(action, 5);
+			}
+
+			Helper.ApplyMatchInitializationBuff(player, 5);
 			Helper.SetDefaultBlood(player, "warrior");
 			Helper.BuffPlayer(player, Prefabs.AB_Consumable_Eat_TrippyShroom_Buff, out var buffEntity, Helper.NO_DURATION);
-			Helper.ApplyMatchInitializationBuff(player, 15);
 		}
 
 		var ODGameMode = new ODGameMode();
@@ -87,23 +99,27 @@ public static class ODManager
 					player.CurrentState = Player.PlayerState.Normal;
 					player.MatchmakingTeam = 0;
 					player.Reset(Helper.ResetOptions.FreshMatch);
+					player.Teleport(PvpArenaConfig.Config.CustomSpawnLocation.ToFloat3());
 				}
 			}
 			if (winnerTeam > 0 && ODGameModes[matchNumber].Teams.Count > 0)
 			{
 				var action = () => {
 					ODGameModes[matchNumber].Dispose();
+					ODGameModes.Remove(matchNumber);
 				};
 				ActionScheduler.RunActionOnceAfterDelay(action, .1);
 			}
 			else
 			{
 				ODGameModes[matchNumber].Dispose();
+				ODGameModes.Remove(matchNumber);
 			}
 		}
 		catch (Exception e)
 		{
 			ODGameModes[matchNumber].Dispose();
+			ODGameModes.Remove(matchNumber);
 			Plugin.PluginLog.LogError(e.ToString());
 		}
 	}
