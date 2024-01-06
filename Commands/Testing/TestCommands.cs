@@ -32,6 +32,7 @@ using UnityEngine;
 using UnityEngine.Jobs;
 using Unity.Entities.UniversalDelegates;
 using static ProjectM.HitColliderCast;
+using PvpArena.GameModes.OD;
 
 namespace PvpArena.Commands.Debug;
 internal class TestCommands
@@ -39,8 +40,50 @@ internal class TestCommands
 	public static Entity MapIcon;
 	[Command("test", description: "Used for debugging", adminOnly: true)]
 	public void TestCommand(Player sender)
-	{
+	{		
 		sender.ReceiveMessage("done");
+	}
+
+	[Command("start-od", description: "Starts an OD match", aliases: new string[] { "od-fight" }, adminOnly: true)]
+	public void StartODFightCommand(Player sender, Player player1, Player player2)
+	{
+		if (player1.CurrentState != Player.PlayerState.Normal)
+		{
+			sender.ReceiveMessage($"{player1.Name} is already in a game mode".Error());
+			return;
+		}
+		if (player2.CurrentState != Player.PlayerState.Normal)
+		{
+			sender.ReceiveMessage($"{player2.Name} is already in a game mode".Error());
+			return;
+		}
+		var player1Pos = sender.Position + new float3(10, 0, 0);
+		var player2Pos = sender.Position + new float3(-10, 0, 0);
+		player1.Teleport(player1Pos);
+		player2.Teleport(player2Pos);
+		
+		ODManager.StartMatch(player1, player2);
+		sender.ReceiveMessage("OD'd".White());
+	}
+
+	[Command("end-od", description: "Starts an OD match", adminOnly: true)]
+	public void EndODFightCommand(Player sender, Player player)
+	{
+		if (player.CurrentState != Player.PlayerState.OD)
+		{
+			sender.ReceiveMessage($"{player.Name} isn't in an OD match".Error());
+			return;
+		}
+
+		var matchNumber = ODManager.FindMatchNumberByPlayer(player);
+		if (matchNumber != -1)
+		{
+			ODManager.EndMatch(matchNumber, 0);
+			sender.ReceiveMessage("Match ended".White());
+			return;
+		}
+
+		sender.ReceiveMessage("Could not find a match with that player".Error());
 	}
 
 	[Command("spawn-fire", description: "Spawns a single ring of fire", adminOnly: true)]
@@ -126,7 +169,7 @@ internal class TestCommands
 	[Command("rat", description: "Makes player a rat", adminOnly: true)]
 	public void RatCommand(Player sender, Player player)
 	{
-		if (!Helper.HasBuff(player, Prefabs.Admin_Observe_Invisible_Buff) && !Helper.HasBuff(player, Prefabs.Admin_Observe_Ghost_Buff) && player.CurrentState == Player.PlayerState.Normal)
+		if (!Helper.HasBuff(player, Prefabs.Admin_Observe_Invisible_Buff) && !Helper.HasBuff(player, Prefabs.Admin_Observe_Ghost_Buff) && player.CurrentState == Player.PlayerState.Normal || player.CurrentState == Player.PlayerState.Pacified)
 		{
 			Helper.BuffPlayer(player, Prefabs.AB_Shapeshift_Rat_Buff, out var buffEntity, Helper.NO_DURATION);
 			Helper.FixIconForShapeshiftBuff(player, buffEntity, Prefabs.AB_Shapeshift_Rat_Group);
@@ -159,7 +202,7 @@ internal class TestCommands
 			if (math.distance(player.Position, sender.Position) <= distance)
 			{
 				if (player == sender) continue;
-				if (!Helper.HasBuff(player, Prefabs.Admin_Observe_Invisible_Buff) && !Helper.HasBuff(player, Prefabs.Admin_Observe_Ghost_Buff) && player.CurrentState == Player.PlayerState.Normal) 
+				if (!Helper.HasBuff(player, Prefabs.Admin_Observe_Invisible_Buff) && !Helper.HasBuff(player, Prefabs.Admin_Observe_Ghost_Buff) && player.CurrentState == Player.PlayerState.Normal || player.CurrentState == Player.PlayerState.Pacified) 
 				{
 					Helper.BuffPlayer(player, buffGuid, out var buffEntity, Helper.NO_DURATION);
 				}
@@ -182,33 +225,78 @@ internal class TestCommands
 		}
 	}
 
-	[Command("clan-area", description: "Makes everyone in an area join a clan", adminOnly: true)]
-	public void ClanAreaCommand(Player sender, int distance = 20)
+	[Command("shuffle-teams", description: "Makes everyone in an area join a clan and teleports them into two parallel lines", aliases: new string[] { "st", "shuffle teams" }, adminOnly: true)]
+	public void ShuffleTeamsCommand(Player sender, int distance = 25)
 	{
-		var playersToClan = new List<Player>();
+		var playersToDivide = new List<Player>();
 		foreach (var player in PlayerService.OnlinePlayers)
 		{
 			if (math.distance(player.Position, sender.Position) <= distance)
 			{
-				if (player == sender) continue;
-				if (!Helper.HasBuff(player, Prefabs.Admin_Observe_Invisible_Buff) && !Helper.HasBuff(player, Prefabs.Admin_Observe_Ghost_Buff) && player.CurrentState == Player.PlayerState.Normal)
+				if (!Helper.HasBuff(player, Prefabs.Admin_Observe_Invisible_Buff) && !Helper.HasBuff(player, Prefabs.Admin_Observe_Ghost_Buff) && player.CurrentState == Player.PlayerState.Normal || player.CurrentState == Player.PlayerState.Pacified)
 				{
-					playersToClan.Add(player);
+					playersToDivide.Add(player);
 				}
 			}
 		}
 
-		if (playersToClan.Count > 0)
+		if (playersToDivide.Count >= 2) // Ensure there are at least 2 players to form two clans
 		{
-			var clanLeader = playersToClan[0];
-			Helper.RemoveFromClan(clanLeader);
-			Helper.CreateClanForPlayer(clanLeader);
-			for (var i = 1; i < playersToClan.Count; i++)
+			// Set the first two players as clan leaders and remove them from the list
+			var clanLeader1 = playersToDivide[0];
+			var clanLeader2 = playersToDivide[1];
+			playersToDivide.RemoveAt(1); // Remove second leader first to maintain index integrity
+			playersToDivide.RemoveAt(0); // Remove first leader
+
+			// Shuffle the remaining players
+			System.Random rng = new System.Random();
+			int n = playersToDivide.Count;
+			while (n > 1)
 			{
-				Helper.AddPlayerToPlayerClanForce(playersToClan[i], clanLeader);
+				n--;
+				int k = rng.Next(n + 1);
+				Player value = playersToDivide[k];
+				playersToDivide[k] = playersToDivide[n];
+				playersToDivide[n] = value;
+			}
+
+			// Create clans and add the leaders
+			Helper.RemoveFromClan(clanLeader1);
+			Helper.CreateClanForPlayer(clanLeader1);
+			Helper.RemoveFromClan(clanLeader2);
+			Helper.CreateClanForPlayer(clanLeader2);
+
+			// Determine starting positions for two parallel lines
+			float3 line1StartPos = sender.Position + new float3(5, 0, 0); // 5 units to the right of the sender on the x-axis
+			float3 line2StartPos = sender.Position - new float3(5, 0, 0); // 5 units to the left of the sender on the x-axis
+			float spacing = 2; // Space between players in a line on the z-axis
+
+			// Teleport clan leaders to the start of each line
+			clanLeader1.Teleport(line1StartPos);
+			clanLeader2.Teleport(line2StartPos);
+
+			// Assign the rest of the players to clans and teleport them to form two parallel lines
+			for (int i = 0; i < playersToDivide.Count; i++)
+			{
+				Vector3 targetPosition;
+				if (i % 2 == 0)
+				{
+					// Add player to Clan 1 and set position in line 1
+					Helper.AddPlayerToPlayerClanForce(playersToDivide[i], clanLeader1);
+					targetPosition = line1StartPos + new float3(0, 0, ((i / 2 + 1) * spacing)); // +1 because leader is at the start
+				}
+				else
+				{
+					// Add player to Clan 2 and set position in line 2
+					Helper.AddPlayerToPlayerClanForce(playersToDivide[i], clanLeader2);
+					targetPosition = line2StartPos + new float3(0, 0, ((i / 2 + 1) * spacing)); // +1 because leader is at the start
+				}
+				playersToDivide[i].Teleport(targetPosition);
 			}
 		}
+		sender.ReceiveMessage("Shuffled.".White());
 	}
+
 
 	[Command("add-region-points", description: "Used for debugging", adminOnly: true)]
 	public void AddRegionPoints(Player sender, Player target, int amount)

@@ -32,7 +32,8 @@ public class Player
 		PrisonBreak,
 		NoHealingLimit,
 		Moba,
-		Pacified
+		Pacified,
+		OD
 	}
 
 	private Entity _user;

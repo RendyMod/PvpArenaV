@@ -17,6 +17,7 @@ using PvpArena.GameModes.Dodgeball;
 using PvpArena.GameModes.Domination;
 using PvpArena.GameModes.Matchmaking1v1;
 using PvpArena.GameModes.Moba;
+using PvpArena.GameModes.OD;
 using PvpArena.GameModes.Pacified;
 using PvpArena.GameModes.Prison;
 using PvpArena.GameModes.PrisonBreak;
@@ -220,7 +221,7 @@ public static class Core
         defaultGameMode.Dispose();
 		pacifiedGameMode.Dispose();
 		matchmaking1v1GameMode.Dispose();
-        
+		ODManager.Dispose();
         CaptureThePancakeManager.Dispose();
 		if (dominationGameMode != null)
 		{

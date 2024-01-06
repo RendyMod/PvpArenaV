@@ -57,7 +57,7 @@ internal class GameModeCommands
 	[Command("end-pancake", usage: ".end-pancake {arenaNumber}", description: "Ends capture the pancake", adminOnly: true)]
 	public void EndPancakeCommand(Player sender, int arenaNumber)
 	{
-		CaptureThePancakeManager.EndMatch(arenaNumber - 1, 0);
+		CaptureThePancakeManager.EndMatch(arenaNumber - 1, 1);
 		sender.ReceiveMessage("Match ended".Success());
 	}
 

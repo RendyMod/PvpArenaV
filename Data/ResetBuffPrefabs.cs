@@ -141,8 +141,7 @@ public static class ResetBuffPrefabs
 		Prefabs.AB_BloodBuff_ResetSpellCooldownOnCast,
 		Prefabs.AB_BloodBuff_Scholar_MovementSpeedOnCast,
 		Prefabs.Buff_OutOfCombat,
-		Prefabs.AB_Shapeshift_NormalForm_Buff,
-		Prefabs.AB_Consumable_Eat_TrippyShroom_Buff
+		Prefabs.AB_Shapeshift_NormalForm_Buff
 	};
 
 	public static HashSet<PrefabGUID> ShapeshiftBuffs = new HashSet<PrefabGUID>
@@ -171,7 +170,7 @@ public static class ResetBuffPrefabs
 	{
 		Prefabs.AB_Consumable_Antidote_Curse_Buff,
 		Prefabs.AB_Consumable_HealingPotion_Debuff,
-		/*Prefabs.AB_Consumable_Eat_TrippyShroom_Buff,*/
+		Prefabs.AB_Consumable_Eat_TrippyShroom_Buff,
 		Prefabs.AB_Consumable_SpellBrew_T02_Buff,
 		Prefabs.AB_Consumable_SpellBrew_T01_Buff,
 		Prefabs.AB_Consumable_SilverResistancePotion_T03_Buff,

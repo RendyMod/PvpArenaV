@@ -10,6 +10,7 @@ using PvpArena.GameModes.Dodgeball;
 using PvpArena.GameModes.Domination;
 using PvpArena.GameModes.Matchmaking1v1;
 using PvpArena.GameModes.Moba;
+using PvpArena.GameModes.OD;
 using PvpArena.GameModes.Pacified;
 using PvpArena.GameModes.Prison;
 using PvpArena.GameModes.PrisonBreak;
@@ -42,7 +43,8 @@ public class GameModePermissionMiddleware : IMiddleware
 			{ Player.PlayerState.PrisonBreak, PrisonBreakGameMode.GetAllowedCommands() },
 			{ Player.PlayerState.NoHealingLimit, NoHealingLimitGameMode.GetAllowedCommands() },
 			{ Player.PlayerState.Moba, MobaGameMode.GetAllowedCommands() },
-			{ Player.PlayerState.Pacified, PacifiedGameMode.GetAllowedCommands() }
+			{ Player.PlayerState.Pacified, PacifiedGameMode.GetAllowedCommands() },
+			{ Player.PlayerState.OD, ODGameMode.GetAllowedCommands() }
 			// Add more game modes and their corresponding allowed commands here
 		};
 	}

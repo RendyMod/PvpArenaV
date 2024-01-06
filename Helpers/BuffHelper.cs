@@ -35,9 +35,9 @@ public static partial class Helper
 	public static PrefabGUID CustomBuff4 = Prefabs.Buff_BloodQuality_T04_OLD;
 	public static PrefabGUID CustomBuff5 = Prefabs.Buff_BloodQuality_T05_OLD;
 	public static PrefabGUID TrollBuff = CustomBuff2;
-	public static void ApplyMatchInitializationBuff(Player player)
+	public static void ApplyMatchInitializationBuff(Player player, int duration = 5)
 	{
-		Helper.BuffPlayer(player, Prefabs.Buff_General_Gloomrot_LightningStun, out var buffEntity, 5);
+		Helper.BuffPlayer(player, Prefabs.Buff_General_Gloomrot_LightningStun, out var buffEntity, duration);
 		Helper.ModifyBuff(buffEntity, BuffModificationTypes.MovementImpair | BuffModificationTypes.AbilityCastImpair);
 	}
 
