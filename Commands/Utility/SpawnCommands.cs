@@ -87,7 +87,7 @@ internal class SpawnCommands
 			foreach (var entity in entities)
 			{
 				if (entity.Has<User>()) continue;
-				if (!entity.Has<PhysicsCollider>()) continue;
+				// if (!entity.Has<PhysicsCollider>()) continue;
 				if (entity.Read<PrefabGUID>() == prefab)
 				{
 					Helper.DestroyEntity(entity);
