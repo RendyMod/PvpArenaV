@@ -12,6 +12,7 @@ using PvpArena.Helpers;
 using PvpArena.Configs;
 using PvpArena.Persistence.MySql.PlayerDatabase;
 using System.Threading;
+using Epic.OnlineServices.Achievements;
 
 namespace PvpArena.GameModes.Matchmaking1v1;
 
@@ -82,6 +83,19 @@ public static class MatchmakingQueue
 
 	public static List<Player> GetQueue()
 	{
+        var playersToRemove = new List<Player>();
+		foreach (var player in _queue)
+		{
+			if (!player.IsOnline)
+			{
+				playersToRemove.Add(player);
+			}
+		}
+        foreach (var player in playersToRemove)
+        {
+            _queue.Remove(player);
+        }
+
 		return _queue;
 	}
 
@@ -98,6 +112,10 @@ public static class MatchmakingQueue
 			// First try to find a match that hasn't occurred recently
 			foreach (var player1 in players)
 			{
+				if (!player1.IsOnline)
+				{
+					continue;
+				}
 				foreach (var player2 in players.Where(p => p != player1))
 				{
 					if (Math.Abs(player1.MatchmakingData1v1.MMR - player2.MatchmakingData1v1.MMR) <= MMR_TOLERANCE &&
@@ -207,8 +225,8 @@ public static class MatchmakingQueue
 			{
 				pointsName += "s";
 			}
-			string winnerVPointsMessage = $"Received {pointsToAward.ToString().Emphasize()} {pointsName.Warning()} for participating in matchmaking. New total: {winner.PlayerPointsData.TotalPoints.ToString().Warning}".White();
-			string loserVPointsMessage = $"Received {pointsToAward.ToString().Emphasize()} {pointsName.Warning()} for participating in matchmaking. New total: {loser.PlayerPointsData.TotalPoints.ToString().Warning}".White();
+			string winnerVPointsMessage = $"Received {pointsToAward.ToString().Emphasize()} {pointsName.Warning()} for participating in matchmaking. New total: {winner.PlayerPointsData.TotalPoints.ToString().Warning()}".White();
+			string loserVPointsMessage = $"Received {pointsToAward.ToString().Emphasize()} {pointsName.Warning()} for participating in matchmaking. New total: {loser.PlayerPointsData.TotalPoints.ToString().Warning()}".White();
 			winner.ReceiveMessage(winnerVPointsMessage);
 			loser.ReceiveMessage(loserVPointsMessage);
 
@@ -236,11 +254,15 @@ public static class MatchmakingQueue
 			loser.Reset(Helper.ResetOptions.FreshMatch);
 
 			// Teleport players back to their original location.
-			winner.Teleport(winner.MatchmakingData1v1.ReturnLocation);
-			if (teleportLoser)
+			var action = () =>
 			{
-				loser.Teleport(loser.MatchmakingData1v1.ReturnLocation);
-			}
+				winner.Teleport(winner.MatchmakingData1v1.ReturnLocation);
+				if (teleportLoser)
+				{
+					loser.Teleport(loser.MatchmakingData1v1.ReturnLocation);
+				}
+			};
+			ActionScheduler.RunActionOnceAfterFrames(action, 2);
 
 			var arena = winner.MatchmakingData1v1.CurrentArena;
 			ArenaManager.FreeArena(arena);

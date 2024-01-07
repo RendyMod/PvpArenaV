@@ -76,8 +76,14 @@ public class Matchmaking1v1GameMode : BaseGameMode
 		player.Reset(Helper.ResetOptions.FreshMatch);
 		if (Helper.BuffPlayer(player, Prefabs.Witch_PigTransformation_Buff, out var buffEntity, 3))
 		{
-			buffEntity.Add<BuffModificationFlagData>();
-			buffEntity.Write(BuffModifiers.PigModifications);
+			Helper.ModifyBuff(buffEntity, BuffModifiers.PigModifications, true);
+
+			var buffer = VWorld.Server.EntityManager.AddBuffer<ModifyUnitStatBuff_DOTS>(buffEntity);
+			buffer.Clear();
+
+			buffer.Add(BuffModifiers.ShapeshiftFastMoveSpeed);
+			var buffer2 = buffEntity.ReadBuffer<CreateGameplayEventsOnDestroy>();
+			buffer2.Clear();
 		}
 
 		var loser = player;
